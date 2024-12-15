@@ -1,0 +1,55 @@
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+.idea_modules/
+
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+# MacOS-specific files
+.DS_Store
+
+# Windows-specific files
+Thumbs.db
+
+# Target directory (generated classes and JARs)
+target/
+out/
+
+# sbt-specific files
+project/target/
+project/project/
+.cache/
+lib_managed/
+
+# Scala
+*.cache
+*.tmp
+
+# Java
+*.war
+*.jar
+
+# Other temporary files
+*.swp
+*.swo
+*.bak
+*.orig
+*.rej
+~*
+# ScalaTest report files
+test-reports/
+
+# IDE-specific files
+*.idea/
+*.vscode/
+*.project
+*.classpath
+.settings/
+
+# Package dependency folders
+lib/
