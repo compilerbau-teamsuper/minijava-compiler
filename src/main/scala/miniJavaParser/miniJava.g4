@@ -102,7 +102,7 @@ assignment : Identifier '=' expression;
 
 methodCall : Identifier '(' expressionList? ')';
 
-forControl : forInit? ';' forControlStatementList? ';' forControlStatementList?;
+forControl : forInit? ';' expression? ';' forControlStatementList?;
 
 forControlStatement
     : assignment
@@ -110,7 +110,7 @@ forControlStatement
 
 forInit
     : localVariableDeclaration
-    | expressionList;
+    | forControlStatementList;
 
 forControlStatementList: forControlStatement (',' forControlStatement)*;
 
