@@ -12,7 +12,7 @@ typeDeclaration
     | interfaceDeclaration
     | ';';
 
-classDeclaration : Public? classModifier 'class' Identifier superclass? superinterfaces? classBody;
+classDeclaration : Public? classModifier? 'class' Identifier superclass? superinterfaces? classBody;
 
 interfaceDeclaration : Public? 'interface' Identifier extendsInterfaces? interfaceBody;
 
@@ -46,9 +46,17 @@ interfaceMemberDeclaration
     : methodDeclaration
     | fieldDeclaration;
 
-methodDeclaration : accessModifier? methodModifier typeOrVoid Identifier formalParameters? ('[' ']')* methodBody;
+methodDeclaration : accessModifier? methodModifier typeOrVoid Identifier '(' formalParameters? ')' ('[' ']')* methodBody;
 
-constructorDeclaration : accessModifier? Identifier formalParameters block;
+methodBody :  '{' methodBodyStatement* '}';
+
+methodBodyStatement
+    : statement
+    | return;
+
+return : 'return' expression?;
+
+constructorDeclaration : accessModifier? Identifier '(' formalParameters? ')' block;
 
 formalParameters : type Identifier (',' type Identifier)* ;
 
@@ -64,13 +72,12 @@ variableInitializer
 
 arrayInitializer : '{' (variableInitializer (',' variableInitializer)*)? ','? '}';
 
-expression : primary; // Simplified for brevity
-
-primary
+expression
     : '(' expression ')'
     | 'this'
     | 'super'
     | literal
+    | qualifiedName
     | Identifier
     | methodCall;
 
@@ -89,9 +96,9 @@ statement
 
 localVariableDeclaration : type variableDeclarators ';';
 
-assignment : Identifier '=' expression;
+assignment : Identifier '=' expression ';';
 
-methodCall : Identifier '(' expressionList? ')';
+methodCall : (qualifiedName | Identifier) '(' expressionList? ')' ';';
 
 ifThen : 'if' '(' expression ')' statement;
 
