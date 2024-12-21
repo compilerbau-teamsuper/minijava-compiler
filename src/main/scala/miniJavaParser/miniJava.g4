@@ -1,39 +1,38 @@
 grammar miniJava;
 
-// Parser rules
-compilationUnit : packageDeclaration? importDeclaration* typeDeclaration* EOF;
+// Start Rule
+compilationUnit : packageDeclaration? importDeclaration* (classDeclaration | interfaceDeclaration | ';')* EOF;
 
+
+// Outer Declarations
 packageDeclaration : 'package' qualifiedName ';';
 
 importDeclaration : 'import' 'static'? qualifiedName ('.' '*')? ';';
-
-typeDeclaration
-    : classDeclaration
-    | interfaceDeclaration
-    | ';';
 
 classDeclaration : Public? classModifier? 'class' Identifier superclass? superinterfaces? classBody;
 
 interfaceDeclaration : Public? 'interface' Identifier extendsInterfaces? interfaceBody;
 
+methodDeclaration : accessModifier? methodModifier? typeOrVoid Identifier '(' formalParameters? ')' ('[' ']')* methodBody;
+
+constructorDeclaration : accessModifier? Identifier '(' formalParameters? ')' block;
+
+
+// Extends / Implements
 superclass : 'extends' Identifier;
 
 superinterfaces : 'implements' Identifier (',' Identifier)*?;
 
 extendsInterfaces : 'extends' Identifier (',' Identifier)*?;
 
-classBody : '{' classBodyDeclaration* '}';
 
-interfaceBody : '{' interfaceBodyDeclaration* '}';
+// Bodys / Inner declarations
+classBody : '{' classBodyDeclaration* '}';
 
 classBodyDeclaration
     : ';'
     | block
     | memberDeclaration;
-
-interfaceBodyDeclaration
-    : ';'
-    | interfaceMemberDeclaration;
 
 memberDeclaration
     : methodDeclaration
@@ -42,11 +41,15 @@ memberDeclaration
     | classDeclaration
     | interfaceDeclaration;
 
+interfaceBody : '{' interfaceBodyDeclaration* '}';
+
+interfaceBodyDeclaration
+    : ';'
+    | interfaceMemberDeclaration;
+
 interfaceMemberDeclaration
     : methodDeclaration
     | fieldDeclaration;
-
-methodDeclaration : accessModifier? methodModifier typeOrVoid Identifier '(' formalParameters? ')' ('[' ']')* methodBody;
 
 methodBody :  '{' methodBodyStatement* '}';
 
@@ -55,8 +58,6 @@ methodBodyStatement
     | return;
 
 return : 'return' expression?;
-
-constructorDeclaration : accessModifier? Identifier '(' formalParameters? ')' block;
 
 formalParameters : type Identifier (',' type Identifier)* ;
 
@@ -72,6 +73,9 @@ variableInitializer
 
 arrayInitializer : '{' (variableInitializer (',' variableInitializer)*)? ','? '}';
 
+
+// Expressions
+
 expression
     : '(' expression ')'
     | 'this'
@@ -83,8 +87,10 @@ expression
 
 expressionList : expression (',' expression)*;
 
-block : '{' (statement | localVariableDeclaration)* '}';
+methodCall : (qualifiedName | Identifier) '(' expressionList? ')' ';';
 
+
+// Statements
 statement
     : block
     | assignment
@@ -94,11 +100,11 @@ statement
     | while
     | for;
 
+block : '{' (statement | localVariableDeclaration)* '}';
+
 localVariableDeclaration : type variableDeclarators ';';
 
 assignment : Identifier '=' expression ';';
-
-methodCall : (qualifiedName | Identifier) '(' expressionList? ')' ';';
 
 ifThen : 'if' '(' expression ')' statement;
 
