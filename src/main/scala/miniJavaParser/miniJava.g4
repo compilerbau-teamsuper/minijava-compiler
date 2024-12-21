@@ -76,31 +76,30 @@ primary
 
 expressionList : expression (',' expression)*;
 
-literal
-    : IntegerLiteral
-    | LongLiteral
-    | FloatingPointLiteral
-    | CharacterLiteral
-    | StringLiteral
-    | BooleanLiteral
-    | NullLiteral;
-
-block : '{' statement* '}';
+block : '{' (statement | localVariableDeclaration)* '}';
 
 statement
     : block
-    | localVariableDeclaration
     | assignment
     | methodCall
-    | 'if' '(' expression ')' statement ('else' statement)?
-    | 'while' '(' expression ')' statement
-    | 'for' '(' forControl ')' statement; // Simplified for brevity
+    | ifThen
+    | ifThenElse
+    | while
+    | for;
 
 localVariableDeclaration : type variableDeclarators ';';
 
 assignment : Identifier '=' expression;
 
 methodCall : Identifier '(' expressionList? ')';
+
+ifThen : 'if' '(' expression ')' statement;
+
+ifThenElse : 'if' '(' expression ')' statement 'else' statement ;
+
+while : 'while' '(' expression ')' statement;
+
+for : 'for' '(' forControl ')' statement;
 
 forControl : forInit? ';' expression? ';' forControlStatementList?;
 
@@ -175,6 +174,15 @@ qualifiedName : (Identifier '.')+ Identifier;
 Identifier : [a-zA-Z_] [a-zA-Z0-9_]*;
 
 // Literals
+literal
+    : IntegerLiteral
+    | LongLiteral
+    | FloatingPointLiteral
+    | CharacterLiteral
+    | StringLiteral
+    | BooleanLiteral
+    | NullLiteral;
+
 BooleanLiteral
     : 'true'
     | 'false';
