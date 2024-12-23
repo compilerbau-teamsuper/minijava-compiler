@@ -75,8 +75,12 @@ arrayInitializer : '{' (variableInitializer (',' variableInitializer)*)? ','? '}
 
 
 // Expressions
-
 expression
+    : calcFunction
+    | booleanFunction
+    | primary;
+
+primary
     : '(' expression ')'
     | 'this'
     | 'super'
@@ -88,6 +92,51 @@ expression
 expressionList : expression (',' expression)*;
 
 methodCall : (qualifiedName | Identifier) '(' expressionList? ')' ';';
+
+
+// Basic Functions
+calcFunction
+    : addition
+    | subtraction
+    | multiplication
+    | division
+    | modulo;
+
+term
+    : multiplication
+    | division
+    | modulo
+    | primary;
+
+multiplication : primary '*' term;
+division : primary '/' term;
+modulo : primary '%' term;
+addition: term '+' (calcFunction | primary);
+subtraction: term '-' (calcFunction | primary);
+
+booleanFunction
+    : greater
+    | greaterEqual
+    | lesser
+    | lesserEqual
+    | equal
+    | notEqual
+    | inverse;
+
+booleanFunNotEqual
+    : greater
+    | greaterEqual
+    | lesser
+    | lesserEqual
+    | inverse;
+
+greater: (primary | calcFunction) '>' (primary | calcFunction);
+greaterEqual: (primary | calcFunction) '>=' (primary | calcFunction);
+lesser: (primary | calcFunction) '<' (primary | calcFunction);
+lesserEqual: (primary | calcFunction) '<=' (primary | calcFunction);
+equal: (primary | booleanFunNotEqual | calcFunction) '==' expression;
+notEqual: (primary | booleanFunNotEqual | calcFunction) '!=' expression;
+inverse: '!' expression;
 
 
 // Statements
