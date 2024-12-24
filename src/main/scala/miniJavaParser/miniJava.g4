@@ -61,9 +61,7 @@ return : 'return' expression?;
 
 formalParameters : type Identifier (',' type Identifier)* ;
 
-fieldDeclaration : fieldModifier* type variableDeclarators ';';
-
-variableDeclarators : variableDeclarator (',' variableDeclarator)*;
+fieldDeclaration : fieldModifier* type variableDeclarator (',' variableDeclarator)* ';';
 
 variableDeclarator : Identifier ('=' variableInitializer)?;
 
@@ -151,7 +149,7 @@ statement
 
 block : '{' (statement | localVariableDeclaration)* '}';
 
-localVariableDeclaration : type variableDeclarators ';';
+localVariableDeclaration : type variableDeclarator (',' variableDeclarator)* ';';
 
 assignment : Identifier '=' expression ';';
 
@@ -178,39 +176,40 @@ forControlStatementList: forControlStatement (',' forControlStatement)*;
 // Types
 typeOrVoid
     : type
-    | Void;
+    | VoidType;
 
 type
-    : classOrInterfaceType
+    : objectType
     | primitiveType;
 
-classOrInterfaceType
-    : STRING
-    | INT
-    | FLOAT
-    | BOOLEAN;
+objectType
+    : 'String' #StringObject
+    | 'Byte' #ByteObject
+    | 'Short' #ShortObject
+    | 'Integer' #IntegerObject
+    | 'Float' #FloatObject
+    | 'Double' #DoubleObject
+    | 'Boolean' #BooleanObject
+    | 'Character' #CharacterObject
+    | Identifier #Identifier;
 
 primitiveType
-    : Int
-    | Float
-    | Boolean;
+    : 'byte' #ByteType
+    | 'short' #ShortType
+    | 'int' #IntType
+    | 'float' #FloatType
+    | 'double' #DoubleType
+    | 'boolean' #BooleanType
+    | 'char' #CharType;
 
-Void : 'void';
-Int : 'int';
-Float : 'float';
-Boolean : 'boolean';
-
-STRING : 'String';
-INTEGER : 'Integer';
-BOOLEAN : 'Boolean';
-FLOAT : 'Float';
+VoidType : 'void';
 
 
 // Modifiers
 accessModifier
-    : Public
-    | Private
-    | Protected;
+    : Public #Public
+    | 'private' #Private
+    | 'protected' #Protected;
 
 classModifier
     : Abstract
@@ -223,8 +222,6 @@ methodModifier
 fieldModifier : (Final? Static | Static? Final);
 
 Public : 'public';
-Private : 'private';
-Protected : 'protected';
 Abstract : 'abstract';
 Final : 'final';
 Static: 'static';
@@ -240,6 +237,7 @@ literal
     : IntegerLiteral
     | LongLiteral
     | FloatingPointLiteral
+    | DoubleLiteral
     | CharacterLiteral
     | StringLiteral
     | BooleanLiteral
@@ -251,7 +249,8 @@ BooleanLiteral
 IntegerLiteral : ('-')? [0-9]+;
 LongLiteral : ('-')? [0-9]+ [lL];
 NullLiteral : 'null';
-FloatingPointLiteral : ('-')? [0-9]+ '.' [0-9]* ([eE][+-]?[0-9]+)?;
+FloatingPointLiteral : ('-')? [0-9]+ '.' [0-9]* ([eE][+-]?[0-9]+)? ('f'|'F');
+DoubleLiteral : ('-')? [0-9]+ '.' [0-9]* ([eE][+-]?[0-9]+)? ('d'|'D')?;
 CharacterLiteral : '\'' . '\'';
 StringLiteral : '"' .*? '"';
 
