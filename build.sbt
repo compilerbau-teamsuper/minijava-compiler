@@ -4,5 +4,6 @@ ThisBuild / scalaVersion := "3.3.4"
 
 lazy val root = (project in file("."))
   .settings(
-    name := "minijava-compiler"
+    name := "minijava-compiler",
+    libraryDependencies += "org.antlr" % "antlr4-runtime" % "4.13.2"
   )

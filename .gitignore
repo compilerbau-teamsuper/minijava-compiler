@@ -60,3 +60,7 @@ project/metals.sbt
 
 # Package dependency folders
 lib/
+
+#ANTLR
+*.interp
+*.tokens
