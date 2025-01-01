@@ -12,4 +12,7 @@ def main(): Unit = {
   println(tree.toStringTree(parser))
   val ast = buildAST(tree)
   println(ast.toString())
+  val byteArray = codeGen(ast)
+  val wd = os.pwd/"out"
+  os.write.over(wd/"HelloWorld.class", byteArray)
 }

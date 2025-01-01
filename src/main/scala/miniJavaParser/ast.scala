@@ -3,11 +3,14 @@ package miniJavaParser
 import miniJavaParser.*
 import scala.jdk.CollectionConverters._
 
-class Program(classDec: List[ClassDec]) {
-    override def toString(): String = s"Program(${classDec.mkString(", ")})"
+class Program(classDec: ClassDec) {
+    def getClassDec(): ClassDec = classDec
+    override def toString(): String = s"Program(${classDec})"
 }
 
 class ClassDec(id: String, body: ClassBody) {
+    def getId(): String = id
+    def getBody(): ClassBody = body
     override def toString(): String = s"ClassDec(${id}, ${body})"
 }
 
@@ -16,9 +19,8 @@ class ClassBody() {
 }
 
 def buildAST(program: CompilationUnitContext): Program = {
-    val classDecs = program.classDeclaration()
-    val classDecASTs = classDecs.asScala.toList.map(classDecAST)
-    Program(classDecASTs)
+    val classDec = program.classDeclaration(0)
+    Program(classDecAST(classDec))
 }
 
 def classDecAST(classDecCtx: ClassDeclarationContext): ClassDec = {
