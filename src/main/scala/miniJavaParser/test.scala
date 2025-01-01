@@ -9,5 +9,7 @@ def main(): Unit = {
   val tokens = new BufferedTokenStream(lexer)
   val parser = new miniJavaParser(tokens)
   val tree = parser.compilationUnit()
-  print(tree.toStringTree(parser))
+  println(tree.toStringTree(parser))
+  val ast = buildAST(tree)
+  println(ast.toString())
 }
