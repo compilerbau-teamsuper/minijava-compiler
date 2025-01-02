@@ -32,7 +32,10 @@ classBody : '{' classBodyDeclaration* '}';
 classBodyDeclaration
     : ';'
     | block
-    | memberDeclaration;
+    | memberDeclaration
+    | staticInitializer;
+
+staticInitializer : 'static' block;
 
 memberDeclaration
     : methodDeclaration
@@ -55,6 +58,7 @@ methodBody :  '{' methodBodyStatement* '}';
 
 methodBodyStatement
     : statement
+    | localVariableDeclaration
     | return;
 
 return : 'return' expression?;
@@ -77,7 +81,8 @@ expression
     : calcFunction
     | booleanFunction
     | primary
-    | arrayRead;
+    | arrayRead
+    | newObject;
 
 primary
     : '(' expression ')'
@@ -94,6 +99,8 @@ methodCall : (qualifiedName | Identifier) '(' expressionList? ')' ';';
 
 arrayRead : arrayAccess ';';
 arrayAccess : primary ('[' expression ']')? ;
+
+newObject: 'new' (qualifiedName | Identifier | methodCall) (classBody)?;
 
 // Basic Functions
 calcFunction
@@ -139,6 +146,24 @@ equal: (primary | booleanFunNotEqual | calcFunction) '==' expression;
 notEqual: (primary | booleanFunNotEqual | calcFunction) '!=' expression;
 inverse: '!' expression;
 
+bitwiseFunction
+    : and
+    | or
+    | xor;
+
+and: term '&' term;
+or: term '|' term;
+xor: term '^' term;
+
+shiftFunction
+    :leftShift
+    | leftShift
+    | unsignedRightShift;
+
+leftShift: term '<<' term;
+rightShift: term '>>' term;
+unsignedRightShift: term '>>>' term;
+
 
 // Statements
 statement
@@ -148,13 +173,16 @@ statement
     | ifThen
     | ifThenElse
     | while
-    | for;
+    | for
+    | switch
+    | break
+    | continue
+    | tryStatement
+    | throwStatement;
 
 block : '{' (statement | localVariableDeclaration)* '}';
 
 localVariableDeclaration : type variableDeclarator (',' variableDeclarator)* ';';
-
-assignment : (primary | arrayAccess) '=' expression ';';
 
 ifThen : 'if' '(' expression ')' statement;
 
@@ -175,6 +203,55 @@ forInit
     | forControlStatementList;
 
 forControlStatementList: forControlStatement (',' forControlStatement)*;
+
+switch: 'switch' '(' expression ')' '{' switchBlockStatementGroup* '}' ;
+
+switchBlockStatementGroup: switchLabel+ switchBlock? ;
+
+switchLabel
+    : 'case' expression ':'
+    | 'default' ':' ;
+
+switchBlock: (statement)* break?;
+
+break: 'break' ';';
+continue: 'continue' ';';
+
+tryStatement: 'try' block catchClause+ (finallyClause)?;
+
+catchClause: 'catch' '(' type Identifier ')' block;
+
+finallyClause: 'finally' block;
+
+throwStatement : 'throw' expression ';' ;
+
+// Assignments
+assignment : (primary | arrayAccess) assignmentType expression ';';
+
+assignmentType
+    : ADD_ASSIGN
+    | SUB_ASSIGN
+    | MUL_ASSIGN
+    | DIV_ASSIGN
+    | AND_ASSIGN
+    | OR_ASSIGN
+    | XOR_ASSIGN
+    | MOD_ASSIGN
+    | LSHIFT_ASSIGN
+    | RSHIFT_ASSIGN
+    | URSHIFT_ASSIGN;
+
+ADD_ASSIGN     : '+=';
+SUB_ASSIGN     : '-=';
+MUL_ASSIGN     : '*=';
+DIV_ASSIGN     : '/=';
+AND_ASSIGN     : '&=';
+OR_ASSIGN      : '|=';
+XOR_ASSIGN     : '^=';
+MOD_ASSIGN     : '%=';
+LSHIFT_ASSIGN  : '<<=';
+RSHIFT_ASSIGN  : '>>=';
+URSHIFT_ASSIGN : '>>>=';
 
 // Types
 typeOrVoid
@@ -260,5 +337,8 @@ DoubleLiteral : ('-')? [0-9]+ '.' [0-9]* ([eE][+-]?[0-9]+)? ('d'|'D')?;
 CharacterLiteral : '\'' . '\'';
 StringLiteral : '"' .*? '"';
 
-// Operators and punctuators
-WS : [ \t\r\n]+ -> skip;
+
+// Whitespace and comments
+WS: [ \t\r\n\u000C]+ -> skip;
+COMMENT: '/*' .*? '*/' -> skip;
+LINE_COMMENT: '//' ~[\r\n]* -> skip;
