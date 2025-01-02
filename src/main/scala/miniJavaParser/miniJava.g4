@@ -76,7 +76,8 @@ arrayInitializer : '{' (variableInitializer (',' variableInitializer)*)? ','? '}
 expression
     : calcFunction
     | booleanFunction
-    | primary;
+    | primary
+    | arrayRead;
 
 primary
     : '(' expression ')'
@@ -91,6 +92,8 @@ expressionList : expression (',' expression)*;
 
 methodCall : (qualifiedName | Identifier) '(' expressionList? ')' ';';
 
+arrayRead : arrayAccess ';';
+arrayAccess : primary ('[' expression ']')? ;
 
 // Basic Functions
 calcFunction
@@ -151,7 +154,7 @@ block : '{' (statement | localVariableDeclaration)* '}';
 
 localVariableDeclaration : type variableDeclarator (',' variableDeclarator)* ';';
 
-assignment : Identifier '=' expression ';';
+assignment : (primary | arrayAccess) '=' expression ';';
 
 ifThen : 'if' '(' expression ')' statement;
 
@@ -180,7 +183,8 @@ typeOrVoid
 
 type
     : objectType
-    | primitiveType;
+    | primitiveType
+    | arrayType;
 
 objectType
     : 'String' #StringObject
@@ -201,6 +205,8 @@ primitiveType
     | 'double' #DoubleType
     | 'boolean' #BooleanType
     | 'char' #CharType;
+
+arrayType : (primitiveType | objectType) '[' ']' ;
 
 VoidType : 'void';
 
