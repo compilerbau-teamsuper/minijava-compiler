@@ -1,13 +1,20 @@
 grammar miniJava;
 
 // Start Rule
-compilationUnit : packageDeclaration? importDeclaration* (classDeclaration | interfaceDeclaration | ';')* EOF;
+compilationUnit : packageDeclaration? importDeclaration* typeDeclaration* EOF;
 
 
 // Outer Declarations
 packageDeclaration : 'package' qualifiedName ';';
 
-importDeclaration : 'import' 'static'? qualifiedName ('.' '*')? ';';
+importDeclaration : 'import' 'static'? qualifiedName Wildcard? ';';
+
+typeDeclaration
+    : classDeclaration
+    | interfaceDeclaration
+    | ';';
+
+Wildcard: ('.' '*');
 
 classDeclaration : Public? classModifier? 'class' Identifier superclass? superinterfaces? classBody;
 
@@ -19,11 +26,11 @@ constructorDeclaration : accessModifier? Identifier '(' formalParameters? ')' bl
 
 
 // Extends / Implements
-superclass : 'extends' Identifier;
+superclass : 'extends' qualifiedName;
 
-superinterfaces : 'implements' Identifier (',' Identifier)*?;
+superinterfaces : 'implements' qualifiedName (',' qualifiedName)*?;
 
-extendsInterfaces : 'extends' Identifier (',' Identifier)*?;
+extendsInterfaces : 'extends' qualifiedName (',' qualifiedName)*?;
 
 
 // Bodys / Inner declarations
@@ -50,7 +57,7 @@ interfaceBodyDeclaration
     : ';'
     | interfaceMemberDeclaration;
 
-interfaceMemberDeclaration
+interfaceMemberDeclaration //ToDo: Interface in Interface möglich?
     : methodDeclaration
     | fieldDeclaration;
 
@@ -65,7 +72,7 @@ return : 'return' expression?;
 
 formalParameters : type Identifier (',' type Identifier)* ;
 
-fieldDeclaration : fieldModifier* type variableDeclarator (',' variableDeclarator)* ';';
+fieldDeclaration : fieldModifier? type variableDeclarator (',' variableDeclarator)* ';';
 
 variableDeclarator : Identifier ('=' variableInitializer)?;
 
@@ -95,12 +102,12 @@ primary
 
 expressionList : expression (',' expression)*;
 
-methodCall : (qualifiedName | Identifier) '(' expressionList? ')' ';';
+methodCall : qualifiedName '(' expressionList? ')' ';';
 
 arrayRead : arrayAccess ';';
 arrayAccess : primary ('[' expression ']')? ;
 
-newObject: 'new' (qualifiedName | Identifier | methodCall) (classBody)?;
+newObject: 'new' (qualifiedName | methodCall) (classBody)?;
 
 // Basic Functions
 calcFunction
@@ -229,7 +236,8 @@ throwStatement : 'throw' expression ';' ;
 assignment : (primary | arrayAccess) assignmentType expression ';';
 
 assignmentType
-    : ADD_ASSIGN
+    : ASSIGN
+    | ADD_ASSIGN
     | SUB_ASSIGN
     | MUL_ASSIGN
     | DIV_ASSIGN
@@ -241,6 +249,7 @@ assignmentType
     | RSHIFT_ASSIGN
     | URSHIFT_ASSIGN;
 
+ASSIGN         : '=';
 ADD_ASSIGN     : '+=';
 SUB_ASSIGN     : '-=';
 MUL_ASSIGN     : '*=';
@@ -302,7 +311,10 @@ methodModifier
     : (Final? Static | Static? Final)
     | Abstract;
 
-fieldModifier : (Final? Static | Static? Final);
+fieldModifier
+    : accessModifier (Final? Static | Static? Final)?
+    | (Final? Static | Static? Final) accessModifier?
+    | (Final? accessModifier Static | Static? accessModifier Final);
 
 Public : 'public';
 Abstract : 'abstract';
@@ -311,7 +323,7 @@ Static: 'static';
 
 
 // Identifier
-qualifiedName : (Identifier '.')+ Identifier;
+qualifiedName : (Identifier '.')* Identifier; // ToDo: Vielleicht nicht alles qualified name sein lassen und auch direkt mit Identifier arbeiten!
 
 Identifier : [a-zA-Z_] [a-zA-Z0-9_]*;
 
