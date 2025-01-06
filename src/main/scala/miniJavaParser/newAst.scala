@@ -139,14 +139,13 @@ object PrimitiveTypeName {
 }
 
 // Modifiers
-sealed trait Modifier
-object Modifier {
-  case object Public extends Modifier
-  case object Private extends Modifier
-  case object Protected extends Modifier
-  case object Abstract extends Modifier
-  case object Static extends Modifier
-  case object Final extends Modifier
+enum Modifier {
+  case Public
+  case Private
+  case Protected
+  case Abstract
+  case Static
+  case Final
 }
 
 // Hilfsklassen
