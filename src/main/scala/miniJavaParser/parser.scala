@@ -51,7 +51,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     )
   }
 
-  override def visitTypeDeclaration(ctx: miniJavaParser.TypeDeclarationContext): TypeDeclaration = {
+    def visitTypeDeclaration(ctx: miniJavaParser.TypeDeclarationContext): TypeDeclaration = {
     if (ctx.classDeclaration() != null) visitClassDeclaration(ctx.classDeclaration())
     else if (ctx.interfaceDeclaration() != null) visitInterfaceDeclaration(ctx.interfaceDeclaration())
     else throw new IllegalArgumentException("Unknown type declaration")
