@@ -10,8 +10,11 @@ def main(): Unit = {
   val parser = new miniJavaParser(tokens)
   val tree = parser.compilationUnit()
   println(tree.toStringTree(parser))
-  val ast = buildAST(tree)
+  
+  val astBuilder = new ASTBuilderVisitor()
+  val ast = astBuilder.visitCompilationUnit(tree)
   println(ast.toString())
+  
   val byteArray = codeGen(ast)
   val wd = os.pwd/"out"
   os.write.over(wd/"HelloWorld.class", byteArray)
