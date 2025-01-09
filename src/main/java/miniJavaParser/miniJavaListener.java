@@ -1,4 +1,4 @@
-// Generated from miniJava.g4 by ANTLR 4.13.2
+// Generated from G:/Git/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
 package miniJavaParser;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
@@ -628,25 +628,25 @@ public interface miniJavaListener extends ParseTreeListener {
 	 */
 	void exitIfThenElse(miniJavaParser.IfThenElseContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#while}.
+	 * Enter a parse tree produced by {@link miniJavaParser#whileStatement}.
 	 * @param ctx the parse tree
 	 */
-	void enterWhile(miniJavaParser.WhileContext ctx);
+	void enterWhileStatement(miniJavaParser.WhileStatementContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#while}.
+	 * Exit a parse tree produced by {@link miniJavaParser#whileStatement}.
 	 * @param ctx the parse tree
 	 */
-	void exitWhile(miniJavaParser.WhileContext ctx);
+	void exitWhileStatement(miniJavaParser.WhileStatementContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#for}.
+	 * Enter a parse tree produced by {@link miniJavaParser#forStatement}.
 	 * @param ctx the parse tree
 	 */
-	void enterFor(miniJavaParser.ForContext ctx);
+	void enterForStatement(miniJavaParser.ForStatementContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#for}.
+	 * Exit a parse tree produced by {@link miniJavaParser#forStatement}.
 	 * @param ctx the parse tree
 	 */
-	void exitFor(miniJavaParser.ForContext ctx);
+	void exitForStatement(miniJavaParser.ForStatementContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link miniJavaParser#forControl}.
 	 * @param ctx the parse tree

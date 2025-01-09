@@ -1,4 +1,4 @@
-// Generated from G:/Git/minijava-compiler/src/main/scala/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
+// Generated from G:/Git/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
 package miniJavaParser;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
@@ -28,6 +28,12 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitImportDeclaration(miniJavaParser.ImportDeclarationContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link miniJavaParser#typeDeclaration}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTypeDeclaration(miniJavaParser.TypeDeclarationContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#classDeclaration}.
 	 * @param ctx the parse tree
@@ -377,17 +383,17 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitIfThenElse(miniJavaParser.IfThenElseContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#while}.
+	 * Visit a parse tree produced by {@link miniJavaParser#whileStatement}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitWhile(miniJavaParser.WhileContext ctx);
+	T visitWhileStatement(miniJavaParser.WhileStatementContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#for}.
+	 * Visit a parse tree produced by {@link miniJavaParser#forStatement}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitFor(miniJavaParser.ForContext ctx);
+	T visitForStatement(miniJavaParser.ForStatementContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#forControl}.
 	 * @param ctx the parse tree

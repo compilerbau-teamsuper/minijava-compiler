@@ -249,28 +249,39 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
 
   // Methode: visitStatement
   override def visitStatement(ctx: miniJavaParser.StatementContext): Statement = {
+    if ctx == null then return null
     if (ctx.block() != null) {
       visitBlock(ctx.block(), false) match {case b: Block => b}
 //    } else if (ctx.assignment() != null) {
 //      visitAssignment(ctx.assignment())
 //    } else if (ctx.methodCall() != null) {
 //      visitMethodCall(ctx.methodCall())
-//    } else if (ctx.ifThen() != null) {
-//      visitIfThen(ctx.ifThen())
-//    } else if (ctx.ifThenElse() != null) {
-//      visitIfThenElse(ctx.ifThenElse())
-//    } else if (ctx.whileStatement() != null) {
-//      visitWhile(ctx.whileStatement())
+    } else if (ctx.ifThen() != null) {
+      visitIfThenElse(ctx.ifThen())
+    } else if (ctx.ifThenElse() != null) {
+      visitIfThenElse(ctx.ifThenElse())
+    } else if (ctx.whileStatement() != null) {
+      visitWhileStatement(ctx.whileStatement())
 //    } else if (ctx.forStatement() != null) {
 //      visitFor(ctx.forStatement())
 //    } else if (ctx.breakStatement() != null) {
 //      Break()
 //    } else if (ctx.continueStatement() != null) {
 //      Continue()
-//    } else {
-//      throw new IllegalArgumentException("Unknown statement")
+    } else {
+      throw new IllegalArgumentException("Unknown statement")
     }
-    else null
+  }
+
+  private def visitIfThenElse(ctx: miniJavaParser.IfThenContext | miniJavaParser.IfThenElseContext): IfStatement = {
+    ctx match {
+      case c: miniJavaParser.IfThenContext => IfStatement(visitExpression(c.expression()), visitStatement(c.statement()), None)
+      case c: miniJavaParser.IfThenElseContext => IfStatement(visitExpression(c.expression()), visitStatement(c.statement(0)), Option(visitStatement(c.statement(1))))
+    }
+  }
+
+  override def visitWhileStatement(ctx: miniJavaParser.WhileStatementContext): WhileStatement  = {
+    ???
   }
 
   // Weitere Hilfsmethoden für Expressions, Typen und andere Knoten
