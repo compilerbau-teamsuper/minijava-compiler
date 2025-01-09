@@ -1,4 +1,5 @@
 package miniJavaParser
+import AST.*
 
 import org.antlr.v4.runtime.{CharStreams, CommonTokenStream, ParserRuleContext}
 

@@ -1,13 +1,14 @@
 package miniJavaParser
+import AST.*
 
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes.*
-import _root_.miniJavaParser.Modifier.Public
-import _root_.miniJavaParser.Modifier.Abstract
-import _root_.miniJavaParser.Modifier.Final
-import _root_.miniJavaParser.Modifier.Private
-import _root_.miniJavaParser.Modifier.Protected
-import _root_.miniJavaParser.Modifier.Static
+import Modifier.Public
+import Modifier.Abstract
+import Modifier.Final
+import Modifier.Private
+import Modifier.Protected
+import Modifier.Static
 
 def codeGen(comp: CompilationUnit): Array[Byte] = {
     comp.typeDeclarations.find(x => x match {
