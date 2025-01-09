@@ -264,10 +264,10 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
       visitWhileStatement(ctx.whileStatement())
 //    } else if (ctx.forStatement() != null) {
 //      visitFor(ctx.forStatement())
-//    } else if (ctx.breakStatement() != null) {
-//      Break()
-//    } else if (ctx.continueStatement() != null) {
-//      Continue()
+    } else if (ctx.break_ != null) {
+      BreakStatement()
+    } else if (ctx.continue_ != null) {
+      ContinueStatement()
     } else {
       throw new IllegalArgumentException("Unknown statement")
     }
@@ -287,6 +287,31 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   // Weitere Hilfsmethoden für Expressions, Typen und andere Knoten
   override def visitExpression(ctx: miniJavaParser.ExpressionContext): Expression = {
     // Implementiere den Besuch von Expressions (z. B. calcFunction, primary, booleanFunction)
+    if ctx.arrayRead() != null then visitArrayRead(ctx.arrayRead())
+    else if ctx.primary() != null then visitPrimary(ctx.primary())
+    else if ctx.newObject() != null then visitNewObject(ctx.newObject())
+    else if ctx.booleanFunction() != null then visitBooleanFunction(ctx.booleanFunction())
+    else if ctx.calcFunction() != null then visitCalcFunction(ctx.calcFunction())
+    else throw new IllegalArgumentException("Unknown statement")
+  }
+
+  override def visitArrayRead(ctx: miniJavaParser.ArrayReadContext): ArrayRead = {
+    ArrayRead() // ToDo
+  }
+
+  override def visitPrimary(ctx: miniJavaParser.PrimaryContext): Expression = {
+    ???
+  }
+
+  override def visitNewObject(ctx: miniJavaParser.NewObjectContext): Expression = {
+    ???
+  }
+
+  override def visitBooleanFunction(ctx: miniJavaParser.BooleanFunctionContext): Expression = {
+    ???
+  }
+
+  override def visitCalcFunction(ctx: miniJavaParser.CalcFunctionContext): Expression = {
     ???
   }
 
