@@ -87,15 +87,25 @@ arrayInitializer : '{' (variableInitializer (',' variableInitializer)*)? ','? '}
 expression
     : calcFunction
     | booleanFunction
-    | primary
-    | arrayRead
+    //| bitwiseFunction ToDo
+    //| shiftFunction ToDo
+    | value
     | newObject;
+
+value
+    : '(' expression ')'
+    | 'this'
+    | 'super'
+    | literal
+    | qualifiedName
+    | Identifier
+    | methodCall
+    | arrayRead;
 
 primary
     : '(' expression ')'
     | 'this'
     | 'super'
-    | literal
     | qualifiedName
     | Identifier
     | methodCall;
@@ -111,65 +121,77 @@ newObject: 'new' (qualifiedName | methodCall) (classBody)?;
 
 // Basic Functions
 calcFunction
-    : addition
-    | subtraction
-    | multiplication
-    | division
-    | modulo;
+    : value calcBinOpHigher term
+    | term calcBinOpLower (calcFunction | value)
+    | qualifiedName calcUnOp;
 
 term
-    : multiplication
-    | division
-    | modulo
-    | primary;
+    : value calcBinOpHigher term
+    | value;
 
-multiplication : primary '*' term;
-division : primary '/' term;
-modulo : primary '%' term;
-addition: term '+' (calcFunction | primary);
-subtraction: term '-' (calcFunction | primary);
+calcBinOpHigher
+    : '*' #MUL
+    | '/' #DIV
+    | '%' #MOD;
+
+calcBinOpLower
+    : '+' #ADD
+    | '-' #SUB;
+
+calcUnOp
+    : '++' #INC
+    | '--' #DEC;
 
 booleanFunction
-    : greater
-    | greaterEqual
-    | lesser
-    | lesserEqual
-    | equal
-    | notEqual
+    : (value | calcFunction) booleanNumberOp (value | calcFunction)
+    | booleanFunHigh booleanOp booleanFunction
+    | booleanFunMiddle AND booleanFunction
+    | booleanFunLow OR booleanFunction
     | inverse;
 
-booleanFunNotEqual
-    : greater
-    | greaterEqual
-    | lesser
-    | lesserEqual
-    | inverse;
+booleanFunHigh
+    : (value | calcFunction) booleanNumberOp (value | calcFunction)
+    | value;
 
-greater: (primary | calcFunction) '>' (primary | calcFunction);
-greaterEqual: (primary | calcFunction) '>=' (primary | calcFunction);
-lesser: (primary | calcFunction) '<' (primary | calcFunction);
-lesserEqual: (primary | calcFunction) '<=' (primary | calcFunction);
-equal: (primary | booleanFunNotEqual | calcFunction) '==' expression;
-notEqual: (primary | booleanFunNotEqual | calcFunction) '!=' expression;
+booleanFunMiddle
+    : (value | calcFunction) booleanNumberOp (value | calcFunction)
+    | booleanFunHigh booleanOp booleanFunction
+    | value;
+
+booleanFunLow
+    : (value | calcFunction) booleanNumberOp (value | calcFunction)
+    | booleanFunHigh booleanOp booleanFunction
+    | booleanFunMiddle AND booleanFunction
+    | value;
+
 inverse: '!' expression;
 
-bitwiseFunction
-    : and
-    | or
-    | xor;
+booleanNumberOp
+    : '>' #GT
+    | '<' #LT
+    | '<=' #LE
+    | '>=' #GE;
 
-and: term '&' term;
-or: term '|' term;
-xor: term '^' term;
+booleanOp
+    : '==' #EQUAL
+    | '!=' #NOTEQUAL;
 
-shiftFunction
-    :leftShift
-    | leftShift
-    | unsignedRightShift;
+AND : '&&';
+OR : '||';
 
-leftShift: term '<<' term;
-rightShift: term '>>' term;
-unsignedRightShift: term '>>>' term;
+bitwiseFunction : value bitOp expression; //ToDo
+
+bitOp
+    : '&' #BITAND
+    | '|' #BITOR
+    | '^' #CARET;
+
+shiftFunction : term shiftOp term; //ToDo
+
+shiftOp
+    : '<<' #LSHIFT
+    | '>>' #RSHIFT
+    | '>>>' #UNSIGNEDRSHIFT;
 
 
 // Statements
@@ -233,7 +255,7 @@ finallyClause: 'finally' block;
 throwStatement : 'throw' expression ';' ;
 
 // Assignments
-assignment : (primary | arrayAccess) assignmentType expression ';';
+assignment : (value | arrayAccess) assignmentType expression ';';
 
 assignmentType
     : ASSIGN
