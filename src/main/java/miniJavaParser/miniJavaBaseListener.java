@@ -1,4 +1,4 @@
-// Generated from miniJava.g4 by ANTLR 4.13.2
+// Generated from G:/Git/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
 package miniJavaParser;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -761,25 +761,25 @@ public class miniJavaBaseListener implements miniJavaListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterWhile(miniJavaParser.WhileContext ctx) { }
+	@Override public void enterWhileStatement(miniJavaParser.WhileStatementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitWhile(miniJavaParser.WhileContext ctx) { }
+	@Override public void exitWhileStatement(miniJavaParser.WhileStatementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterFor(miniJavaParser.ForContext ctx) { }
+	@Override public void enterForStatement(miniJavaParser.ForStatementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitFor(miniJavaParser.ForContext ctx) { }
+	@Override public void exitForStatement(miniJavaParser.ForStatementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

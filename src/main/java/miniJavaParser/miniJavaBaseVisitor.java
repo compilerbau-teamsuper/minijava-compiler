@@ -1,4 +1,4 @@
-// Generated from G:/Git/minijava-compiler/src/main/scala/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
+// Generated from G:/Git/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
 package miniJavaParser;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 
@@ -33,6 +33,13 @@ public class miniJavaBaseVisitor<T> extends AbstractParseTreeVisitor<T> implemen
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
 	@Override public T visitImportDeclaration(miniJavaParser.ImportDeclarationContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitTypeDeclaration(miniJavaParser.TypeDeclarationContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -445,14 +452,14 @@ public class miniJavaBaseVisitor<T> extends AbstractParseTreeVisitor<T> implemen
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitWhile(miniJavaParser.WhileContext ctx) { return visitChildren(ctx); }
+	@Override public T visitWhileStatement(miniJavaParser.WhileStatementContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitFor(miniJavaParser.ForContext ctx) { return visitChildren(ctx); }
+	@Override public T visitForStatement(miniJavaParser.ForStatementContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *

@@ -179,8 +179,8 @@ statement
     | methodCall
     | ifThen
     | ifThenElse
-    | while
-    | for
+    | whileStatement
+    | forStatement
     | switch
     | break
     | continue
@@ -195,9 +195,9 @@ ifThen : 'if' '(' expression ')' statement;
 
 ifThenElse : 'if' '(' expression ')' statement 'else' statement ;
 
-while : 'while' '(' expression ')' statement;
+whileStatement : 'while' '(' expression ')' statement;
 
-for : 'for' '(' forControl ')' statement;
+forStatement : 'for' '(' forControl ')' statement;
 
 forControl : forInit? ';' expression? ';' forControlStatementList?;
 
