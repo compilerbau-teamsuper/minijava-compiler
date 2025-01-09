@@ -9,7 +9,7 @@ import scala.jdk.CollectionConverters.*
 object JavaASTBuilder {
   def main(args: Array[String]): Unit = {
     // Beispiel-Dateipfad (ersetzen mit dem Pfad zu deiner Java-Datei)
-    val filePath = "G:\\Git\\minijava-compiler\\src\\main\\scala\\miniJavaParser\\test.java"
+    val filePath = "G:\\Git\\minijava-compiler\\src\\main\\java\\test.java"
 
     // Parse die Datei
     val input = CharStreams.fromFileName(filePath)
