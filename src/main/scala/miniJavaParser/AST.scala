@@ -87,6 +87,7 @@ case class UnaryExpression(operator: UnaryOperator, operand: Expression) extends
 case class MethodCall(target: Option[Expression], methodName: String, arguments: List[Expression]) extends Expression
 case class FieldAccess(target: Expression, fieldName: String) extends Expression
 case class ArrayInitializer(initializers: List[Expression]) extends Expression
+case class ArrayRead() extends Expression // ToDo: Argumente/Umsetzung
 
 // Literals
 sealed trait LiteralValue
