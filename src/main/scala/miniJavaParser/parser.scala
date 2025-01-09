@@ -54,24 +54,24 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   override def visitTypeDeclaration(ctx: miniJavaParser.TypeDeclarationContext): TypeDeclaration = {
     if (ctx.classDeclaration() != null) visitClassDeclaration(ctx.classDeclaration())
     else if (ctx.interfaceDeclaration() != null) visitInterfaceDeclaration(ctx.interfaceDeclaration())
-    else throw new IllegalArgumentException("Unknown type declaration")
+    else null // Just Semikolon
   }
 
   override def visitClassDeclaration(ctx: miniJavaParser.ClassDeclarationContext): ClassDeclaration = {
     val modifiers: ListBuffer[Modifier] = if ctx.classModifier() != null then ListBuffer(toModifier(ctx.classModifier().getText)) else ListBuffer()
     if ctx.Public() != null then modifiers.addOne(Modifier.Public)
     val name = ctx.Identifier().getText
-    val superclass =  if ctx.superclass() != null then Option(ctx.superclass()).map(sc => visitQualifiedName(sc.qualifiedName())) else null
-    val interfaces = if ctx.superinterfaces() != null then ctx.superinterfaces().qualifiedName().asScala.map(visitQualifiedName).toList else null
+    val superclass =  if ctx.superclass() != null then Option(ctx.superclass()).map(sc => visitQualifiedName(sc.qualifiedName())) else None
+    val interfaces = if ctx.superinterfaces() != null then ctx.superinterfaces().qualifiedName().asScala.map(visitQualifiedName).toList else List.empty
     val body = visitClassBody(ctx.classBody())
 
     ClassDeclaration(modifiers.toList, name, superclass, interfaces, body)
   }
 
   override def visitInterfaceDeclaration(ctx: miniJavaParser.InterfaceDeclarationContext): InterfaceDeclaration = {
-    val modifiers: List[Modifier] = if ctx.Public() != null then List(Modifier.Public) else List()
+    val modifiers: List[Modifier] = if ctx.Public() != null then List(Modifier.Public) else List.empty
     val name = ctx.Identifier().getText
-    val superInterfaces = ctx.extendsInterfaces().qualifiedName().asScala.map(visitQualifiedName).toList
+    val superInterfaces = if ctx.extendsInterfaces() != null then ctx.extendsInterfaces().qualifiedName().asScala.map(visitQualifiedName).toList else List.empty
     val body = visitInterfaceBody(ctx.interfaceBody())
 
     InterfaceDeclaration(modifiers, name, superInterfaces, body)
@@ -85,8 +85,10 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   override def visitInterfaceBody(ctx: miniJavaParser.InterfaceBodyContext): InterfaceBody = {
-    //val members = ctx.interfaceBodyDeclaration().asScala.flatMap(visitInterfaceBodyDeclaration).toList
-    InterfaceBody(ctx.interfaceBodyDeclaration().asScala.toList.map(c => visitInterfaceBodyDeclaration(c)))
+    if !ctx.interfaceBodyDeclaration().isEmpty then {
+      InterfaceBody(ctx.interfaceBodyDeclaration().asScala.toList.map(c => visitInterfaceBodyDeclaration(c)))
+    }
+    else InterfaceBody(List.empty)
   }
 
   override def visitQualifiedName(ctx: miniJavaParser.QualifiedNameContext): QualifiedName = {
@@ -94,6 +96,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   private def getModifiers(ctx: ParserRuleContext): List[Modifier] = {
+    if ctx == null then return List.empty
     val modifiers: ListBuffer[Modifier] = ListBuffer()
     for (i <- 0 until ctx.getChildCount)
       try modifiers.addOne(toModifier(ctx.getChild(i).getText))
@@ -124,8 +127,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     else null
   }
 
-  override def visitInterfaceBodyDeclaration(ctx: miniJavaParser.InterfaceBodyDeclarationContext): InterfaceMember = { //ToDo
-    // Es gibt mehrere mögliche Inhalte für eine ClassBodyDeclaration
+  override def visitInterfaceBodyDeclaration(ctx: miniJavaParser.InterfaceBodyDeclarationContext): InterfaceMember = {
     if (ctx.interfaceMemberDeclaration() != null) {
       visitInterfaceMemberDeclaration(ctx.interfaceMemberDeclaration())
     }
@@ -164,26 +166,23 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     val modifiers = getModifiers(ctx.methodModifier()).:::(getModifiers(ctx.accessModifier()))
     val name = ctx.Identifier().getText
     val returnType = visitTypeOrVoid(ctx.typeOrVoid())
-//    val parameters = Option(ctx.formalParameters())
-//      .map(_.formalParameter().asScala.map(visitFormalParameter).toList)
-//      .getOrElse(List.empty)
+    val parameters = getFormalParameters(ctx.formalParameters())
     val body = visitMethodBody(ctx.methodBody())
 
-    MethodDeclaration(modifiers, returnType, name, List(), body)
+    MethodDeclaration(modifiers, returnType, name, parameters, body)
   }
 
   // Methode: visitFieldDeclaration
   override def visitFieldDeclaration(ctx: miniJavaParser.FieldDeclarationContext): FieldDeclaration = {
-    //val modifiers = ctx.fieldModifier().asScala.map(_.getText).toList.map(toModifier)
     val modifiers = getModifiers(ctx.fieldModifier())
     val fieldType = visitType(ctx.`type`())
-//    ctx.variableDeclarator().asScala.map { declarator =>
-//      val name = declarator.Identifier().getText
-//      val initializer = Option(declarator.variableInitializer())
-//        .map(visitVariableInitializer) //??
-//      FieldDeclaration(modifiers, fieldType, List()) // ToDo
-//    }.toList
-    FieldDeclaration(modifiers, null, List.empty)
+    val variables = ctx.variableDeclarator().asScala.map { declarator =>
+      val name = declarator.Identifier().getText
+      val initializer = Option(declarator.variableInitializer())
+        .map(visitVariableInitializer)
+      VariableDeclarator(name, initializer) 
+    }.toList
+    FieldDeclaration(modifiers, fieldType, variables)
   }
 
   // Methode: visitConstructorDeclaration
@@ -200,11 +199,9 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     ConstructorDeclaration(modifiers, name, List(), body match {case b: Block => b}) // ToDo
   }
 
-  // Methode: visitFormalParameter
-  private def visitFormalParameter(ctx: miniJavaParser.FormalParametersContext): Parameter = {
-//    val parameterType = visitType(ctx.`type`())
-//    val name = ctx.Identifier().getText
-    Parameter("test", null) // ToDo
+  private def getFormalParameters(ctx: miniJavaParser.FormalParametersContext): List[Parameter] = {
+    if ctx == null then return List.empty
+    (ctx.`type`().asScala zip ctx.Identifier().asScala).map{case (t, n) =>  Parameter(n.getText, visitType(t))}.toList
   }
 
   // Methode: visitVariableInitializer
@@ -290,9 +287,40 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   override def visitType(ctx: miniJavaParser.TypeContext): Type = {
-    // Implementiere den Besuch von Typen (primitive und Object-Typen)
-    null // ToDo
+    if ctx.arrayType() != null then toType(ctx.arrayType().getText)
+    else if ctx.objectType() != null then toType(ctx.objectType().getText)
+    else if ctx.primitiveType() != null then toType(ctx.primitiveType().getText)
+    else throw new IllegalArgumentException("No Type given!")
   }
+
+  private def toType(typeName: String): Type = typeName match {
+    // Primitive Typen
+    case "int" => PrimitiveType(PrimitiveTypeName.Int)
+    case "boolean" => PrimitiveType(PrimitiveTypeName.Boolean)
+    case "char" => PrimitiveType(PrimitiveTypeName.Char)
+    case "byte" => PrimitiveType(PrimitiveTypeName.Byte)
+    case "short" => PrimitiveType(PrimitiveTypeName.Short)
+    case "float" => PrimitiveType(PrimitiveTypeName.Float)
+    case "double" => PrimitiveType(PrimitiveTypeName.Double)
+
+    // Objekt-Typen
+    case "String" => ObjectType(ObjectTypeName.String)
+    case "Byte" => ObjectType(ObjectTypeName.Byte)
+    case "Short" => ObjectType(ObjectTypeName.Short)
+    case "Integer" => ObjectType(ObjectTypeName.Integer)
+    case "Float" => ObjectType(ObjectTypeName.Float)
+    case "Double" => ObjectType(ObjectTypeName.Double)
+    case "Boolean" => ObjectType(ObjectTypeName.Boolean)
+    case "Character" => ObjectType(ObjectTypeName.Character)
+
+    // Benutzerdefinierter Objekttyp
+    case customType if customType.matches("[A-Za-z_][A-Za-z0-9_]*") =>
+      ObjectType(ObjectTypeName.Custom(customType))
+
+    // Unbekannter Typ
+    case _ => throw new IllegalArgumentException(s"Unknown type: $typeName")
+  }
+
 
 }
 

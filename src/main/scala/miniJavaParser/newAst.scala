@@ -124,7 +124,7 @@ sealed trait TypeOrVoid extends ASTNode
 case object VoidType extends TypeOrVoid
 sealed trait Type extends TypeOrVoid
 case class PrimitiveType(name: PrimitiveTypeName) extends Type
-case class ObjectType(name: String) extends Type
+case class ObjectType(name: ObjectTypeName) extends Type
 
 sealed trait PrimitiveTypeName
 object PrimitiveTypeName {
@@ -137,6 +137,20 @@ object PrimitiveTypeName {
   case object Short extends PrimitiveTypeName
   case object Byte extends PrimitiveTypeName
 }
+
+sealed trait ObjectTypeName
+object ObjectTypeName {
+  case object String extends ObjectTypeName
+  case object Byte extends ObjectTypeName
+  case object Short extends ObjectTypeName
+  case object Integer extends ObjectTypeName
+  case object Float extends ObjectTypeName
+  case object Double extends ObjectTypeName
+  case object Boolean extends ObjectTypeName
+  case object Character extends ObjectTypeName
+  case class Custom(name: String) extends ObjectTypeName // Für benutzerdefinierte Typen
+}
+
 
 // Modifiers
 sealed trait Modifier
