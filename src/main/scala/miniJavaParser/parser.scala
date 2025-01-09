@@ -52,7 +52,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     )
   }
 
-    def visitTypeDeclaration(ctx: miniJavaParser.TypeDeclarationContext): TypeDeclaration = {
+  override def visitTypeDeclaration(ctx: miniJavaParser.TypeDeclarationContext): TypeDeclaration = {
     if (ctx.classDeclaration() != null) visitClassDeclaration(ctx.classDeclaration())
     else if (ctx.interfaceDeclaration() != null) visitInterfaceDeclaration(ctx.interfaceDeclaration())
     else null // Just Semikolon
@@ -281,7 +281,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   override def visitWhileStatement(ctx: miniJavaParser.WhileStatementContext): WhileStatement  = {
-    ???
+    WhileStatement(visitExpression(ctx.expression()), visitStatement(ctx.statement()))
   }
 
   // Weitere Hilfsmethoden für Expressions, Typen und andere Knoten
