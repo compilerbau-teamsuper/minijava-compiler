@@ -74,9 +74,10 @@ case class ReturnStatement(expression: Option[Expression]) extends Statement
 case class BreakStatement() extends Statement
 case class ContinueStatement() extends Statement
 case class Assignment(left: Expression, right: Expression) extends Statement
+case class LocalVariableDeclaration(varType: Type, variables: List[VariableDeclarator]) extends Statement
 
 sealed trait ForInit extends ASTNode
-case class VariableDeclarationInit(variable: FieldDeclaration) extends ForInit
+case class VariableDeclarationInit(variable: FieldDeclaration) extends ForInit // ToDo das richtig?
 case class ExpressionListInit(expressions: List[Expression]) extends ForInit
 
 // Expressions
@@ -118,6 +119,8 @@ sealed trait UnaryOperator
 object UnaryOperator {
   case object Negate extends UnaryOperator // -x
   case object Not extends UnaryOperator    // !x
+  case object Increment extends UnaryOperator
+  case object Decrement extends UnaryOperator
 }
 
 // Typen
