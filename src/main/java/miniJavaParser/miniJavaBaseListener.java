@@ -341,6 +341,18 @@ public class miniJavaBaseListener implements miniJavaListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterValue(miniJavaParser.ValueContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitValue(miniJavaParser.ValueContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterPrimary(miniJavaParser.PrimaryContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -437,61 +449,97 @@ public class miniJavaBaseListener implements miniJavaListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterMultiplication(miniJavaParser.MultiplicationContext ctx) { }
+	@Override public void enterMUL(miniJavaParser.MULContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitMultiplication(miniJavaParser.MultiplicationContext ctx) { }
+	@Override public void exitMUL(miniJavaParser.MULContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterDivision(miniJavaParser.DivisionContext ctx) { }
+	@Override public void enterDIV(miniJavaParser.DIVContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitDivision(miniJavaParser.DivisionContext ctx) { }
+	@Override public void exitDIV(miniJavaParser.DIVContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterModulo(miniJavaParser.ModuloContext ctx) { }
+	@Override public void enterMOD(miniJavaParser.MODContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitModulo(miniJavaParser.ModuloContext ctx) { }
+	@Override public void exitMOD(miniJavaParser.MODContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterAddition(miniJavaParser.AdditionContext ctx) { }
+	@Override public void enterADD(miniJavaParser.ADDContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitAddition(miniJavaParser.AdditionContext ctx) { }
+	@Override public void exitADD(miniJavaParser.ADDContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSubtraction(miniJavaParser.SubtractionContext ctx) { }
+	@Override public void enterSUB(miniJavaParser.SUBContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSubtraction(miniJavaParser.SubtractionContext ctx) { }
+	@Override public void exitSUB(miniJavaParser.SUBContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterINC(miniJavaParser.INCContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitINC(miniJavaParser.INCContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterDEC(miniJavaParser.DECContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitDEC(miniJavaParser.DECContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterNegate(miniJavaParser.NegateContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitNegate(miniJavaParser.NegateContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -509,85 +557,37 @@ public class miniJavaBaseListener implements miniJavaListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterBooleanFunNotEqual(miniJavaParser.BooleanFunNotEqualContext ctx) { }
+	@Override public void enterBooleanFunHigh(miniJavaParser.BooleanFunHighContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitBooleanFunNotEqual(miniJavaParser.BooleanFunNotEqualContext ctx) { }
+	@Override public void exitBooleanFunHigh(miniJavaParser.BooleanFunHighContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterGreater(miniJavaParser.GreaterContext ctx) { }
+	@Override public void enterBooleanFunMiddle(miniJavaParser.BooleanFunMiddleContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitGreater(miniJavaParser.GreaterContext ctx) { }
+	@Override public void exitBooleanFunMiddle(miniJavaParser.BooleanFunMiddleContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterGreaterEqual(miniJavaParser.GreaterEqualContext ctx) { }
+	@Override public void enterBooleanFunLow(miniJavaParser.BooleanFunLowContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitGreaterEqual(miniJavaParser.GreaterEqualContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterLesser(miniJavaParser.LesserContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitLesser(miniJavaParser.LesserContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterLesserEqual(miniJavaParser.LesserEqualContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitLesserEqual(miniJavaParser.LesserEqualContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterEqual(miniJavaParser.EqualContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitEqual(miniJavaParser.EqualContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterNotEqual(miniJavaParser.NotEqualContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitNotEqual(miniJavaParser.NotEqualContext ctx) { }
+	@Override public void exitBooleanFunLow(miniJavaParser.BooleanFunLowContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -605,6 +605,78 @@ public class miniJavaBaseListener implements miniJavaListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterGT(miniJavaParser.GTContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitGT(miniJavaParser.GTContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterLT(miniJavaParser.LTContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitLT(miniJavaParser.LTContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterLE(miniJavaParser.LEContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitLE(miniJavaParser.LEContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterGE(miniJavaParser.GEContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitGE(miniJavaParser.GEContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterEQUAL(miniJavaParser.EQUALContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitEQUAL(miniJavaParser.EQUALContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterNOTEQUAL(miniJavaParser.NOTEQUALContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitNOTEQUAL(miniJavaParser.NOTEQUALContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterBitwiseFunction(miniJavaParser.BitwiseFunctionContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -617,37 +689,37 @@ public class miniJavaBaseListener implements miniJavaListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterAnd(miniJavaParser.AndContext ctx) { }
+	@Override public void enterBITAND(miniJavaParser.BITANDContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitAnd(miniJavaParser.AndContext ctx) { }
+	@Override public void exitBITAND(miniJavaParser.BITANDContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterOr(miniJavaParser.OrContext ctx) { }
+	@Override public void enterBITOR(miniJavaParser.BITORContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitOr(miniJavaParser.OrContext ctx) { }
+	@Override public void exitBITOR(miniJavaParser.BITORContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterXor(miniJavaParser.XorContext ctx) { }
+	@Override public void enterCARET(miniJavaParser.CARETContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitXor(miniJavaParser.XorContext ctx) { }
+	@Override public void exitCARET(miniJavaParser.CARETContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -665,37 +737,37 @@ public class miniJavaBaseListener implements miniJavaListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLeftShift(miniJavaParser.LeftShiftContext ctx) { }
+	@Override public void enterLSHIFT(miniJavaParser.LSHIFTContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitLeftShift(miniJavaParser.LeftShiftContext ctx) { }
+	@Override public void exitLSHIFT(miniJavaParser.LSHIFTContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterRightShift(miniJavaParser.RightShiftContext ctx) { }
+	@Override public void enterRSHIFT(miniJavaParser.RSHIFTContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitRightShift(miniJavaParser.RightShiftContext ctx) { }
+	@Override public void exitRSHIFT(miniJavaParser.RSHIFTContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterUnsignedRightShift(miniJavaParser.UnsignedRightShiftContext ctx) { }
+	@Override public void enterUNSIGNEDRSHIFT(miniJavaParser.UNSIGNEDRSHIFTContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitUnsignedRightShift(miniJavaParser.UnsignedRightShiftContext ctx) { }
+	@Override public void exitUNSIGNEDRSHIFT(miniJavaParser.UNSIGNEDRSHIFTContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -708,6 +780,18 @@ public class miniJavaBaseListener implements miniJavaListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitStatement(miniJavaParser.StatementContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterBlockStatement(miniJavaParser.BlockStatementContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitBlockStatement(miniJavaParser.BlockStatementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

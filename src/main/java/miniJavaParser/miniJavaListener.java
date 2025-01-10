@@ -278,6 +278,16 @@ public interface miniJavaListener extends ParseTreeListener {
 	 */
 	void exitExpression(miniJavaParser.ExpressionContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link miniJavaParser#value}.
+	 * @param ctx the parse tree
+	 */
+	void enterValue(miniJavaParser.ValueContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link miniJavaParser#value}.
+	 * @param ctx the parse tree
+	 */
+	void exitValue(miniJavaParser.ValueContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link miniJavaParser#primary}.
 	 * @param ctx the parse tree
 	 */
@@ -358,55 +368,99 @@ public interface miniJavaListener extends ParseTreeListener {
 	 */
 	void exitTerm(miniJavaParser.TermContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#multiplication}.
+	 * Enter a parse tree produced by the {@code MUL}
+	 * labeled alternative in {@link miniJavaParser#calcBinOpHigher}.
 	 * @param ctx the parse tree
 	 */
-	void enterMultiplication(miniJavaParser.MultiplicationContext ctx);
+	void enterMUL(miniJavaParser.MULContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#multiplication}.
+	 * Exit a parse tree produced by the {@code MUL}
+	 * labeled alternative in {@link miniJavaParser#calcBinOpHigher}.
 	 * @param ctx the parse tree
 	 */
-	void exitMultiplication(miniJavaParser.MultiplicationContext ctx);
+	void exitMUL(miniJavaParser.MULContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#division}.
+	 * Enter a parse tree produced by the {@code DIV}
+	 * labeled alternative in {@link miniJavaParser#calcBinOpHigher}.
 	 * @param ctx the parse tree
 	 */
-	void enterDivision(miniJavaParser.DivisionContext ctx);
+	void enterDIV(miniJavaParser.DIVContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#division}.
+	 * Exit a parse tree produced by the {@code DIV}
+	 * labeled alternative in {@link miniJavaParser#calcBinOpHigher}.
 	 * @param ctx the parse tree
 	 */
-	void exitDivision(miniJavaParser.DivisionContext ctx);
+	void exitDIV(miniJavaParser.DIVContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#modulo}.
+	 * Enter a parse tree produced by the {@code MOD}
+	 * labeled alternative in {@link miniJavaParser#calcBinOpHigher}.
 	 * @param ctx the parse tree
 	 */
-	void enterModulo(miniJavaParser.ModuloContext ctx);
+	void enterMOD(miniJavaParser.MODContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#modulo}.
+	 * Exit a parse tree produced by the {@code MOD}
+	 * labeled alternative in {@link miniJavaParser#calcBinOpHigher}.
 	 * @param ctx the parse tree
 	 */
-	void exitModulo(miniJavaParser.ModuloContext ctx);
+	void exitMOD(miniJavaParser.MODContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#addition}.
+	 * Enter a parse tree produced by the {@code ADD}
+	 * labeled alternative in {@link miniJavaParser#calcBinOpLower}.
 	 * @param ctx the parse tree
 	 */
-	void enterAddition(miniJavaParser.AdditionContext ctx);
+	void enterADD(miniJavaParser.ADDContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#addition}.
+	 * Exit a parse tree produced by the {@code ADD}
+	 * labeled alternative in {@link miniJavaParser#calcBinOpLower}.
 	 * @param ctx the parse tree
 	 */
-	void exitAddition(miniJavaParser.AdditionContext ctx);
+	void exitADD(miniJavaParser.ADDContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#subtraction}.
+	 * Enter a parse tree produced by the {@code SUB}
+	 * labeled alternative in {@link miniJavaParser#calcBinOpLower}.
 	 * @param ctx the parse tree
 	 */
-	void enterSubtraction(miniJavaParser.SubtractionContext ctx);
+	void enterSUB(miniJavaParser.SUBContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#subtraction}.
+	 * Exit a parse tree produced by the {@code SUB}
+	 * labeled alternative in {@link miniJavaParser#calcBinOpLower}.
 	 * @param ctx the parse tree
 	 */
-	void exitSubtraction(miniJavaParser.SubtractionContext ctx);
+	void exitSUB(miniJavaParser.SUBContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code INC}
+	 * labeled alternative in {@link miniJavaParser#calcUnOp}.
+	 * @param ctx the parse tree
+	 */
+	void enterINC(miniJavaParser.INCContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code INC}
+	 * labeled alternative in {@link miniJavaParser#calcUnOp}.
+	 * @param ctx the parse tree
+	 */
+	void exitINC(miniJavaParser.INCContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code DEC}
+	 * labeled alternative in {@link miniJavaParser#calcUnOp}.
+	 * @param ctx the parse tree
+	 */
+	void enterDEC(miniJavaParser.DECContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code DEC}
+	 * labeled alternative in {@link miniJavaParser#calcUnOp}.
+	 * @param ctx the parse tree
+	 */
+	void exitDEC(miniJavaParser.DECContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link miniJavaParser#negate}.
+	 * @param ctx the parse tree
+	 */
+	void enterNegate(miniJavaParser.NegateContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link miniJavaParser#negate}.
+	 * @param ctx the parse tree
+	 */
+	void exitNegate(miniJavaParser.NegateContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link miniJavaParser#booleanFunction}.
 	 * @param ctx the parse tree
@@ -418,75 +472,35 @@ public interface miniJavaListener extends ParseTreeListener {
 	 */
 	void exitBooleanFunction(miniJavaParser.BooleanFunctionContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#booleanFunNotEqual}.
+	 * Enter a parse tree produced by {@link miniJavaParser#booleanFunHigh}.
 	 * @param ctx the parse tree
 	 */
-	void enterBooleanFunNotEqual(miniJavaParser.BooleanFunNotEqualContext ctx);
+	void enterBooleanFunHigh(miniJavaParser.BooleanFunHighContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#booleanFunNotEqual}.
+	 * Exit a parse tree produced by {@link miniJavaParser#booleanFunHigh}.
 	 * @param ctx the parse tree
 	 */
-	void exitBooleanFunNotEqual(miniJavaParser.BooleanFunNotEqualContext ctx);
+	void exitBooleanFunHigh(miniJavaParser.BooleanFunHighContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#greater}.
+	 * Enter a parse tree produced by {@link miniJavaParser#booleanFunMiddle}.
 	 * @param ctx the parse tree
 	 */
-	void enterGreater(miniJavaParser.GreaterContext ctx);
+	void enterBooleanFunMiddle(miniJavaParser.BooleanFunMiddleContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#greater}.
+	 * Exit a parse tree produced by {@link miniJavaParser#booleanFunMiddle}.
 	 * @param ctx the parse tree
 	 */
-	void exitGreater(miniJavaParser.GreaterContext ctx);
+	void exitBooleanFunMiddle(miniJavaParser.BooleanFunMiddleContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#greaterEqual}.
+	 * Enter a parse tree produced by {@link miniJavaParser#booleanFunLow}.
 	 * @param ctx the parse tree
 	 */
-	void enterGreaterEqual(miniJavaParser.GreaterEqualContext ctx);
+	void enterBooleanFunLow(miniJavaParser.BooleanFunLowContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#greaterEqual}.
+	 * Exit a parse tree produced by {@link miniJavaParser#booleanFunLow}.
 	 * @param ctx the parse tree
 	 */
-	void exitGreaterEqual(miniJavaParser.GreaterEqualContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#lesser}.
-	 * @param ctx the parse tree
-	 */
-	void enterLesser(miniJavaParser.LesserContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#lesser}.
-	 * @param ctx the parse tree
-	 */
-	void exitLesser(miniJavaParser.LesserContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#lesserEqual}.
-	 * @param ctx the parse tree
-	 */
-	void enterLesserEqual(miniJavaParser.LesserEqualContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#lesserEqual}.
-	 * @param ctx the parse tree
-	 */
-	void exitLesserEqual(miniJavaParser.LesserEqualContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#equal}.
-	 * @param ctx the parse tree
-	 */
-	void enterEqual(miniJavaParser.EqualContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#equal}.
-	 * @param ctx the parse tree
-	 */
-	void exitEqual(miniJavaParser.EqualContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#notEqual}.
-	 * @param ctx the parse tree
-	 */
-	void enterNotEqual(miniJavaParser.NotEqualContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#notEqual}.
-	 * @param ctx the parse tree
-	 */
-	void exitNotEqual(miniJavaParser.NotEqualContext ctx);
+	void exitBooleanFunLow(miniJavaParser.BooleanFunLowContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link miniJavaParser#inverse}.
 	 * @param ctx the parse tree
@@ -498,6 +512,78 @@ public interface miniJavaListener extends ParseTreeListener {
 	 */
 	void exitInverse(miniJavaParser.InverseContext ctx);
 	/**
+	 * Enter a parse tree produced by the {@code GT}
+	 * labeled alternative in {@link miniJavaParser#booleanNumberOp}.
+	 * @param ctx the parse tree
+	 */
+	void enterGT(miniJavaParser.GTContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code GT}
+	 * labeled alternative in {@link miniJavaParser#booleanNumberOp}.
+	 * @param ctx the parse tree
+	 */
+	void exitGT(miniJavaParser.GTContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code LT}
+	 * labeled alternative in {@link miniJavaParser#booleanNumberOp}.
+	 * @param ctx the parse tree
+	 */
+	void enterLT(miniJavaParser.LTContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code LT}
+	 * labeled alternative in {@link miniJavaParser#booleanNumberOp}.
+	 * @param ctx the parse tree
+	 */
+	void exitLT(miniJavaParser.LTContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code LE}
+	 * labeled alternative in {@link miniJavaParser#booleanNumberOp}.
+	 * @param ctx the parse tree
+	 */
+	void enterLE(miniJavaParser.LEContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code LE}
+	 * labeled alternative in {@link miniJavaParser#booleanNumberOp}.
+	 * @param ctx the parse tree
+	 */
+	void exitLE(miniJavaParser.LEContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code GE}
+	 * labeled alternative in {@link miniJavaParser#booleanNumberOp}.
+	 * @param ctx the parse tree
+	 */
+	void enterGE(miniJavaParser.GEContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code GE}
+	 * labeled alternative in {@link miniJavaParser#booleanNumberOp}.
+	 * @param ctx the parse tree
+	 */
+	void exitGE(miniJavaParser.GEContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code EQUAL}
+	 * labeled alternative in {@link miniJavaParser#booleanOp}.
+	 * @param ctx the parse tree
+	 */
+	void enterEQUAL(miniJavaParser.EQUALContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code EQUAL}
+	 * labeled alternative in {@link miniJavaParser#booleanOp}.
+	 * @param ctx the parse tree
+	 */
+	void exitEQUAL(miniJavaParser.EQUALContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code NOTEQUAL}
+	 * labeled alternative in {@link miniJavaParser#booleanOp}.
+	 * @param ctx the parse tree
+	 */
+	void enterNOTEQUAL(miniJavaParser.NOTEQUALContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code NOTEQUAL}
+	 * labeled alternative in {@link miniJavaParser#booleanOp}.
+	 * @param ctx the parse tree
+	 */
+	void exitNOTEQUAL(miniJavaParser.NOTEQUALContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link miniJavaParser#bitwiseFunction}.
 	 * @param ctx the parse tree
 	 */
@@ -508,35 +594,41 @@ public interface miniJavaListener extends ParseTreeListener {
 	 */
 	void exitBitwiseFunction(miniJavaParser.BitwiseFunctionContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#and}.
+	 * Enter a parse tree produced by the {@code BITAND}
+	 * labeled alternative in {@link miniJavaParser#bitOp}.
 	 * @param ctx the parse tree
 	 */
-	void enterAnd(miniJavaParser.AndContext ctx);
+	void enterBITAND(miniJavaParser.BITANDContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#and}.
+	 * Exit a parse tree produced by the {@code BITAND}
+	 * labeled alternative in {@link miniJavaParser#bitOp}.
 	 * @param ctx the parse tree
 	 */
-	void exitAnd(miniJavaParser.AndContext ctx);
+	void exitBITAND(miniJavaParser.BITANDContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#or}.
+	 * Enter a parse tree produced by the {@code BITOR}
+	 * labeled alternative in {@link miniJavaParser#bitOp}.
 	 * @param ctx the parse tree
 	 */
-	void enterOr(miniJavaParser.OrContext ctx);
+	void enterBITOR(miniJavaParser.BITORContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#or}.
+	 * Exit a parse tree produced by the {@code BITOR}
+	 * labeled alternative in {@link miniJavaParser#bitOp}.
 	 * @param ctx the parse tree
 	 */
-	void exitOr(miniJavaParser.OrContext ctx);
+	void exitBITOR(miniJavaParser.BITORContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#xor}.
+	 * Enter a parse tree produced by the {@code CARET}
+	 * labeled alternative in {@link miniJavaParser#bitOp}.
 	 * @param ctx the parse tree
 	 */
-	void enterXor(miniJavaParser.XorContext ctx);
+	void enterCARET(miniJavaParser.CARETContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#xor}.
+	 * Exit a parse tree produced by the {@code CARET}
+	 * labeled alternative in {@link miniJavaParser#bitOp}.
 	 * @param ctx the parse tree
 	 */
-	void exitXor(miniJavaParser.XorContext ctx);
+	void exitCARET(miniJavaParser.CARETContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link miniJavaParser#shiftFunction}.
 	 * @param ctx the parse tree
@@ -548,35 +640,41 @@ public interface miniJavaListener extends ParseTreeListener {
 	 */
 	void exitShiftFunction(miniJavaParser.ShiftFunctionContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#leftShift}.
+	 * Enter a parse tree produced by the {@code LSHIFT}
+	 * labeled alternative in {@link miniJavaParser#shiftOp}.
 	 * @param ctx the parse tree
 	 */
-	void enterLeftShift(miniJavaParser.LeftShiftContext ctx);
+	void enterLSHIFT(miniJavaParser.LSHIFTContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#leftShift}.
+	 * Exit a parse tree produced by the {@code LSHIFT}
+	 * labeled alternative in {@link miniJavaParser#shiftOp}.
 	 * @param ctx the parse tree
 	 */
-	void exitLeftShift(miniJavaParser.LeftShiftContext ctx);
+	void exitLSHIFT(miniJavaParser.LSHIFTContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#rightShift}.
+	 * Enter a parse tree produced by the {@code RSHIFT}
+	 * labeled alternative in {@link miniJavaParser#shiftOp}.
 	 * @param ctx the parse tree
 	 */
-	void enterRightShift(miniJavaParser.RightShiftContext ctx);
+	void enterRSHIFT(miniJavaParser.RSHIFTContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#rightShift}.
+	 * Exit a parse tree produced by the {@code RSHIFT}
+	 * labeled alternative in {@link miniJavaParser#shiftOp}.
 	 * @param ctx the parse tree
 	 */
-	void exitRightShift(miniJavaParser.RightShiftContext ctx);
+	void exitRSHIFT(miniJavaParser.RSHIFTContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#unsignedRightShift}.
+	 * Enter a parse tree produced by the {@code UNSIGNEDRSHIFT}
+	 * labeled alternative in {@link miniJavaParser#shiftOp}.
 	 * @param ctx the parse tree
 	 */
-	void enterUnsignedRightShift(miniJavaParser.UnsignedRightShiftContext ctx);
+	void enterUNSIGNEDRSHIFT(miniJavaParser.UNSIGNEDRSHIFTContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#unsignedRightShift}.
+	 * Exit a parse tree produced by the {@code UNSIGNEDRSHIFT}
+	 * labeled alternative in {@link miniJavaParser#shiftOp}.
 	 * @param ctx the parse tree
 	 */
-	void exitUnsignedRightShift(miniJavaParser.UnsignedRightShiftContext ctx);
+	void exitUNSIGNEDRSHIFT(miniJavaParser.UNSIGNEDRSHIFTContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link miniJavaParser#statement}.
 	 * @param ctx the parse tree
@@ -587,6 +685,16 @@ public interface miniJavaListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitStatement(miniJavaParser.StatementContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link miniJavaParser#blockStatement}.
+	 * @param ctx the parse tree
+	 */
+	void enterBlockStatement(miniJavaParser.BlockStatementContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link miniJavaParser#blockStatement}.
+	 * @param ctx the parse tree
+	 */
+	void exitBlockStatement(miniJavaParser.BlockStatementContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link miniJavaParser#block}.
 	 * @param ctx the parse tree

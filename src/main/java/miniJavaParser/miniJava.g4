@@ -123,7 +123,8 @@ newObject: 'new' (qualifiedName | methodCall) (classBody)?;
 calcFunction
     : value calcBinOpHigher term
     | term calcBinOpLower (calcFunction | value)
-    | qualifiedName calcUnOp;
+    | qualifiedName calcUnOp
+    | negate;
 
 term
     : value calcBinOpHigher term
@@ -142,11 +143,13 @@ calcUnOp
     : '++' #INC
     | '--' #DEC;
 
+negate : '-' value;
+
 booleanFunction
     : (value | calcFunction) booleanNumberOp (value | calcFunction)
-    | booleanFunHigh booleanOp booleanFunction
-    | booleanFunMiddle AND booleanFunction
-    | booleanFunLow OR booleanFunction
+    | booleanFunHigh booleanOp (booleanFunction | value)
+    | booleanFunMiddle AND (booleanFunction | value)
+    | booleanFunLow OR (booleanFunction | value)
     | inverse;
 
 booleanFunHigh
@@ -209,7 +212,11 @@ statement
     | tryStatement
     | throwStatement;
 
-block : '{' (statement | localVariableDeclaration)* '}';
+blockStatement
+    : localVariableDeclaration
+    | statement;
+
+block : '{' blockStatement* '}';
 
 localVariableDeclaration : type variableDeclarator (',' variableDeclarator)* ';';
 

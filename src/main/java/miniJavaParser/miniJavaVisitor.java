@@ -173,6 +173,12 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitExpression(miniJavaParser.ExpressionContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link miniJavaParser#value}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitValue(miniJavaParser.ValueContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#primary}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -221,35 +227,60 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitTerm(miniJavaParser.TermContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#multiplication}.
+	 * Visit a parse tree produced by the {@code MUL}
+	 * labeled alternative in {@link miniJavaParser#calcBinOpHigher}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitMultiplication(miniJavaParser.MultiplicationContext ctx);
+	T visitMUL(miniJavaParser.MULContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#division}.
+	 * Visit a parse tree produced by the {@code DIV}
+	 * labeled alternative in {@link miniJavaParser#calcBinOpHigher}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitDivision(miniJavaParser.DivisionContext ctx);
+	T visitDIV(miniJavaParser.DIVContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#modulo}.
+	 * Visit a parse tree produced by the {@code MOD}
+	 * labeled alternative in {@link miniJavaParser#calcBinOpHigher}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitModulo(miniJavaParser.ModuloContext ctx);
+	T visitMOD(miniJavaParser.MODContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#addition}.
+	 * Visit a parse tree produced by the {@code ADD}
+	 * labeled alternative in {@link miniJavaParser#calcBinOpLower}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitAddition(miniJavaParser.AdditionContext ctx);
+	T visitADD(miniJavaParser.ADDContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#subtraction}.
+	 * Visit a parse tree produced by the {@code SUB}
+	 * labeled alternative in {@link miniJavaParser#calcBinOpLower}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitSubtraction(miniJavaParser.SubtractionContext ctx);
+	T visitSUB(miniJavaParser.SUBContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code INC}
+	 * labeled alternative in {@link miniJavaParser#calcUnOp}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitINC(miniJavaParser.INCContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code DEC}
+	 * labeled alternative in {@link miniJavaParser#calcUnOp}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitDEC(miniJavaParser.DECContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link miniJavaParser#negate}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNegate(miniJavaParser.NegateContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#booleanFunction}.
 	 * @param ctx the parse tree
@@ -257,47 +288,23 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitBooleanFunction(miniJavaParser.BooleanFunctionContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#booleanFunNotEqual}.
+	 * Visit a parse tree produced by {@link miniJavaParser#booleanFunHigh}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitBooleanFunNotEqual(miniJavaParser.BooleanFunNotEqualContext ctx);
+	T visitBooleanFunHigh(miniJavaParser.BooleanFunHighContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#greater}.
+	 * Visit a parse tree produced by {@link miniJavaParser#booleanFunMiddle}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitGreater(miniJavaParser.GreaterContext ctx);
+	T visitBooleanFunMiddle(miniJavaParser.BooleanFunMiddleContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#greaterEqual}.
+	 * Visit a parse tree produced by {@link miniJavaParser#booleanFunLow}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitGreaterEqual(miniJavaParser.GreaterEqualContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#lesser}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitLesser(miniJavaParser.LesserContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#lesserEqual}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitLesserEqual(miniJavaParser.LesserEqualContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#equal}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitEqual(miniJavaParser.EqualContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#notEqual}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitNotEqual(miniJavaParser.NotEqualContext ctx);
+	T visitBooleanFunLow(miniJavaParser.BooleanFunLowContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#inverse}.
 	 * @param ctx the parse tree
@@ -305,29 +312,74 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitInverse(miniJavaParser.InverseContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code GT}
+	 * labeled alternative in {@link miniJavaParser#booleanNumberOp}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitGT(miniJavaParser.GTContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code LT}
+	 * labeled alternative in {@link miniJavaParser#booleanNumberOp}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLT(miniJavaParser.LTContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code LE}
+	 * labeled alternative in {@link miniJavaParser#booleanNumberOp}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLE(miniJavaParser.LEContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code GE}
+	 * labeled alternative in {@link miniJavaParser#booleanNumberOp}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitGE(miniJavaParser.GEContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code EQUAL}
+	 * labeled alternative in {@link miniJavaParser#booleanOp}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitEQUAL(miniJavaParser.EQUALContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code NOTEQUAL}
+	 * labeled alternative in {@link miniJavaParser#booleanOp}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNOTEQUAL(miniJavaParser.NOTEQUALContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#bitwiseFunction}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitBitwiseFunction(miniJavaParser.BitwiseFunctionContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#and}.
+	 * Visit a parse tree produced by the {@code BITAND}
+	 * labeled alternative in {@link miniJavaParser#bitOp}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitAnd(miniJavaParser.AndContext ctx);
+	T visitBITAND(miniJavaParser.BITANDContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#or}.
+	 * Visit a parse tree produced by the {@code BITOR}
+	 * labeled alternative in {@link miniJavaParser#bitOp}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitOr(miniJavaParser.OrContext ctx);
+	T visitBITOR(miniJavaParser.BITORContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#xor}.
+	 * Visit a parse tree produced by the {@code CARET}
+	 * labeled alternative in {@link miniJavaParser#bitOp}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitXor(miniJavaParser.XorContext ctx);
+	T visitCARET(miniJavaParser.CARETContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#shiftFunction}.
 	 * @param ctx the parse tree
@@ -335,29 +387,38 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitShiftFunction(miniJavaParser.ShiftFunctionContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#leftShift}.
+	 * Visit a parse tree produced by the {@code LSHIFT}
+	 * labeled alternative in {@link miniJavaParser#shiftOp}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitLeftShift(miniJavaParser.LeftShiftContext ctx);
+	T visitLSHIFT(miniJavaParser.LSHIFTContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#rightShift}.
+	 * Visit a parse tree produced by the {@code RSHIFT}
+	 * labeled alternative in {@link miniJavaParser#shiftOp}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitRightShift(miniJavaParser.RightShiftContext ctx);
+	T visitRSHIFT(miniJavaParser.RSHIFTContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#unsignedRightShift}.
+	 * Visit a parse tree produced by the {@code UNSIGNEDRSHIFT}
+	 * labeled alternative in {@link miniJavaParser#shiftOp}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitUnsignedRightShift(miniJavaParser.UnsignedRightShiftContext ctx);
+	T visitUNSIGNEDRSHIFT(miniJavaParser.UNSIGNEDRSHIFTContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#statement}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitStatement(miniJavaParser.StatementContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link miniJavaParser#blockStatement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitBlockStatement(miniJavaParser.BlockStatementContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#block}.
 	 * @param ctx the parse tree
