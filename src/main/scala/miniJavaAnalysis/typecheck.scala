@@ -52,8 +52,9 @@ def binary_numeric(
     val l = unbox(left).get
     val r = unbox(right).get
     (l.ty, r.ty) match
-        case (IR.PrimitiveType.Double, IR.PrimitiveType.Double) => IR.NumericBinaryExpression(l, operator, r)
+        case (IR.PrimitiveType.Double, IR.PrimitiveType.Double) => IR.NumericBinaryExpression(???, operator, ???)
         case _ => throw RuntimeException("TODO: error")
+}
 
 def typecheck_expr(
     names: Map[String, QualifiedName],
