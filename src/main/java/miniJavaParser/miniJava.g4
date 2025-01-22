@@ -143,7 +143,7 @@ calcUnOp
     : '++' #INC
     | '--' #DEC;
 
-negate : '-' value;
+negate : '-' expression;
 
 booleanFunction
     : (value | calcFunction) booleanNumberOp (value | calcFunction)

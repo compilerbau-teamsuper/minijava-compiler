@@ -62,7 +62,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     val modifiers: ListBuffer[Modifier] = if ctx.classModifier() != null then ListBuffer(toModifier(ctx.classModifier().getText)) else ListBuffer()
     if ctx.Public() != null then modifiers.addOne(Modifier.Public)
     val name = ctx.Identifier().getText
-    val superclass =  if ctx.superclass() != null then Option(ctx.superclass()).map(sc => visitQualifiedName(sc.qualifiedName())) else None
+    val superclass =  if ctx.superclass() != null then visitQualifiedName(ctx.superclass().qualifiedName()) else QualifiedName(List("Object"))
     val interfaces = if ctx.superinterfaces() != null then ctx.superinterfaces().qualifiedName().asScala.map(visitQualifiedName).toList else List.empty
     val body = visitClassBody(ctx.classBody())
 
@@ -317,7 +317,24 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   override def visitValue(ctx: miniJavaParser.ValueContext): Expression = {
-    ArrayRead() // ToDo Platzhalter
+    if ctx.expression() != null then visitExpression(ctx.expression())
+    else if ctx.literal() != null then visitLiteral(ctx.literal())
+    else ArrayRead() // ToDo Platzhalter
+  }
+
+  override def visitLiteral(ctx: miniJavaParser.LiteralContext): Literal = {
+    if ctx.NullLiteral() != null then Literal(NullLiteral)
+    else if ctx.StringLiteral() != null then Literal(StringLiteral(ctx.StringLiteral().toString))
+    else if ctx.CharacterLiteral() != null then Literal(CharacterLiteral(ctx.CharacterLiteral().toString.charAt(0)))
+    else if ctx.BooleanLiteral() != null then Literal(BooleanLiteral(ctx.BooleanLiteral().toString.equals("true")))
+    else if ctx.IntegerLiteral() != null then Literal(IntLiteral(ctx.IntegerLiteral().toString.toInt))
+    //    else if ctx.LongLiteral() != null then
+    //      Literal(LongLiteral(new Long(ctx.LongLiteral().toString.replace("l","").replace("L",""))))
+    //    else if ctx.FloatingPointLiteral() != null then
+    //      Literal(FloatLiteral(new Float(ctx.FloatingPointLiteral().toString.replace("f","").replace("F",""))))
+    //    else if ctx.DoubleLiteral() != null then
+    //      Literal(DoubleLiteral(new Double(ctx.DoubleLiteral().toString.replace("d","").replace("D","")))) //ToDo
+    else throw new IllegalArgumentException("Unknown literal")
   }
 
   override def visitArrayRead(ctx: miniJavaParser.ArrayReadContext): ArrayRead = {
@@ -393,37 +410,48 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   override def visitCalcFunction(ctx: miniJavaParser.CalcFunctionContext): Expression = {
-    // CalcFunction:
-    // - Can involve binary operations (`+`, `-`, `*`, `/`, `%`)
-    // - Can also involve unary operations (`++`, `--`)
-
-    if (ctx.calcBinOpHigher() != null || ctx.calcBinOpLower() != null) {
-      // Case 1: Binary operation
+    if (ctx.calcBinOpHigher() != null) {
       val left = visitValue(ctx.value()) // Left-hand side expression ToDo
-      val right = visitValue(ctx.term().value()) // Right-hand side expression ToDo
-      val operator = ctx.getChild(1).getText match {
-        case "+" => BinaryOperator.Add
-        case "-" => BinaryOperator.Subtract
-        case "*" => BinaryOperator.Multiply
-        case "/" => BinaryOperator.Divide
-        case "%" => BinaryOperator.Modulo
-      }
+      val right = visitTerm(ctx.term()) // Right-hand side expression ToDo
+      val operator = getCalcOperator(ctx.getChild(1).getText)
+      BinaryExpression(left, operator, right)
+    } else if (ctx.calcBinOpLower() != null) {
+      val left = visitTerm(ctx.term()) // Left-hand side expression ToDo
+      val right = if ctx.term() != null then visitTerm(ctx.term()) else visitCalcFunction(ctx.calcFunction())// Right-hand side expression ToDo
+      val operator = getCalcOperator(ctx.getChild(1).getText)
       BinaryExpression(left, operator, right)
     } else if (ctx.calcUnOp() != null) {
       // Case 2: Unary operation
-      val operator = ctx.getChild(0).getText match {
+      val operator = ctx.getChild(1).getText match {
         case "++" => UnaryOperator.Increment
         case "--" => UnaryOperator.Decrement
-        case "-" => UnaryOperator.Negate
-        case "!" => UnaryOperator.Not
       }
       val operand = visitValue(ctx.value()) // Operand of the unary operation ToDo
       UnaryExpression(operator, operand)
-    } else {
+    } else if ctx.negate() != null then UnaryExpression(UnaryOperator.Negate, visitExpression(ctx.negate().expression()))
+    else {
       throw new IllegalArgumentException("Invalid CalcFunction structure")
     }
   }
 
+  private def getCalcOperator(op: String): BinaryOperator = {
+    op match {
+      case "+" => BinaryOperator.Add
+      case "-" => BinaryOperator.Subtract
+      case "*" => BinaryOperator.Multiply
+      case "/" => BinaryOperator.Divide
+      case "%" => BinaryOperator.Modulo
+    }
+  }
+
+  override def visitTerm(ctx: miniJavaParser.TermContext): Expression = {
+    if ctx.calcBinOpHigher() != null then
+      val left = visitValue(ctx.value()) // Left-hand side expression
+      val right = visitTerm(ctx.term()) // Right-hand side expression
+      val operator = getCalcOperator(ctx.getChild(1).getText)
+      BinaryExpression(left, operator, right)
+    else visitValue(ctx.value())
+  }
 
   override def visitTypeOrVoid(ctx: miniJavaParser.TypeOrVoidContext): TypeOrVoid = {
     if (ctx.`type`() != null) {
