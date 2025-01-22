@@ -1,4 +1,4 @@
-package miniJavaParser.AST
+package AST
 
 // Top-Level Trait für alle AST-Knoten
 sealed trait ASTNode
@@ -19,7 +19,7 @@ sealed trait TypeDeclaration extends ASTNode
 case class ClassDeclaration(
                              modifiers: List[Modifier],
                              name: String,
-                             superclass: Option[QualifiedName],
+                             superclass: QualifiedName,
                              interfaces: List[QualifiedName],
                              body: ClassBody
                            ) extends TypeDeclaration with ClassMember
@@ -93,7 +93,11 @@ case class ArrayRead() extends Expression // ToDo: Argumente/Umsetzung
 // Literals
 sealed trait LiteralValue
 case class IntLiteral(value: Int) extends LiteralValue
+case class LongLiteral(value: Long) extends LiteralValue
+case class FloatLiteral(value: Float) extends LiteralValue
+case class DoubleLiteral(value: Double) extends LiteralValue
 case class StringLiteral(value: String) extends LiteralValue
+case class CharacterLiteral(value: Char) extends LiteralValue
 case class BooleanLiteral(value: Boolean) extends LiteralValue
 case object NullLiteral extends LiteralValue
 

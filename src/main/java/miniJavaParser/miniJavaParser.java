@@ -3155,8 +3155,8 @@ public class miniJavaParser extends Parser {
 
 	@SuppressWarnings("CheckReturnValue")
 	public static class NegateContext extends ParserRuleContext {
-		public ValueContext value() {
-			return getRuleContext(ValueContext.class,0);
+		public ExpressionContext expression() {
+			return getRuleContext(ExpressionContext.class,0);
 		}
 		public NegateContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -3186,7 +3186,7 @@ public class miniJavaParser extends Parser {
 			setState(498);
 			match(T__22);
 			setState(499);
-			value();
+			expression();
 			}
 		}
 		catch (RecognitionException re) {
@@ -7591,7 +7591,7 @@ public class miniJavaParser extends Parser {
 		"\u0005\u0018\u0000\u0000\u01ef\u01f1\u0005\u0019\u0000\u0000\u01f0\u01ee"+
 		"\u0001\u0000\u0000\u0000\u01f0\u01ef\u0001\u0000\u0000\u0000\u01f1M\u0001"+
 		"\u0000\u0000\u0000\u01f2\u01f3\u0005\u0017\u0000\u0000\u01f3\u01f4\u0003"+
-		"6\u001b\u0000\u01f4O\u0001\u0000\u0000\u0000\u01f5\u01f8\u00036\u001b"+
+		"4\u001a\u0000\u01f4O\u0001\u0000\u0000\u0000\u01f5\u01f8\u00036\u001b"+
 		"\u0000\u01f6\u01f8\u0003D\"\u0000\u01f7\u01f5\u0001\u0000\u0000\u0000"+
 		"\u01f7\u01f6\u0001\u0000\u0000\u0000\u01f8\u01f9\u0001\u0000\u0000\u0000"+
 		"\u01f9\u01fc\u0003Z-\u0000\u01fa\u01fd\u00036\u001b\u0000\u01fb\u01fd"+
