@@ -84,7 +84,7 @@ case class ExpressionListInit(expressions: List[Expression]) extends ForInit
 sealed trait Expression extends ASTNode
 case class Literal(value: LiteralValue) extends Expression
 case class BinaryExpression(left: Expression, operator: BinaryOperator, right: Expression) extends Expression
-case class UnaryExpression(operator: UnaryOperator, operand: Expression) extends Expression
+case class UnaryExpression(operator: UnaryOperator, operand: Expression) extends Expression // ToDo: Syntactic Sugar entfernen?! Not umsetzbar?
 case class MethodCall(target: Option[Expression], methodName: String, arguments: List[Expression]) extends Expression
 case class FieldAccess(target: Expression, fieldName: String) extends Expression
 case class ArrayInitializer(initializers: List[Expression]) extends Expression
@@ -171,5 +171,5 @@ enum Modifier {
 }
 
 // Hilfsklassen
-case class QualifiedName(parts: List[String]) extends ASTNode
+case class QualifiedName(parts: List[String]) extends ASTNode, Expression
 
