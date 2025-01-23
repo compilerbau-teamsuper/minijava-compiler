@@ -82,7 +82,6 @@ case class ExpressionListInit(expressions: List[Expression]) extends ForInit
 
 // Expressions
 sealed trait Expression extends ASTNode
-case class Literal(value: LiteralValue) extends Expression
 case class BinaryExpression(left: Expression, operator: BinaryOperator, right: Expression) extends Expression
 case class UnaryExpression(operator: UnaryOperator, operand: Expression) extends Expression // ToDo: Syntactic Sugar entfernen?! Not umsetzbar?
 case class MethodCall(target: Option[Expression], methodName: String, arguments: List[Expression]) extends Expression
@@ -91,15 +90,15 @@ case class ArrayInitializer(initializers: List[Expression]) extends Expression
 case class ArrayRead() extends Expression // ToDo: Argumente/Umsetzung
 
 // Literals
-sealed trait LiteralValue
-case class IntLiteral(value: Int) extends LiteralValue
-case class LongLiteral(value: Long) extends LiteralValue
-case class FloatLiteral(value: Float) extends LiteralValue
-case class DoubleLiteral(value: Double) extends LiteralValue
-case class StringLiteral(value: String) extends LiteralValue
-case class CharacterLiteral(value: Char) extends LiteralValue
-case class BooleanLiteral(value: Boolean) extends LiteralValue
-case object NullLiteral extends LiteralValue
+sealed trait Literal extends Expression
+case class IntLiteral(value: Int) extends Literal
+case class LongLiteral(value: Long) extends Literal
+case class FloatLiteral(value: Float) extends Literal
+case class DoubleLiteral(value: Double) extends Literal
+case class StringLiteral(value: String) extends Literal
+case class CharacterLiteral(value: Char) extends Literal
+case class BooleanLiteral(value: Boolean) extends Literal
+case object NullLiteral extends Literal
 
 // Operatoren
 sealed trait BinaryOperator
