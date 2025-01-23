@@ -334,17 +334,17 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   override def visitLiteral(ctx: LiteralContext): Literal = {
-    if ctx.NullLiteral() != null then Literal(AST.NullLiteral)
-    else if ctx.StringLiteral() != null then Literal(AST.StringLiteral(ctx.StringLiteral().toString))
-    else if ctx.CharacterLiteral() != null then Literal(AST.CharacterLiteral(ctx.CharacterLiteral().toString.charAt(0)))
-    else if ctx.BooleanLiteral() != null then Literal(AST.BooleanLiteral(ctx.BooleanLiteral().toString.equals("true")))
-    else if ctx.IntegerLiteral() != null then Literal(IntLiteral(ctx.IntegerLiteral().toString.toInt))
+    if ctx.NullLiteral() != null then AST.NullLiteral
+    else if ctx.StringLiteral() != null then AST.StringLiteral(ctx.StringLiteral().toString)
+    else if ctx.CharacterLiteral() != null then AST.CharacterLiteral(ctx.CharacterLiteral().toString.charAt(0))
+    else if ctx.BooleanLiteral() != null then AST.BooleanLiteral(ctx.BooleanLiteral().toString.equals("true"))
+    else if ctx.IntegerLiteral() != null then IntLiteral(ctx.IntegerLiteral().toString.toInt)
     else if ctx.LongLiteral() != null then
-      Literal(AST.LongLiteral(ctx.LongLiteral().toString.replace("l","").replace("L","").toLong))
+      AST.LongLiteral(ctx.LongLiteral().toString.replace("l","").replace("L","").toLong)
     else if ctx.FloatingPointLiteral() != null then
-      Literal(FloatLiteral(ctx.FloatingPointLiteral().toString.toFloat))
+      FloatLiteral(ctx.FloatingPointLiteral().toString.toFloat)
     else if ctx.DoubleLiteral() != null then
-      Literal(AST.DoubleLiteral(ctx.DoubleLiteral().toString.toDouble))
+      AST.DoubleLiteral(ctx.DoubleLiteral().toString.toDouble)
     else throw new IllegalArgumentException("Unknown literal")
   }
 
@@ -430,10 +430,10 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     } else if (ctx.calcUnOp() != null) {
       // Case 2: Unary operation
       ctx.getChild(1).getText match {
-        case "++" => BinaryExpression(visitQualifiedName(ctx.qualifiedName()), Add, Literal(IntLiteral(1)))
-        case "--" => BinaryExpression(visitQualifiedName(ctx.qualifiedName()), Subtract, Literal(IntLiteral(1)))
+        case "++" => BinaryExpression(visitQualifiedName(ctx.qualifiedName()), Add, IntLiteral(1))
+        case "--" => BinaryExpression(visitQualifiedName(ctx.qualifiedName()), Subtract, IntLiteral(1))
       }
-    } else if ctx.negate() != null then BinaryExpression(Literal(IntLiteral(0)), Subtract, visitExpression(ctx.negate().expression()))
+    } else if ctx.negate() != null then BinaryExpression(IntLiteral(0), Subtract, visitExpression(ctx.negate().expression()))
     else {
       throw new IllegalArgumentException("Invalid CalcFunction structure")
     }
