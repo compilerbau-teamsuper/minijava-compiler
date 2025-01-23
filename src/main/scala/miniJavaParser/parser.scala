@@ -1,6 +1,8 @@
 package miniJavaParser
 import AST.*
-
+import AST.BinaryOperator.{Add, Subtract}
+import miniJavaParser.*
+import org.antlr.v4.runtime.tree.TerminalNodeImpl
 import org.antlr.v4.runtime.{CharStreams, CommonTokenStream, ParserRuleContext}
 
 import scala.collection.mutable.ListBuffer
@@ -9,7 +11,7 @@ import scala.jdk.CollectionConverters.*
 object JavaASTBuilder {
   def main(args: Array[String]): Unit = {
     // Beispiel-Dateipfad (ersetzen mit dem Pfad zu deiner Java-Datei)
-    val filePath = "G:\\Git\\minijava-compiler\\src\\main\\java\\test.java"
+    val filePath = "src/main/java/test.java"
 
     // Parse die Datei
     val input = CharStreams.fromFileName(filePath)
@@ -31,7 +33,7 @@ object JavaASTBuilder {
 
 // Visitor-Klasse zur Generierung des AST
 class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
-  override def visitCompilationUnit(ctx: miniJavaParser.CompilationUnitContext): CompilationUnit = {
+  override def visitCompilationUnit(ctx: CompilationUnitContext): CompilationUnit = {
     val packageDeclaration = Option(ctx.packageDeclaration())
       .map(visitPackageDeclaration)
     val importDeclarations = ctx.importDeclaration().asScala.map(visitImportDeclaration).toList
@@ -40,11 +42,11 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     CompilationUnit(packageDeclaration, importDeclarations, typeDeclarations)
   }
 
-  override def visitPackageDeclaration(ctx: miniJavaParser.PackageDeclarationContext): PackageDeclaration = {
+  override def visitPackageDeclaration(ctx: PackageDeclarationContext): PackageDeclaration = {
     PackageDeclaration(visitQualifiedName(ctx.qualifiedName()))
   }
 
-  override def visitImportDeclaration(ctx: miniJavaParser.ImportDeclarationContext): ImportDeclaration = {
+  override def visitImportDeclaration(ctx: ImportDeclarationContext): ImportDeclaration = {
     ImportDeclaration(
       visitQualifiedName(ctx.qualifiedName()),
       ctx.Static() != null,
@@ -52,13 +54,13 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     )
   }
 
-  override def visitTypeDeclaration(ctx: miniJavaParser.TypeDeclarationContext): TypeDeclaration = {
+  override def visitTypeDeclaration(ctx: TypeDeclarationContext): TypeDeclaration = {
     if (ctx.classDeclaration() != null) visitClassDeclaration(ctx.classDeclaration())
     else if (ctx.interfaceDeclaration() != null) visitInterfaceDeclaration(ctx.interfaceDeclaration())
     else null // Just Semikolon
   }
 
-  override def visitClassDeclaration(ctx: miniJavaParser.ClassDeclarationContext): ClassDeclaration = {
+  override def visitClassDeclaration(ctx: ClassDeclarationContext): ClassDeclaration = {
     val modifiers: ListBuffer[Modifier] = if ctx.classModifier() != null then ListBuffer(toModifier(ctx.classModifier().getText)) else ListBuffer()
     if ctx.Public() != null then modifiers.addOne(Modifier.Public)
     val name = ctx.Identifier().getText
@@ -69,7 +71,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     ClassDeclaration(modifiers.toList, name, superclass, interfaces, body)
   }
 
-  override def visitInterfaceDeclaration(ctx: miniJavaParser.InterfaceDeclarationContext): InterfaceDeclaration = {
+  override def visitInterfaceDeclaration(ctx: InterfaceDeclarationContext): InterfaceDeclaration = {
     val modifiers: List[Modifier] = if ctx.Public() != null then List(Modifier.Public) else List.empty
     val name = ctx.Identifier().getText
     val superInterfaces = if ctx.extendsInterfaces() != null then ctx.extendsInterfaces().qualifiedName().asScala.map(visitQualifiedName).toList else List.empty
@@ -78,21 +80,21 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     InterfaceDeclaration(modifiers, name, superInterfaces, body)
   }
 
-  override def visitClassBody(ctx: miniJavaParser.ClassBodyContext): ClassBody = {
+  override def visitClassBody(ctx: ClassBodyContext): ClassBody = {
     if !ctx.classBodyDeclaration().isEmpty then {
       ClassBody(ctx.classBodyDeclaration().asScala.toList.map(c => visitClassBodyDeclaration(c)))
     }
     else ClassBody(List.empty)
   }
 
-  override def visitInterfaceBody(ctx: miniJavaParser.InterfaceBodyContext): InterfaceBody = {
+  override def visitInterfaceBody(ctx: InterfaceBodyContext): InterfaceBody = {
     if !ctx.interfaceBodyDeclaration().isEmpty then {
       InterfaceBody(ctx.interfaceBodyDeclaration().asScala.toList.map(c => visitInterfaceBodyDeclaration(c)))
     }
     else InterfaceBody(List.empty)
   }
 
-  override def visitQualifiedName(ctx: miniJavaParser.QualifiedNameContext): QualifiedName = {
+  override def visitQualifiedName(ctx: QualifiedNameContext): QualifiedName = {
     QualifiedName(ctx.Identifier().asScala.map(_.getText).toList)
   }
 
@@ -116,7 +118,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     case _             => throw new IllegalArgumentException(s"Unknown modifier: $modifier")
   }
 
-  override def visitClassBodyDeclaration(ctx: miniJavaParser.ClassBodyDeclarationContext): ClassMember = {
+  override def visitClassBodyDeclaration(ctx: ClassBodyDeclarationContext): ClassMember = {
     if (ctx.staticInitializer() != null) {
       visitBlock(ctx.staticInitializer().block(), true) match { case s: StaticBlock => s }
     } else if (ctx.block() != null) {
@@ -128,7 +130,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     else null
   }
 
-  override def visitInterfaceBodyDeclaration(ctx: miniJavaParser.InterfaceBodyDeclarationContext): InterfaceMember = {
+  override def visitInterfaceBodyDeclaration(ctx: InterfaceBodyDeclarationContext): InterfaceMember = {
     if (ctx.interfaceMemberDeclaration() != null) {
       visitInterfaceMemberDeclaration(ctx.interfaceMemberDeclaration())
     }
@@ -136,7 +138,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   // Hilfsfunktion für MemberDeclaration
-  override def visitMemberDeclaration(ctx: miniJavaParser.MemberDeclarationContext): ClassMember = {
+  override def visitMemberDeclaration(ctx: MemberDeclarationContext): ClassMember = {
     if (ctx.methodDeclaration() != null) {
       visitMethodDeclaration(ctx.methodDeclaration())
     } else if (ctx.fieldDeclaration() != null) {
@@ -152,7 +154,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     }
   }
 
-  override def visitInterfaceMemberDeclaration(ctx: miniJavaParser.InterfaceMemberDeclarationContext): InterfaceMember = {
+  override def visitInterfaceMemberDeclaration(ctx: InterfaceMemberDeclarationContext): InterfaceMember = {
     if (ctx.methodDeclaration() != null) {
       visitMethodDeclaration(ctx.methodDeclaration())
     } else if (ctx.fieldDeclaration() != null) {
@@ -163,7 +165,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   // Methode: visitMethodDeclaration
-  override def visitMethodDeclaration(ctx: miniJavaParser.MethodDeclarationContext): MethodDeclaration = {
+  override def visitMethodDeclaration(ctx: MethodDeclarationContext): MethodDeclaration = {
     val modifiers = getModifiers(ctx.methodModifier()).:::(getModifiers(ctx.accessModifier()))
     val name = ctx.Identifier().getText
     val returnType = visitTypeOrVoid(ctx.typeOrVoid())
@@ -174,7 +176,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   // Methode: visitFieldDeclaration
-  override def visitFieldDeclaration(ctx: miniJavaParser.FieldDeclarationContext): FieldDeclaration = {
+  override def visitFieldDeclaration(ctx: FieldDeclarationContext): FieldDeclaration = {
     val modifiers = getModifiers(ctx.fieldModifier())
     val fieldType = visitType(ctx.`type`())
     val variables = ctx.variableDeclarator().asScala.map { declarator =>
@@ -187,7 +189,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   // Methode: visitConstructorDeclaration
-  override def visitConstructorDeclaration(ctx: miniJavaParser.ConstructorDeclarationContext): ConstructorDeclaration = {
+  override def visitConstructorDeclaration(ctx: ConstructorDeclarationContext): ConstructorDeclaration = {
     val modifiers = Option(ctx.accessModifier())
       .map(am => toModifier(am.getText))
       .toList
@@ -200,13 +202,13 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     ConstructorDeclaration(modifiers, name, List(), body match {case b: Block => b}) // ToDo
   }
 
-  private def getFormalParameters(ctx: miniJavaParser.FormalParametersContext): List[Parameter] = {
+  private def getFormalParameters(ctx: FormalParametersContext): List[Parameter] = {
     if ctx == null then return List.empty
     (ctx.`type`().asScala zip ctx.Identifier().asScala).map{case (t, n) =>  Parameter(n.getText, visitType(t))}.toList
   }
 
   // Methode: visitVariableInitializer
-  override def visitVariableInitializer(ctx: miniJavaParser.VariableInitializerContext): Expression = {
+  override def visitVariableInitializer(ctx: VariableInitializerContext): Expression = {
     if (ctx.expression() != null) {
       visitExpression(ctx.expression())
     } else if (ctx.arrayInitializer() != null) {
@@ -217,34 +219,34 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   // Methode: visitArrayInitializer
-  override def visitArrayInitializer(ctx: miniJavaParser.ArrayInitializerContext): ArrayInitializer = {
+  override def visitArrayInitializer(ctx: ArrayInitializerContext): ArrayInitializer = {
     val initializers = ctx.variableInitializer().asScala.map(visitVariableInitializer).toList
     ArrayInitializer(initializers)
   }
 
   // Methode: visitMethodBody
-  override def visitMethodBody(ctx: miniJavaParser.MethodBodyContext): Block = {
+  override def visitMethodBody(ctx: MethodBodyContext): Block = {
     val statements = ctx.methodBodyStatement().asScala.map(visitMethodBodyStatement).toList
     Block(statements) // ToDo: Methodbody = Block?
   }
 
   // Methode: visitBlock
-  private def visitBlock(ctx: miniJavaParser.BlockContext, static: Boolean): Block | StaticBlock = {
+  private def visitBlock(ctx: BlockContext, static: Boolean): Block | StaticBlock = {
     val statements = ctx.blockStatement().asScala.map(visitBlockStatement).toList
     if static then StaticBlock(statements) else Block(statements)
   }
 
-  override def visitBlockStatement(ctx: miniJavaParser.BlockStatementContext): Statement= {
+  override def visitBlockStatement(ctx: BlockStatementContext): Statement= {
     if ctx.localVariableDeclaration() != null then visitLocalVariableDeclaration(ctx.localVariableDeclaration())
     else if ctx.statement() != null then visitStatement(ctx.statement())
     else throw new IllegalArgumentException("Unknown block statement")
   }
 
-  override def visitLocalVariableDeclaration(ctx: miniJavaParser.LocalVariableDeclarationContext): LocalVariableDeclaration = {
+  override def visitLocalVariableDeclaration(ctx: LocalVariableDeclarationContext): LocalVariableDeclaration = {
     LocalVariableDeclaration(visitType(ctx.`type`()), ctx.variableDeclarator().asScala.map(visitVariableDeclarator).toList)
   }
 
-  override def visitVariableDeclarator(ctx: miniJavaParser.VariableDeclaratorContext): VariableDeclarator = {
+  override def visitVariableDeclarator(ctx: VariableDeclaratorContext): VariableDeclarator = {
     if ctx.variableInitializer() != null then
       VariableDeclarator(ctx.Identifier().getText, Option(visitVariableInitializer(ctx.variableInitializer())))
     else
@@ -253,7 +255,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
 
 
   // Methode: visitMethodBodyStatement
-  override def visitMethodBodyStatement(ctx: miniJavaParser.MethodBodyStatementContext): Statement = {
+  override def visitMethodBodyStatement(ctx: MethodBodyStatementContext): Statement = {
     if (ctx.statement() != null) {
       visitStatement(ctx.statement())
 //    } else if (ctx.returnStatement() != null) {
@@ -266,7 +268,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   // Methode: visitStatement
-  override def visitStatement(ctx: miniJavaParser.StatementContext): Statement = {
+  override def visitStatement(ctx: StatementContext): Statement = {
     if ctx == null then return null
     if (ctx.block() != null) {
       visitBlock(ctx.block(), false) match {case b: Block => b}
@@ -291,23 +293,23 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     }
   }
 
-  override def visitAssignment(ctx: miniJavaParser.AssignmentContext): Assignment = {
+  override def visitAssignment(ctx: AssignmentContext): Assignment = {
     Assignment(ArrayRead(), visitExpression(ctx.expression())) // ToDo ArrayRead() nur Platzhalter
   }
 
-  private def visitIfThenElse(ctx: miniJavaParser.IfThenContext | miniJavaParser.IfThenElseContext): IfStatement = {
+  private def visitIfThenElse(ctx: IfThenContext | IfThenElseContext): IfStatement = {
     ctx match {
-      case c: miniJavaParser.IfThenContext => IfStatement(visitExpression(c.expression()), visitStatement(c.statement()), None)
-      case c: miniJavaParser.IfThenElseContext => IfStatement(visitExpression(c.expression()), visitStatement(c.statement(0)), Option(visitStatement(c.statement(1))))
+      case c: IfThenContext => IfStatement(visitExpression(c.expression()), visitStatement(c.statement()), None)
+      case c: IfThenElseContext => IfStatement(visitExpression(c.expression()), visitStatement(c.statement(0)), Option(visitStatement(c.statement(1))))
     }
   }
 
-  override def visitWhileStatement(ctx: miniJavaParser.WhileStatementContext): WhileStatement  = {
+  override def visitWhileStatement(ctx: WhileStatementContext): WhileStatement  = {
     WhileStatement(visitExpression(ctx.expression()), visitStatement(ctx.statement()))
   }
 
   // Weitere Hilfsmethoden für Expressions, Typen und andere Knoten
-  override def visitExpression(ctx: miniJavaParser.ExpressionContext): Expression = {
+  override def visitExpression(ctx: ExpressionContext): Expression = {
     // Implementiere den Besuch von Expressions (z. B. calcFunction, primary, booleanFunction)
     if ctx.value() != null then visitValue(ctx.value())
     else if ctx.newObject() != null then visitNewObject(ctx.newObject())
@@ -316,40 +318,45 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     else throw new IllegalArgumentException("Unknown statement")
   }
 
-  override def visitValue(ctx: miniJavaParser.ValueContext): Expression = {
-    if ctx.expression() != null then visitExpression(ctx.expression())
-    else if ctx.literal() != null then visitLiteral(ctx.literal())
-    else ArrayRead() // ToDo Platzhalter
+  override def visitValue(ctx: ValueContext): Expression = visitValueOrPrimary(ctx)
+
+  override def visitPrimary(ctx: PrimaryContext): Expression = visitValueOrPrimary(ctx)
+
+  private def visitValueOrPrimary(ctx: ValueContext | PrimaryContext) : Expression = {
+    ctx.getChild(0) match {
+      case c: TerminalNodeImpl if c.toString == "(" => visitExpression(ctx.getChild(1) match {case e: ExpressionContext => e})
+      case l: LiteralContext => visitLiteral(l)
+      case q: QualifiedNameContext => visitQualifiedName(q)
+      case i: IdentifierContext => QualifiedName(List(i.Identifier().getText))
+      //case m: MethodCallContext => visitMethodCall(m)
+      // ToDo: Rest der Fälle
+    }
   }
 
-  override def visitLiteral(ctx: miniJavaParser.LiteralContext): Literal = {
-    if ctx.NullLiteral() != null then Literal(NullLiteral)
-    else if ctx.StringLiteral() != null then Literal(StringLiteral(ctx.StringLiteral().toString))
-    else if ctx.CharacterLiteral() != null then Literal(CharacterLiteral(ctx.CharacterLiteral().toString.charAt(0)))
-    else if ctx.BooleanLiteral() != null then Literal(BooleanLiteral(ctx.BooleanLiteral().toString.equals("true")))
+  override def visitLiteral(ctx: LiteralContext): Literal = {
+    if ctx.NullLiteral() != null then Literal(AST.NullLiteral)
+    else if ctx.StringLiteral() != null then Literal(AST.StringLiteral(ctx.StringLiteral().toString))
+    else if ctx.CharacterLiteral() != null then Literal(AST.CharacterLiteral(ctx.CharacterLiteral().toString.charAt(0)))
+    else if ctx.BooleanLiteral() != null then Literal(AST.BooleanLiteral(ctx.BooleanLiteral().toString.equals("true")))
     else if ctx.IntegerLiteral() != null then Literal(IntLiteral(ctx.IntegerLiteral().toString.toInt))
-    //    else if ctx.LongLiteral() != null then
-    //      Literal(LongLiteral(new Long(ctx.LongLiteral().toString.replace("l","").replace("L",""))))
-    //    else if ctx.FloatingPointLiteral() != null then
-    //      Literal(FloatLiteral(new Float(ctx.FloatingPointLiteral().toString.replace("f","").replace("F",""))))
-    //    else if ctx.DoubleLiteral() != null then
-    //      Literal(DoubleLiteral(new Double(ctx.DoubleLiteral().toString.replace("d","").replace("D","")))) //ToDo
+    else if ctx.LongLiteral() != null then
+      Literal(AST.LongLiteral(ctx.LongLiteral().toString.replace("l","").replace("L","").toLong))
+    else if ctx.FloatingPointLiteral() != null then
+      Literal(FloatLiteral(ctx.FloatingPointLiteral().toString.toFloat))
+    else if ctx.DoubleLiteral() != null then
+      Literal(AST.DoubleLiteral(ctx.DoubleLiteral().toString.toDouble))
     else throw new IllegalArgumentException("Unknown literal")
   }
 
-  override def visitArrayRead(ctx: miniJavaParser.ArrayReadContext): ArrayRead = {
+  override def visitArrayRead(ctx: ArrayReadContext): ArrayRead = {
     ArrayRead() // ToDo
   }
 
-  override def visitPrimary(ctx: miniJavaParser.PrimaryContext): Expression = {
+  override def visitNewObject(ctx: NewObjectContext): Expression = {
     ???
   }
 
-  override def visitNewObject(ctx: miniJavaParser.NewObjectContext): Expression = {
-    ???
-  }
-
-  override def visitBooleanFunction(ctx: miniJavaParser.BooleanFunctionContext): Expression = {
+  override def visitBooleanFunction(ctx: BooleanFunctionContext): Expression = {
     // BooleanFunction:
     // - Either involves a comparison (`booleanNumberOp`) between two values/calcFunctions
     // - Or involves a logical operation (`AND`, `OR`) between other boolean functions
@@ -358,16 +365,16 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     if (ctx.booleanNumberOp() != null || ctx.booleanOp() != null) {
       // Case 1: Comparison operation
       val left = ctx.getChild(0) match {
-        case c: miniJavaParser.CalcFunctionContext => visitCalcFunction(c)
-        case v: miniJavaParser.ValueContext => visitValue(v)
-        case h: miniJavaParser.BooleanFunHighContext => getLeftBoolFun(h)
-        case m: miniJavaParser.BooleanFunMiddleContext => getLeftBoolFun(m)
-        case l: miniJavaParser.BooleanFunLowContext => getLeftBoolFun(l)
+        case c: CalcFunctionContext => visitCalcFunction(c)
+        case v: ValueContext => visitValue(v)
+        case h: BooleanFunHighContext => getLeftBoolFun(h)
+        case m: BooleanFunMiddleContext => getLeftBoolFun(m)
+        case l: BooleanFunLowContext => getLeftBoolFun(l)
       }
       val right = ctx.getChild(2) match {
-        case c: miniJavaParser.CalcFunctionContext => visitCalcFunction(c)
-        case v: miniJavaParser.ValueContext => visitValue(v)
-        case b: miniJavaParser.BooleanFunctionContext => visitBooleanFunction(b)
+        case c: CalcFunctionContext => visitCalcFunction(c)
+        case v: ValueContext => visitValue(v)
+        case b: BooleanFunctionContext => visitBooleanFunction(b)
       }
       val operator = getBoolOperator(ctx.getChild(1).getText)
       BinaryExpression(left, operator, right)
@@ -391,44 +398,42 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     }
   }
 
-  private def getLeftBoolFun(ctx: miniJavaParser.BooleanFunHighContext | miniJavaParser.BooleanFunMiddleContext | miniJavaParser.BooleanFunLowContext): Expression = {
+  private def getLeftBoolFun(ctx: BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext): Expression = {
     if (ctx.getChild(1) != null) {
       ctx.getChild(0) match {
-        case c: miniJavaParser.CalcFunctionContext => BinaryExpression(visitCalcFunction(c), getBoolOperator(ctx.getChild(1).getText), getRightBoolFun(ctx))
-        case v: miniJavaParser.ValueContext => BinaryExpression(visitValue(v), getBoolOperator(ctx.getChild(1).getText), getRightBoolFun(ctx))
-        case h: miniJavaParser.BooleanFunHighContext => BinaryExpression(getLeftBoolFun(h), getBoolOperator(ctx.getChild(1).getText), getRightBoolFun(ctx))
-        case m: miniJavaParser.BooleanFunMiddleContext => BinaryExpression(getLeftBoolFun(m), getBoolOperator(ctx.getChild(1).getText), getRightBoolFun(ctx))
+        case c: CalcFunctionContext => BinaryExpression(visitCalcFunction(c), getBoolOperator(ctx.getChild(1).getText), getRightBoolFun(ctx))
+        case v: ValueContext => BinaryExpression(visitValue(v), getBoolOperator(ctx.getChild(1).getText), getRightBoolFun(ctx))
+        case h: BooleanFunHighContext => BinaryExpression(getLeftBoolFun(h), getBoolOperator(ctx.getChild(1).getText), getRightBoolFun(ctx))
+        case m: BooleanFunMiddleContext => BinaryExpression(getLeftBoolFun(m), getBoolOperator(ctx.getChild(1).getText), getRightBoolFun(ctx))
       }
-    } else ctx.getChild(0) match {case v: miniJavaParser.ValueContext => visitValue(v)}
+    } else ctx.getChild(0) match {case v: ValueContext => visitValue(v)}
   }
 
-  private def getRightBoolFun(ctx: miniJavaParser.BooleanFunHighContext | miniJavaParser.BooleanFunMiddleContext | miniJavaParser.BooleanFunLowContext): Expression = {
+  private def getRightBoolFun(ctx: BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext): Expression = {
     ctx.getChild(2) match {
-      case b: miniJavaParser.BooleanFunctionContext => visitBooleanFunction(b)
-      case v: miniJavaParser.ValueContext => visitValue(v)
+      case b: BooleanFunctionContext => visitBooleanFunction(b)
+      case v: ValueContext => visitValue(v)
     }
   }
 
-  override def visitCalcFunction(ctx: miniJavaParser.CalcFunctionContext): Expression = {
+  override def visitCalcFunction(ctx: CalcFunctionContext): Expression = {
     if (ctx.calcBinOpHigher() != null) {
-      val left = visitValue(ctx.value()) // Left-hand side expression ToDo
-      val right = visitTerm(ctx.term()) // Right-hand side expression ToDo
+      val left = visitValue(ctx.value()) // Left-hand side expression
+      val right = visitTerm(ctx.term()) // Right-hand side expression
       val operator = getCalcOperator(ctx.getChild(1).getText)
       BinaryExpression(left, operator, right)
     } else if (ctx.calcBinOpLower() != null) {
-      val left = visitTerm(ctx.term()) // Left-hand side expression ToDo
+      val left = visitTerm(ctx.term()) // Left-hand side expression
       val right = if ctx.term() != null then visitTerm(ctx.term()) else visitCalcFunction(ctx.calcFunction())// Right-hand side expression ToDo
       val operator = getCalcOperator(ctx.getChild(1).getText)
       BinaryExpression(left, operator, right)
     } else if (ctx.calcUnOp() != null) {
       // Case 2: Unary operation
-      val operator = ctx.getChild(1).getText match {
-        case "++" => UnaryOperator.Increment
-        case "--" => UnaryOperator.Decrement
+      ctx.getChild(1).getText match {
+        case "++" => BinaryExpression(visitQualifiedName(ctx.qualifiedName()), Add, Literal(IntLiteral(1)))
+        case "--" => BinaryExpression(visitQualifiedName(ctx.qualifiedName()), Subtract, Literal(IntLiteral(1)))
       }
-      val operand = visitValue(ctx.value()) // Operand of the unary operation ToDo
-      UnaryExpression(operator, operand)
-    } else if ctx.negate() != null then UnaryExpression(UnaryOperator.Negate, visitExpression(ctx.negate().expression()))
+    } else if ctx.negate() != null then BinaryExpression(Literal(IntLiteral(0)), Subtract, visitExpression(ctx.negate().expression()))
     else {
       throw new IllegalArgumentException("Invalid CalcFunction structure")
     }
@@ -444,7 +449,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     }
   }
 
-  override def visitTerm(ctx: miniJavaParser.TermContext): Expression = {
+  override def visitTerm(ctx: TermContext): Expression = {
     if ctx.calcBinOpHigher() != null then
       val left = visitValue(ctx.value()) // Left-hand side expression
       val right = visitTerm(ctx.term()) // Right-hand side expression
@@ -453,15 +458,15 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     else visitValue(ctx.value())
   }
 
-  override def visitTypeOrVoid(ctx: miniJavaParser.TypeOrVoidContext): TypeOrVoid = {
+  override def visitTypeOrVoid(ctx: TypeOrVoidContext): TypeOrVoid = {
     if (ctx.`type`() != null) {
       visitType(ctx.`type`())
     } else {
-      VoidType
+      AST.VoidType
     }
   }
 
-  override def visitType(ctx: miniJavaParser.TypeContext): Type = {
+  override def visitType(ctx: TypeContext): Type = {
     if ctx.arrayType() != null then toType(ctx.arrayType().getText)
     else if ctx.objectType() != null then toType(ctx.objectType().getText)
     else if ctx.primitiveType() != null then toType(ctx.primitiveType().getText)

@@ -105,7 +105,7 @@ value
 primary
     : '(' expression ')'
     | 'this'
-    | 'super'
+    | 'super' // ToDo: das voll überdenken/implementieren
     | qualifiedName
     | Identifier
     | methodCall;
