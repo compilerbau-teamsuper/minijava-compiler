@@ -256,15 +256,12 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
 
   // Methode: visitMethodBodyStatement
   override def visitMethodBodyStatement(ctx: MethodBodyStatementContext): Statement = {
-    if (ctx.statement() != null) {
-      visitStatement(ctx.statement())
-//    } else if (ctx.returnStatement() != null) {
-//      val expression = Option(ctx.returnStatement().expression()).map(visitExpression)
-//      Return(expression)
-//    } else {
-//      throw new IllegalArgumentException("Unknown method body statement")
+    ctx.getChild(0) match {
+      case s: StatementContext => visitStatement(s)
+      case r: ReturnContext => ReturnStatement(Option(r.expression()).map(visitExpression))
+      case l: LocalVariableDeclarationContext => visitLocalVariableDeclaration(l)
+      case _ => throw new IllegalArgumentException("Unknown method body statement")
     }
-    else null
   }
 
   // Methode: visitStatement
@@ -274,8 +271,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
       visitBlock(ctx.block(), false) match {case b: Block => b}
     } else if (ctx.assignment() != null) {
       visitAssignment(ctx.assignment())
-//    } else if (ctx.methodCall() != null) {
-//      visitMethodCall(ctx.methodCall())
+    } else if (ctx.methodCall() != null) {
+      visitMethodCall(ctx.methodCall())
     } else if (ctx.ifThen() != null) {
       visitIfThenElse(ctx.ifThen())
     } else if (ctx.ifThenElse() != null) {
@@ -295,6 +292,15 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
 
   override def visitAssignment(ctx: AssignmentContext): Assignment = {
     Assignment(ArrayRead(), visitExpression(ctx.expression())) // ToDo ArrayRead() nur Platzhalter
+  }
+
+  override def visitMethodCall(ctx: MethodCallContext): MethodCall = { // ToDo
+    // MethodCall(target: Option[Expression], methodName: String, arguments: List[Expression])
+    // methodCall : qualifiedName '(' expressionList? ')' ';';
+    val names = visitQualifiedName(ctx.qualifiedName()).parts
+    // if names.length > 1 then MethodCall(Some(QualifiedName(names.)), names.last, visitExpressionList(ctx.expressionList()))
+    // MethodCall
+    null
   }
 
   private def visitIfThenElse(ctx: IfThenContext | IfThenElseContext): IfStatement = {
@@ -424,7 +430,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
       BinaryExpression(left, operator, right)
     } else if (ctx.calcBinOpLower() != null) {
       val left = visitTerm(ctx.term()) // Left-hand side expression
-      val right = if ctx.term() != null then visitTerm(ctx.term()) else visitCalcFunction(ctx.calcFunction())// Right-hand side expression ToDo
+      val right = if ctx.value != null then visitValue(ctx.value()) else visitCalcFunction(ctx.calcFunction())// Right-hand side expression
       val operator = getCalcOperator(ctx.getChild(1).getText)
       BinaryExpression(left, operator, right)
     } else if (ctx.calcUnOp() != null) {
