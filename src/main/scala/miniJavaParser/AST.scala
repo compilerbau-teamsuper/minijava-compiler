@@ -1,4 +1,4 @@
-package AST
+package miniJavaParser.AST
 
 // Top-Level Trait für alle AST-Knoten
 sealed trait ASTNode
