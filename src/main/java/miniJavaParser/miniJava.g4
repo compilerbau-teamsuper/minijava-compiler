@@ -145,7 +145,7 @@ calcUnOp
 
 negate : '-' expression;
 
-booleanFunction
+booleanFunction // ToDo: Xor (^)
     : (value | calcFunction) booleanNumberOp (value | calcFunction)
     | booleanFunHigh booleanOp (booleanFunction | value)
     | booleanFunMiddle AND (booleanFunction | value)

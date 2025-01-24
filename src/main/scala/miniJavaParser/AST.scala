@@ -73,7 +73,7 @@ case class ForStatement(init: Option[ForInit], condition: Option[Expression], up
 case class ReturnStatement(expression: Option[Expression]) extends Statement
 case class BreakStatement() extends Statement
 case class ContinueStatement() extends Statement
-case class Assignment(left: Expression, right: Expression) extends Statement
+case class Assignment(left: Expression, right: Expression) extends Statement // ToDo: Links nur Qualified Name?!
 case class LocalVariableDeclaration(varType: Type, variables: List[VariableDeclarator]) extends Statement
 
 sealed trait ForInit extends ASTNode
@@ -84,8 +84,9 @@ case class ExpressionListInit(expressions: List[Expression]) extends ForInit
 sealed trait Expression extends ASTNode
 case class BinaryExpression(left: Expression, operator: BinaryOperator, right: Expression) extends Expression
 case class UnaryExpression(operator: UnaryOperator, operand: Expression) extends Expression // ToDo: Syntactic Sugar entfernen?! Not umsetzbar?
-case class MethodCall(target: Option[Expression], methodName: String, arguments: List[Expression]) extends Expression
-case class FieldAccess(target: Expression, fieldName: String) extends Expression
+case class MethodCall(target: Option[Expression], methodName: String, arguments: List[Expression]) extends Expression, Statement
+case class FieldAccess(target: Expression, fieldName: String) extends Expression // ToDo: Hier (und bei MethodCall usw) bei namen anstatt String n QualifiedName?
+case class VarAccess(fieldName: String) extends Expression // ToDo: Zusammenfassen in FieldAccess?
 case class ArrayInitializer(initializers: List[Expression]) extends Expression
 case class ArrayRead() extends Expression // ToDo: Argumente/Umsetzung
 
