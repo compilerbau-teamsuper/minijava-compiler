@@ -60,7 +60,7 @@ def typecheck_expr(
     names: Map[String, QualifiedName],
     types: Map[QualifiedName, ObjectInfo],
 )(expr: AST.Expression): IR.TypedExpression[IR.Type]  = expr match
-    case AST.Literal(value) => value match
+    case literal: AST.Literal => literal match
         case AST.IntLiteral(value) => value match
             case _ if value.isValidByte => IR.ByteLiteral(value.toByte)
             case _ if value.isValidShort => IR.ShortLiteral(value.toShort)
