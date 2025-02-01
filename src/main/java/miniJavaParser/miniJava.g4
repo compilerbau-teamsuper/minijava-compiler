@@ -283,7 +283,6 @@ type
 
 objectType
     : 'String' #StringObject
-    | 'Byte' #ByteObject
     | 'Short' #ShortObject
     | 'Integer' #IntegerObject
     | 'Float' #FloatObject
@@ -293,8 +292,7 @@ objectType
     | Identifier #Identifier;
 
 primitiveType
-    : 'byte' #ByteType
-    | 'short' #ShortType
+    : 'short' #ShortType
     | 'int' #IntType
     | 'float' #FloatType
     | 'double' #DoubleType
@@ -334,8 +332,6 @@ Static: 'static';
 // Identifier
 qualifiedName : (Identifier '.')* Identifier; // ToDo: Vielleicht nicht alles qualified name sein lassen und auch direkt mit Identifier arbeiten!
 
-Identifier : [a-zA-Z_] [a-zA-Z0-9_]*;
-
 // Literals
 literal
     : IntegerLiteral
@@ -343,16 +339,17 @@ literal
     | FloatingPointLiteral
     | DoubleLiteral
     | CharacterLiteral
-    | StringLiteral
     | BooleanLiteral
-    | NullLiteral;
+    | NullLiteral
+    | StringLiteral;
 
 BooleanLiteral
-    : 'true'
+    :'true'
     | 'false';
+
 IntegerLiteral : ('-')? [0-9]+;
 LongLiteral : ('-')? [0-9]+ [lL];
-NullLiteral : 'null';
+NullLiteral: 'null';
 FloatingPointLiteral : ('-')? [0-9]+ '.' [0-9]* ([eE][+-]?[0-9]+)? ('f'|'F');
 DoubleLiteral : ('-')? [0-9]+ '.' [0-9]* ([eE][+-]?[0-9]+)? ('d'|'D')?;
 CharacterLiteral : '\'' . '\'';
@@ -363,3 +360,5 @@ StringLiteral : '"' .*? '"';
 WS: [ \t\r\n\u000C]+ -> skip;
 COMMENT: '/*' .*? '*/' -> skip;
 LINE_COMMENT: '//' ~[\r\n]* -> skip;
+
+Identifier : [a-zA-Z_] [a-zA-Z0-9_]*;

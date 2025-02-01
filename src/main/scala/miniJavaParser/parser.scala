@@ -200,11 +200,17 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   private def standardInitializer(t: Type) : Expression = {
-    null // not fully implemented yet
-//    t match {
-//      case s: ObjectType.String => AST.StringLiteral("")
-//      case c: Custom(_) => throw new IllegalArgumentException("Custom Types must be initialized?!")
-//    }
+    t match {
+      case i: (PrimitiveType.Int.type | ObjectType.Integer.type) => AST.IntLiteral(0)
+      case b: (PrimitiveType.Boolean.type | ObjectType.Boolean.type) => AST.BooleanLiteral(false)
+      case c: (PrimitiveType.Char.type | ObjectType.Character.type) => AST.CharacterLiteral('0')
+      case s: (PrimitiveType.Short.type | ObjectType.Short.type) => AST.ShortLiteral(0)
+      case l: (PrimitiveType.Long.type | ObjectType.Long.type) => AST.LongLiteral(0)
+      case f: (PrimitiveType.Float.type | ObjectType.Float.type) => AST.FloatLiteral(0)
+      case d: (PrimitiveType.Double.type | ObjectType.Double.type) => AST.DoubleLiteral(0)
+      case s: ObjectType.String.type => AST.StringLiteral("")
+      case _ => throw new IllegalArgumentException("Custom Types must be initialized?!")
+    }
   }
 
   // Methode: visitConstructorDeclaration
@@ -274,12 +280,13 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
 
   private def visitLocalVariableDec(ctx: LocalVariableDeclarationContext): List[LocalVariableDeclaration] = {
     val t = visitType(ctx.`type`())
-    val variables = ctx.variableDeclarator().asScala.map(visitVariableDeclarator).toList
+    val variables = ctx.variableDeclarator().asScala.map(v => visitVariableDeclarator(v, t)).toList
     variables.map(v => LocalVariableDeclaration(t, v))
   }
 
-  override def visitVariableDeclarator(ctx: VariableDeclaratorContext): VariableDeclarator = {
-    VariableDeclarator(ctx.Identifier().getText, visitVariableInitializer(ctx.variableInitializer()))
+  private def visitVariableDeclarator(ctx: VariableDeclaratorContext, t: Type): VariableDeclarator = {
+    VariableDeclarator(ctx.Identifier().getText,
+      if ctx.variableInitializer() != null then visitVariableInitializer(ctx.variableInitializer()) else standardInitializer(t))
   }
 
 
@@ -502,15 +509,15 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     case "int" => PrimitiveType.Int
     case "boolean" => PrimitiveType.Boolean
     case "char" => PrimitiveType.Char
-    case "byte" => PrimitiveType.Byte
     case "short" => PrimitiveType.Short
+    case "long" => PrimitiveType.Long
     case "float" => PrimitiveType.Float
     case "double" => PrimitiveType.Double
 
     // Objekt-Typen
     case "String" => ObjectType.String
-    case "Byte" => ObjectType.Byte
     case "Short" => ObjectType.Short
+    case "Long" => ObjectType.Long
     case "Integer" => ObjectType.Integer
     case "Float" => ObjectType.Float
     case "Double" => ObjectType.Double
@@ -524,7 +531,5 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     // Unbekannter Typ
     case _ => throw new IllegalArgumentException(s"Unknown type: $typeName")
   }
-
-
 }
 
