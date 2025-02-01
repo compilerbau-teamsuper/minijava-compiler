@@ -48,7 +48,7 @@ case class MethodDeclaration(
 case class FieldDeclaration(
                              modifiers: List[Modifier],
                              fieldType: Type,
-                             variables: List[VariableDeclarator]
+                             variables: List[VariableDeclarator] // ToDo: syntactic sugar weglassen und die auseinanderpfrimln -> zu einzelnen machen
                            ) extends ClassMember with InterfaceMember
 case class ConstructorDeclaration(
                                    modifiers: List[Modifier],
@@ -58,12 +58,11 @@ case class ConstructorDeclaration(
                                  ) extends ClassMember
 
 // Variablen und Parameter
-case class VariableDeclarator(name: String, initializer: Option[Expression]) extends ASTNode
+case class VariableDeclarator(name: String, initializer: Option[Expression]) extends ASTNode // ToDo: initializer rausmachen, Standardkonstruktor und so
 case class Parameter(name: String, paramType: Type) extends ASTNode
 
 // Blöcke und Statements
 case class Block(statements: List[Statement]) extends Statement with ClassMember
-case class StaticBlock(statements: List[Statement]) extends ClassMember
 
 sealed trait Statement extends ASTNode
 case class ExpressionStatement(expression: Expression) extends Statement
@@ -83,7 +82,7 @@ case class ExpressionListInit(expressions: List[Expression]) extends ForInit
 // Expressions
 sealed trait Expression extends ASTNode
 case class BinaryExpression(left: Expression, operator: BinaryOperator, right: Expression) extends Expression
-case class UnaryExpression(operator: UnaryOperator, operand: Expression) extends Expression // ToDo: Syntactic Sugar entfernen?! Not umsetzbar?
+case class UnaryExpression(operator: UnaryOperator, operand: Expression) extends Expression // ToDo: Syntactic Sugar entfernen?! Not ohne XOR bisschen tricky glaub
 case class MethodCall(target: Option[Expression], methodName: String, arguments: List[Expression]) extends Expression, Statement
 case class FieldAccess(target: Expression, fieldName: String) extends Expression // ToDo: Hier (und bei MethodCall usw) bei namen anstatt String n QualifiedName?
 case class VarAccess(fieldName: String) extends Expression // ToDo: Zusammenfassen in FieldAccess?

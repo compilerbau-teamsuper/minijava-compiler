@@ -1,4 +1,4 @@
-// Generated from G:/Git/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
+// Generated from C:/Git/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
 package miniJavaParser;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
@@ -88,12 +88,6 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitClassBodyDeclaration(miniJavaParser.ClassBodyDeclarationContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#staticInitializer}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitStaticInitializer(miniJavaParser.StaticInitializerContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#memberDeclaration}.
 	 * @param ctx the parse tree
@@ -353,60 +347,6 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitNOTEQUAL(miniJavaParser.NOTEQUALContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#bitwiseFunction}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitBitwiseFunction(miniJavaParser.BitwiseFunctionContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code BITAND}
-	 * labeled alternative in {@link miniJavaParser#bitOp}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitBITAND(miniJavaParser.BITANDContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code BITOR}
-	 * labeled alternative in {@link miniJavaParser#bitOp}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitBITOR(miniJavaParser.BITORContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code CARET}
-	 * labeled alternative in {@link miniJavaParser#bitOp}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitCARET(miniJavaParser.CARETContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#shiftFunction}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitShiftFunction(miniJavaParser.ShiftFunctionContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code LSHIFT}
-	 * labeled alternative in {@link miniJavaParser#shiftOp}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitLSHIFT(miniJavaParser.LSHIFTContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code RSHIFT}
-	 * labeled alternative in {@link miniJavaParser#shiftOp}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitRSHIFT(miniJavaParser.RSHIFTContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code UNSIGNEDRSHIFT}
-	 * labeled alternative in {@link miniJavaParser#shiftOp}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitUNSIGNEDRSHIFT(miniJavaParser.UNSIGNEDRSHIFTContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#statement}.
 	 * @param ctx the parse tree

@@ -1,4 +1,4 @@
-// Generated from G:/Git/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
+// Generated from C:/Git/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
 package miniJavaParser;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
@@ -137,16 +137,6 @@ public interface miniJavaListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitClassBodyDeclaration(miniJavaParser.ClassBodyDeclarationContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#staticInitializer}.
-	 * @param ctx the parse tree
-	 */
-	void enterStaticInitializer(miniJavaParser.StaticInitializerContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#staticInitializer}.
-	 * @param ctx the parse tree
-	 */
-	void exitStaticInitializer(miniJavaParser.StaticInitializerContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link miniJavaParser#memberDeclaration}.
 	 * @param ctx the parse tree
@@ -583,98 +573,6 @@ public interface miniJavaListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitNOTEQUAL(miniJavaParser.NOTEQUALContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#bitwiseFunction}.
-	 * @param ctx the parse tree
-	 */
-	void enterBitwiseFunction(miniJavaParser.BitwiseFunctionContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#bitwiseFunction}.
-	 * @param ctx the parse tree
-	 */
-	void exitBitwiseFunction(miniJavaParser.BitwiseFunctionContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code BITAND}
-	 * labeled alternative in {@link miniJavaParser#bitOp}.
-	 * @param ctx the parse tree
-	 */
-	void enterBITAND(miniJavaParser.BITANDContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code BITAND}
-	 * labeled alternative in {@link miniJavaParser#bitOp}.
-	 * @param ctx the parse tree
-	 */
-	void exitBITAND(miniJavaParser.BITANDContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code BITOR}
-	 * labeled alternative in {@link miniJavaParser#bitOp}.
-	 * @param ctx the parse tree
-	 */
-	void enterBITOR(miniJavaParser.BITORContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code BITOR}
-	 * labeled alternative in {@link miniJavaParser#bitOp}.
-	 * @param ctx the parse tree
-	 */
-	void exitBITOR(miniJavaParser.BITORContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code CARET}
-	 * labeled alternative in {@link miniJavaParser#bitOp}.
-	 * @param ctx the parse tree
-	 */
-	void enterCARET(miniJavaParser.CARETContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code CARET}
-	 * labeled alternative in {@link miniJavaParser#bitOp}.
-	 * @param ctx the parse tree
-	 */
-	void exitCARET(miniJavaParser.CARETContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#shiftFunction}.
-	 * @param ctx the parse tree
-	 */
-	void enterShiftFunction(miniJavaParser.ShiftFunctionContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#shiftFunction}.
-	 * @param ctx the parse tree
-	 */
-	void exitShiftFunction(miniJavaParser.ShiftFunctionContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code LSHIFT}
-	 * labeled alternative in {@link miniJavaParser#shiftOp}.
-	 * @param ctx the parse tree
-	 */
-	void enterLSHIFT(miniJavaParser.LSHIFTContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code LSHIFT}
-	 * labeled alternative in {@link miniJavaParser#shiftOp}.
-	 * @param ctx the parse tree
-	 */
-	void exitLSHIFT(miniJavaParser.LSHIFTContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code RSHIFT}
-	 * labeled alternative in {@link miniJavaParser#shiftOp}.
-	 * @param ctx the parse tree
-	 */
-	void enterRSHIFT(miniJavaParser.RSHIFTContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code RSHIFT}
-	 * labeled alternative in {@link miniJavaParser#shiftOp}.
-	 * @param ctx the parse tree
-	 */
-	void exitRSHIFT(miniJavaParser.RSHIFTContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code UNSIGNEDRSHIFT}
-	 * labeled alternative in {@link miniJavaParser#shiftOp}.
-	 * @param ctx the parse tree
-	 */
-	void enterUNSIGNEDRSHIFT(miniJavaParser.UNSIGNEDRSHIFTContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code UNSIGNEDRSHIFT}
-	 * labeled alternative in {@link miniJavaParser#shiftOp}.
-	 * @param ctx the parse tree
-	 */
-	void exitUNSIGNEDRSHIFT(miniJavaParser.UNSIGNEDRSHIFTContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link miniJavaParser#statement}.
 	 * @param ctx the parse tree

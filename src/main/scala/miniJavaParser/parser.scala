@@ -119,10 +119,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   override def visitClassBodyDeclaration(ctx: ClassBodyDeclarationContext): ClassMember = {
-    if (ctx.staticInitializer() != null) {
-      visitBlock(ctx.staticInitializer().block(), true) match { case s: StaticBlock => s }
-    } else if (ctx.block() != null) {
-      visitBlock(ctx.block(), false) match { case b: Block => b }
+    if (ctx.block() != null) {
+      visitBlock(ctx.block())
     }
     else if (ctx.memberDeclaration() != null) {
       visitMemberDeclaration(ctx.memberDeclaration())
@@ -197,9 +195,9 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
 //    val parameters = Option(ctx.formalParameters())
 //      .map(_.formalParameter().asScala.map(visitFormalParameter).toList)
 //      .getOrElse(List.empty)
-    val body = visitBlock(ctx.block(), false)
+    val body = visitBlock(ctx.block())
 
-    ConstructorDeclaration(modifiers, name, List(), body match {case b: Block => b}) // ToDo
+    ConstructorDeclaration(modifiers, name, List(), body) // ToDo
   }
 
   private def getFormalParameters(ctx: FormalParametersContext): List[Parameter] = {
@@ -231,12 +229,12 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   // Methode: visitBlock
-  private def visitBlock(ctx: BlockContext, static: Boolean): Block | StaticBlock = {
+  override def visitBlock(ctx: BlockContext): Block = {
     val statements = ctx.blockStatement().asScala.map(visitBlockStatement).toList
-    if static then StaticBlock(statements) else Block(statements)
+    Block(statements)
   }
 
-  override def visitBlockStatement(ctx: BlockStatementContext): Statement= {
+  override def visitBlockStatement(ctx: BlockStatementContext): Statement = {
     if ctx.localVariableDeclaration() != null then visitLocalVariableDeclaration(ctx.localVariableDeclaration())
     else if ctx.statement() != null then visitStatement(ctx.statement())
     else throw new IllegalArgumentException("Unknown block statement")
@@ -267,26 +265,17 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   // Methode: visitStatement
   override def visitStatement(ctx: StatementContext): Statement = {
     if ctx == null then return null
-    if (ctx.block() != null) {
-      visitBlock(ctx.block(), false) match {case b: Block => b}
-    } else if (ctx.assignment() != null) {
-      visitAssignment(ctx.assignment())
-    } else if (ctx.methodCall() != null) {
-      visitMethodCall(ctx.methodCall())
-    } else if (ctx.ifThen() != null) {
-      visitIfThenElse(ctx.ifThen())
-    } else if (ctx.ifThenElse() != null) {
-      visitIfThenElse(ctx.ifThenElse())
-    } else if (ctx.whileStatement() != null) {
-      visitWhileStatement(ctx.whileStatement())
-//    } else if (ctx.forStatement() != null) {
-//      visitFor(ctx.forStatement())
-    } else if (ctx.break_ != null) {
-      BreakStatement()
-    } else if (ctx.continue_ != null) {
-      ContinueStatement()
-    } else {
-      throw new IllegalArgumentException("Unknown statement")
+    ctx.getChild(0) match {
+      case b: BlockContext => visitBlock(b)
+      case a: AssignmentContext => visitAssignment(a)
+      case m: MethodCallContext => visitMethodCall(m)
+      case i: (IfThenContext | IfThenElseContext) => visitIfThenElse(i)
+      // case s: SwitchContext => visitSwitch(s) // ToDo: Überhaupt notwendig?
+      case w: WhileStatementContext => visitWhileStatement(w)
+      case b: BreakStatement => BreakStatement()
+      case c: ContinueStatement => ContinueStatement()
+      // case f: ForStatementContext => visitForStatement(f)
+      case _ => throw new IllegalArgumentException("Unknown statement")
     }
   }
 
@@ -473,10 +462,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   override def visitType(ctx: TypeContext): Type = {
-    if ctx.arrayType() != null then toType(ctx.arrayType().getText)
-    else if ctx.objectType() != null then toType(ctx.objectType().getText)
-    else if ctx.primitiveType() != null then toType(ctx.primitiveType().getText)
-    else throw new IllegalArgumentException("No Type given!")
+    if ctx.arrayType() != null then toType(ctx.arrayType().getChild(0).getText)
+    else toType(ctx.getChild(0).getText)
   }
 
   private def toType(typeName: String): Type = typeName match {
