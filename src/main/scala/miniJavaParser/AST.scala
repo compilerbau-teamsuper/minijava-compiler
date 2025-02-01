@@ -48,7 +48,7 @@ case class MethodDeclaration(
 case class FieldDeclaration(
                              modifiers: List[Modifier],
                              fieldType: Type,
-                             variables: List[VariableDeclarator] // ToDo: syntactic sugar weglassen und die auseinanderpfrimln -> zu einzelnen machen
+                             variables: VariableDeclarator
                            ) extends ClassMember with InterfaceMember
 case class ConstructorDeclaration(
                                    modifiers: List[Modifier],
@@ -58,7 +58,7 @@ case class ConstructorDeclaration(
                                  ) extends ClassMember
 
 // Variablen und Parameter
-case class VariableDeclarator(name: String, initializer: Option[Expression]) extends ASTNode // ToDo: initializer rausmachen, Standardkonstruktor und so
+case class VariableDeclarator(name: String, initializer: Expression) extends ASTNode
 case class Parameter(name: String, paramType: Type) extends ASTNode
 
 // Blöcke und Statements
@@ -73,7 +73,7 @@ case class ReturnStatement(expression: Option[Expression]) extends Statement
 case class BreakStatement() extends Statement
 case class ContinueStatement() extends Statement
 case class Assignment(left: Expression, right: Expression) extends Statement // ToDo: Links nur Qualified Name?!
-case class LocalVariableDeclaration(varType: Type, variables: List[VariableDeclarator]) extends Statement
+case class LocalVariableDeclaration(varType: Type, variable: VariableDeclarator) extends Statement
 
 sealed trait ForInit extends ASTNode
 case class VariableDeclarationInit(variable: FieldDeclaration) extends ForInit // ToDo das richtig?
@@ -130,32 +130,30 @@ object UnaryOperator {
 sealed trait TypeOrVoid extends ASTNode
 case object VoidType extends TypeOrVoid
 sealed trait Type extends TypeOrVoid
-case class PrimitiveType(name: PrimitiveTypeName) extends Type
-case class ObjectType(name: ObjectTypeName) extends Type
 
-sealed trait PrimitiveTypeName
-object PrimitiveTypeName {
-  case object Int extends PrimitiveTypeName
-  case object Boolean extends PrimitiveTypeName
-  case object Char extends PrimitiveTypeName
-  case object Double extends PrimitiveTypeName
-  case object Float extends PrimitiveTypeName
-  case object Long extends PrimitiveTypeName
-  case object Short extends PrimitiveTypeName
-  case object Byte extends PrimitiveTypeName
+sealed trait PrimitiveType extends Type
+object PrimitiveType {
+  case object Int extends PrimitiveType
+  case object Boolean extends PrimitiveType
+  case object Char extends PrimitiveType
+  case object Double extends PrimitiveType
+  case object Float extends PrimitiveType
+  case object Long extends PrimitiveType
+  case object Short extends PrimitiveType
+  case object Byte extends PrimitiveType
 }
 
-sealed trait ObjectTypeName
-object ObjectTypeName {
-  case object String extends ObjectTypeName
-  case object Byte extends ObjectTypeName
-  case object Short extends ObjectTypeName
-  case object Integer extends ObjectTypeName
-  case object Float extends ObjectTypeName
-  case object Double extends ObjectTypeName
-  case object Boolean extends ObjectTypeName
-  case object Character extends ObjectTypeName
-  case class Custom(name: String) extends ObjectTypeName // Für benutzerdefinierte Typen
+sealed trait ObjectType extends Type
+object ObjectType {
+  case object String extends ObjectType
+  case object Byte extends ObjectType
+  case object Short extends ObjectType
+  case object Integer extends ObjectType
+  case object Float extends ObjectType
+  case object Double extends ObjectType
+  case object Boolean extends ObjectType
+  case object Character extends ObjectType
+  case class Custom(name: String) extends ObjectType // Für benutzerdefinierte Typen
 }
 
 
