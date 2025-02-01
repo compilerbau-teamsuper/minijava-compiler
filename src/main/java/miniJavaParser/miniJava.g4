@@ -39,10 +39,7 @@ classBody : '{' classBodyDeclaration* '}';
 classBodyDeclaration
     : ';'
     | block
-    | memberDeclaration
-    | staticInitializer;
-
-staticInitializer : 'static' block;
+    | memberDeclaration;
 
 memberDeclaration
     : methodDeclaration
@@ -87,8 +84,6 @@ arrayInitializer : '{' (variableInitializer (',' variableInitializer)*)? ','? '}
 expression
     : calcFunction
     | booleanFunction
-    //| bitwiseFunction ToDo
-    //| shiftFunction ToDo
     | value
     | newObject;
 
@@ -182,21 +177,6 @@ booleanOp
 AND : '&&';
 OR : '||';
 
-bitwiseFunction : value bitOp expression; //ToDo
-
-bitOp
-    : '&' #BITAND
-    | '|' #BITOR
-    | '^' #CARET;
-
-shiftFunction : term shiftOp term; //ToDo
-
-shiftOp
-    : '<<' #LSHIFT
-    | '>>' #RSHIFT
-    | '>>>' #UNSIGNEDRSHIFT;
-
-
 // Statements
 statement
     : block
@@ -226,8 +206,8 @@ ifThenElse : 'if' '(' expression ')' statement 'else' statement ;
 
 whileStatement : 'while' '(' expression ')' statement;
 
-forStatement : 'for' '(' forControl ')' statement;
-
+forStatement : 'for' '(' forControl ')' statement; // ToDo: foreach wäre noch cool, komplizierter Teil von for nicht wichtig
+// Generell an Abstrakter Syntax aus Vorlesung orientiern
 forControl : forInit? ';' expression? ';' forControlStatementList?;
 
 forControlStatement
