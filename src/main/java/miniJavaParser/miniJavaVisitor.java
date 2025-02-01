@@ -1,4 +1,4 @@
-// Generated from C:/Git/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
+// Generated from G:/Git/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
 package miniJavaParser;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
@@ -511,13 +511,6 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitStringObject(miniJavaParser.StringObjectContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code ByteObject}
-	 * labeled alternative in {@link miniJavaParser#objectType}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitByteObject(miniJavaParser.ByteObjectContext ctx);
-	/**
 	 * Visit a parse tree produced by the {@code ShortObject}
 	 * labeled alternative in {@link miniJavaParser#objectType}.
 	 * @param ctx the parse tree
@@ -566,13 +559,6 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitIdentifier(miniJavaParser.IdentifierContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code ByteType}
-	 * labeled alternative in {@link miniJavaParser#primitiveType}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitByteType(miniJavaParser.ByteTypeContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code ShortType}
 	 * labeled alternative in {@link miniJavaParser#primitiveType}.

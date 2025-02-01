@@ -93,6 +93,7 @@ case class ArrayRead() extends Expression // ToDo: Argumente/Umsetzung
 sealed trait Literal extends Expression
 case class IntLiteral(value: Int) extends Literal
 case class LongLiteral(value: Long) extends Literal
+case class ShortLiteral(value: Short) extends Literal
 case class FloatLiteral(value: Float) extends Literal
 case class DoubleLiteral(value: Double) extends Literal
 case class StringLiteral(value: String) extends Literal
@@ -140,14 +141,13 @@ object PrimitiveType {
   case object Float extends PrimitiveType
   case object Long extends PrimitiveType
   case object Short extends PrimitiveType
-  case object Byte extends PrimitiveType
 }
 
 sealed trait ObjectType extends Type
 object ObjectType {
   case object String extends ObjectType
-  case object Byte extends ObjectType
   case object Short extends ObjectType
+  case object Long extends PrimitiveType
   case object Integer extends ObjectType
   case object Float extends ObjectType
   case object Double extends ObjectType

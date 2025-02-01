@@ -1,4 +1,4 @@
-// Generated from C:/Git/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
+// Generated from G:/Git/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
 package miniJavaParser;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
@@ -846,18 +846,6 @@ public interface miniJavaListener extends ParseTreeListener {
 	 */
 	void exitStringObject(miniJavaParser.StringObjectContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code ByteObject}
-	 * labeled alternative in {@link miniJavaParser#objectType}.
-	 * @param ctx the parse tree
-	 */
-	void enterByteObject(miniJavaParser.ByteObjectContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code ByteObject}
-	 * labeled alternative in {@link miniJavaParser#objectType}.
-	 * @param ctx the parse tree
-	 */
-	void exitByteObject(miniJavaParser.ByteObjectContext ctx);
-	/**
 	 * Enter a parse tree produced by the {@code ShortObject}
 	 * labeled alternative in {@link miniJavaParser#objectType}.
 	 * @param ctx the parse tree
@@ -941,18 +929,6 @@ public interface miniJavaListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitIdentifier(miniJavaParser.IdentifierContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code ByteType}
-	 * labeled alternative in {@link miniJavaParser#primitiveType}.
-	 * @param ctx the parse tree
-	 */
-	void enterByteType(miniJavaParser.ByteTypeContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code ByteType}
-	 * labeled alternative in {@link miniJavaParser#primitiveType}.
-	 * @param ctx the parse tree
-	 */
-	void exitByteType(miniJavaParser.ByteTypeContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code ShortType}
 	 * labeled alternative in {@link miniJavaParser#primitiveType}.
