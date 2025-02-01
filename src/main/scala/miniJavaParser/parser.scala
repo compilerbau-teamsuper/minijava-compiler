@@ -82,14 +82,24 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
 
   override def visitClassBody(ctx: ClassBodyContext): ClassBody = {
     if !ctx.classBodyDeclaration().isEmpty then {
-      ClassBody(ctx.classBodyDeclaration().asScala.toList.map(c => visitClassBodyDeclaration(c)))
+      val classBodyDecs : ListBuffer[ClassMember] = ListBuffer()
+      ctx.classBodyDeclaration().asScala.toList.foreach(c => visitClassBodyDec(c) match {
+        case cm: ClassMember => classBodyDecs.addOne(cm)
+        case cms: List[ClassMember] => classBodyDecs.addAll(cms)
+      })
+      ClassBody(classBodyDecs.toList)
     }
     else ClassBody(List.empty)
   }
 
   override def visitInterfaceBody(ctx: InterfaceBodyContext): InterfaceBody = {
     if !ctx.interfaceBodyDeclaration().isEmpty then {
-      InterfaceBody(ctx.interfaceBodyDeclaration().asScala.toList.map(c => visitInterfaceBodyDeclaration(c)))
+      val interfaceBodyDecs: ListBuffer[InterfaceMember] = ListBuffer()
+      ctx.interfaceBodyDeclaration().asScala.toList.foreach(i => visitInterfaceBodyDec(i) match {
+        case im: InterfaceMember => interfaceBodyDecs.addOne(im)
+        case ims: List[InterfaceMember] => interfaceBodyDecs.addAll(ims)
+      })
+      InterfaceBody(interfaceBodyDecs.toList)
     }
     else InterfaceBody(List.empty)
   }
@@ -118,29 +128,30 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     case _             => throw new IllegalArgumentException(s"Unknown modifier: $modifier")
   }
 
-  override def visitClassBodyDeclaration(ctx: ClassBodyDeclarationContext): ClassMember = {
+  private def visitClassBodyDec(ctx: ClassBodyDeclarationContext): ClassMember | List[ClassMember] = {
     if (ctx.block() != null) {
       visitBlock(ctx.block())
     }
     else if (ctx.memberDeclaration() != null) {
-      visitMemberDeclaration(ctx.memberDeclaration())
+      visitMemberDec(ctx.memberDeclaration())
     }
-    else null
+    else null  // ToDo: None?
   }
 
-  override def visitInterfaceBodyDeclaration(ctx: InterfaceBodyDeclarationContext): InterfaceMember = {
+  private def visitInterfaceBodyDec(ctx: InterfaceBodyDeclarationContext): InterfaceMember | List[InterfaceMember] = {
     if (ctx.interfaceMemberDeclaration() != null) {
-      visitInterfaceMemberDeclaration(ctx.interfaceMemberDeclaration())
+      visitInterfaceMemberDec(ctx.interfaceMemberDeclaration())
     }
-    else null
+    else null // ToDo: None?
   }
 
   // Hilfsfunktion für MemberDeclaration
-  override def visitMemberDeclaration(ctx: MemberDeclarationContext): ClassMember = {
+  private def visitMemberDec(ctx: MemberDeclarationContext): ClassMember | List[ClassMember] = {
     if (ctx.methodDeclaration() != null) {
       visitMethodDeclaration(ctx.methodDeclaration())
     } else if (ctx.fieldDeclaration() != null) {
-      visitFieldDeclaration(ctx.fieldDeclaration())
+      val f = visitFieldDec(ctx.fieldDeclaration())
+      if f.length == 1 then f.head else f
     } else if (ctx.constructorDeclaration() != null) {
       visitConstructorDeclaration(ctx.constructorDeclaration())
     } else if (ctx.classDeclaration() != null) {
@@ -152,11 +163,12 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     }
   }
 
-  override def visitInterfaceMemberDeclaration(ctx: InterfaceMemberDeclarationContext): InterfaceMember = {
+  private def visitInterfaceMemberDec(ctx: InterfaceMemberDeclarationContext): InterfaceMember | List[InterfaceMember] = {
     if (ctx.methodDeclaration() != null) {
       visitMethodDeclaration(ctx.methodDeclaration())
     } else if (ctx.fieldDeclaration() != null) {
-      visitFieldDeclaration(ctx.fieldDeclaration())
+      val f = visitFieldDec(ctx.fieldDeclaration())
+      if f.length == 1 then f.head else f
     } else {
       throw new IllegalArgumentException("Unknown member declaration")
     }
@@ -174,16 +186,25 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   // Methode: visitFieldDeclaration
-  override def visitFieldDeclaration(ctx: FieldDeclarationContext): FieldDeclaration = {
+  private def visitFieldDec(ctx: FieldDeclarationContext): List[FieldDeclaration] = {
     val modifiers = getModifiers(ctx.fieldModifier())
     val fieldType = visitType(ctx.`type`())
     val variables = ctx.variableDeclarator().asScala.map { declarator =>
       val name = declarator.Identifier().getText
-      val initializer = Option(declarator.variableInitializer())
-        .map(visitVariableInitializer)
+      val initializer = if declarator.variableInitializer() != null
+        then visitVariableInitializer(declarator.variableInitializer())
+        else standardInitializer(fieldType)
       VariableDeclarator(name, initializer) 
     }.toList
-    FieldDeclaration(modifiers, fieldType, variables)
+    variables.map(v => FieldDeclaration(modifiers, fieldType, v))
+  }
+
+  private def standardInitializer(t: Type) : Expression = {
+    null // not fully implemented yet
+//    t match {
+//      case s: ObjectType.String => AST.StringLiteral("")
+//      case c: Custom(_) => throw new IllegalArgumentException("Custom Types must be initialized?!")
+//    }
   }
 
   // Methode: visitConstructorDeclaration
@@ -224,40 +245,50 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
 
   // Methode: visitMethodBody
   override def visitMethodBody(ctx: MethodBodyContext): Block = {
-    val statements = ctx.methodBodyStatement().asScala.map(visitMethodBodyStatement).toList
-    Block(statements) // ToDo: Methodbody = Block?
+    val statements: ListBuffer[Statement] = ListBuffer()
+    ctx.methodBodyStatement().asScala.foreach(s => visitMethodBodyStmt(s) match {
+      case sm: Statement => statements.addOne(sm)
+      case sms: List[Statement] => statements.addAll(sms)
+    })
+    Block(statements.toList) // ToDo: Methodbody = Block?
   }
 
   // Methode: visitBlock
   override def visitBlock(ctx: BlockContext): Block = {
-    val statements = ctx.blockStatement().asScala.map(visitBlockStatement).toList
-    Block(statements)
+    val statements: ListBuffer[Statement] = ListBuffer()
+    ctx.blockStatement().asScala.foreach(s => visitBlockStmt(s) match {
+      case sm: Statement => statements.addOne(sm)
+      case sms: List[Statement] => statements.addAll(sms)
+    })
+    Block(statements.toList)
   }
 
-  override def visitBlockStatement(ctx: BlockStatementContext): Statement = {
-    if ctx.localVariableDeclaration() != null then visitLocalVariableDeclaration(ctx.localVariableDeclaration())
-    else if ctx.statement() != null then visitStatement(ctx.statement())
-    else throw new IllegalArgumentException("Unknown block statement")
+  private def visitBlockStmt(ctx: BlockStatementContext): Statement | List[Statement] = {
+    if (ctx.localVariableDeclaration() != null) {
+      val f = visitLocalVariableDec(ctx.localVariableDeclaration())
+      if f.length == 1 then f.head else f
+    }
+    else if (ctx.statement() != null) { visitStatement(ctx.statement())}
+    else {throw new IllegalArgumentException("Unknown block statement")}
   }
 
-  override def visitLocalVariableDeclaration(ctx: LocalVariableDeclarationContext): LocalVariableDeclaration = {
-    LocalVariableDeclaration(visitType(ctx.`type`()), ctx.variableDeclarator().asScala.map(visitVariableDeclarator).toList)
+  private def visitLocalVariableDec(ctx: LocalVariableDeclarationContext): List[LocalVariableDeclaration] = {
+    val t = visitType(ctx.`type`())
+    val variables = ctx.variableDeclarator().asScala.map(visitVariableDeclarator).toList
+    variables.map(v => LocalVariableDeclaration(t, v))
   }
 
   override def visitVariableDeclarator(ctx: VariableDeclaratorContext): VariableDeclarator = {
-    if ctx.variableInitializer() != null then
-      VariableDeclarator(ctx.Identifier().getText, Option(visitVariableInitializer(ctx.variableInitializer())))
-    else
-      VariableDeclarator(ctx.Identifier().getText, None)
+    VariableDeclarator(ctx.Identifier().getText, visitVariableInitializer(ctx.variableInitializer()))
   }
 
 
   // Methode: visitMethodBodyStatement
-  override def visitMethodBodyStatement(ctx: MethodBodyStatementContext): Statement = {
+  private def visitMethodBodyStmt(ctx: MethodBodyStatementContext): Statement | List[Statement] = {
     ctx.getChild(0) match {
       case s: StatementContext => visitStatement(s)
       case r: ReturnContext => ReturnStatement(Option(r.expression()).map(visitExpression))
-      case l: LocalVariableDeclarationContext => visitLocalVariableDeclaration(l)
+      case l: LocalVariableDeclarationContext => visitLocalVariableDec(l)
       case _ => throw new IllegalArgumentException("Unknown method body statement")
     }
   }
@@ -468,27 +499,27 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
 
   private def toType(typeName: String): Type = typeName match {
     // Primitive Typen
-    case "int" => PrimitiveType(PrimitiveTypeName.Int)
-    case "boolean" => PrimitiveType(PrimitiveTypeName.Boolean)
-    case "char" => PrimitiveType(PrimitiveTypeName.Char)
-    case "byte" => PrimitiveType(PrimitiveTypeName.Byte)
-    case "short" => PrimitiveType(PrimitiveTypeName.Short)
-    case "float" => PrimitiveType(PrimitiveTypeName.Float)
-    case "double" => PrimitiveType(PrimitiveTypeName.Double)
+    case "int" => PrimitiveType.Int
+    case "boolean" => PrimitiveType.Boolean
+    case "char" => PrimitiveType.Char
+    case "byte" => PrimitiveType.Byte
+    case "short" => PrimitiveType.Short
+    case "float" => PrimitiveType.Float
+    case "double" => PrimitiveType.Double
 
     // Objekt-Typen
-    case "String" => ObjectType(ObjectTypeName.String)
-    case "Byte" => ObjectType(ObjectTypeName.Byte)
-    case "Short" => ObjectType(ObjectTypeName.Short)
-    case "Integer" => ObjectType(ObjectTypeName.Integer)
-    case "Float" => ObjectType(ObjectTypeName.Float)
-    case "Double" => ObjectType(ObjectTypeName.Double)
-    case "Boolean" => ObjectType(ObjectTypeName.Boolean)
-    case "Character" => ObjectType(ObjectTypeName.Character)
+    case "String" => ObjectType.String
+    case "Byte" => ObjectType.Byte
+    case "Short" => ObjectType.Short
+    case "Integer" => ObjectType.Integer
+    case "Float" => ObjectType.Float
+    case "Double" => ObjectType.Double
+    case "Boolean" => ObjectType.Boolean
+    case "Character" => ObjectType.Character
 
     // Benutzerdefinierter Objekttyp
     case customType if customType.matches("[A-Za-z_][A-Za-z0-9_]*") =>
-      ObjectType(ObjectTypeName.Custom(customType))
+      ObjectType.Custom(customType)
 
     // Unbekannter Typ
     case _ => throw new IllegalArgumentException(s"Unknown type: $typeName")
