@@ -664,36 +664,6 @@ public interface miniJavaListener extends ParseTreeListener {
 	 */
 	void exitForControl(miniJavaParser.ForControlContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#forControlStatement}.
-	 * @param ctx the parse tree
-	 */
-	void enterForControlStatement(miniJavaParser.ForControlStatementContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#forControlStatement}.
-	 * @param ctx the parse tree
-	 */
-	void exitForControlStatement(miniJavaParser.ForControlStatementContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#forInit}.
-	 * @param ctx the parse tree
-	 */
-	void enterForInit(miniJavaParser.ForInitContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#forInit}.
-	 * @param ctx the parse tree
-	 */
-	void exitForInit(miniJavaParser.ForInitContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#forControlStatementList}.
-	 * @param ctx the parse tree
-	 */
-	void enterForControlStatementList(miniJavaParser.ForControlStatementListContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#forControlStatementList}.
-	 * @param ctx the parse tree
-	 */
-	void exitForControlStatementList(miniJavaParser.ForControlStatementListContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link miniJavaParser#switch}.
 	 * @param ctx the parse tree
 	 */

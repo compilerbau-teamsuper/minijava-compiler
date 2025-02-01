@@ -402,24 +402,6 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitForControl(miniJavaParser.ForControlContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#forControlStatement}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitForControlStatement(miniJavaParser.ForControlStatementContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#forInit}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitForInit(miniJavaParser.ForInitContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#forControlStatementList}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitForControlStatementList(miniJavaParser.ForControlStatementListContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#switch}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

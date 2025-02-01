@@ -312,7 +312,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
       case w: WhileStatementContext => visitWhileStatement(w)
       case b: BreakStatement => BreakStatement()
       case c: ContinueStatement => ContinueStatement()
-      // case f: ForStatementContext => visitForStatement(f)
+      case f: ForStatementContext => visitForStatement(f)
       case _ => throw new IllegalArgumentException("Unknown statement")
     }
   }
@@ -339,6 +339,14 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
 
   override def visitWhileStatement(ctx: WhileStatementContext): WhileStatement  = {
     WhileStatement(visitExpression(ctx.expression()), visitStatement(ctx.statement()))
+  }
+
+  override def visitForStatement(ctx: ForStatementContext): ForStatement = {
+    val forControl = ctx.forControl()
+    val init = if forControl.localVariableDeclaration() != null then Option(visitLocalVariableDec(forControl.localVariableDeclaration()).head) else None
+    val condition = if forControl.booleanFunction() != null then Option(visitBooleanFunction(forControl.booleanFunction())) else None
+    val update = if forControl.calcFunction() != null then Option(visitCalcFunction(forControl.calcFunction())) else None
+    ForStatement(init, condition, update, visitStatement(ctx.statement()))
   }
 
   // Weitere Hilfsmethoden für Expressions, Typen und andere Knoten

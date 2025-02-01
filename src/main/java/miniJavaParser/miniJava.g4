@@ -206,19 +206,19 @@ ifThenElse : 'if' '(' expression ')' statement 'else' statement ;
 
 whileStatement : 'while' '(' expression ')' statement;
 
-forStatement : 'for' '(' forControl ')' statement; // ToDo: foreach wäre noch cool, komplizierter Teil von for nicht wichtig
+forStatement : 'for' '(' forControl ')' statement; // ToDo: Foreach wäre noch nice.
 // Generell an Abstrakter Syntax aus Vorlesung orientiern
-forControl : forInit? ';' expression? ';' forControlStatementList?;
+forControl : localVariableDeclaration? ';' booleanFunction? ';' calcFunction?;
 
-forControlStatement
-    : assignment
-    | methodCall;
+//forControlStatement
+//    : assignment
+//    | methodCall;
 
-forInit
-    : localVariableDeclaration
-    | forControlStatementList;
+//forInit
+//    : localVariableDeclaration
+//    | forControlStatementList;
 
-forControlStatementList: forControlStatement (',' forControlStatement)*;
+//forControlStatementList: forControlStatement (',' forControlStatement)*;
 
 switch: 'switch' '(' expression ')' '{' switchBlockStatementGroup* '}' ;
 

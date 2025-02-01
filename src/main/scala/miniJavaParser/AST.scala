@@ -68,16 +68,12 @@ sealed trait Statement extends ASTNode
 case class ExpressionStatement(expression: Expression) extends Statement
 case class IfStatement(condition: Expression, thenStmt: Statement, elseStmt: Option[Statement]) extends Statement
 case class WhileStatement(condition: Expression, body: Statement) extends Statement
-case class ForStatement(init: Option[ForInit], condition: Option[Expression], update: List[Expression], body: Statement) extends Statement
+case class ForStatement(init: Option[LocalVariableDeclaration], condition: Option[Expression], update: Option[Expression], body: Statement) extends Statement
 case class ReturnStatement(expression: Option[Expression]) extends Statement
 case class BreakStatement() extends Statement
 case class ContinueStatement() extends Statement
 case class Assignment(left: Expression, right: Expression) extends Statement // ToDo: Links nur Qualified Name?!
 case class LocalVariableDeclaration(varType: Type, variable: VariableDeclarator) extends Statement
-
-sealed trait ForInit extends ASTNode
-case class VariableDeclarationInit(variable: FieldDeclaration) extends ForInit // ToDo das richtig?
-case class ExpressionListInit(expressions: List[Expression]) extends ForInit
 
 // Expressions
 sealed trait Expression extends ASTNode
