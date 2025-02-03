@@ -25,8 +25,8 @@ case class ObjectType(name: QualifiedName) extends Type
 case object NullType extends Type
 
 object LangTypes {
-    val Object = ObjectType(QualifiedName(List("java", "lang", "Object")))
-    val String = ObjectType(QualifiedName(List("java", "lang", "String")))
+    val Object = ObjectType(QualifiedName(List("java", "lang"), "Object"))
+    val String = ObjectType(QualifiedName(List("java", "lang"), "String"))
 }
 
 sealed trait TypedStatement[+T <: Type](val ty: T)

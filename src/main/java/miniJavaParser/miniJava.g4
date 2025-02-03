@@ -65,7 +65,7 @@ methodBodyStatement
     | localVariableDeclaration
     | return;
 
-return : 'return' expression?;
+return : 'return' expression? ';';
 
 formalParameters : type Identifier (',' type Identifier)* ;
 
@@ -84,32 +84,31 @@ arrayInitializer : '{' (variableInitializer (',' variableInitializer)*)? ','? '}
 expression
     : calcFunction
     | booleanFunction
-    | value
-    | newObject;
+    | newObject
+    | value;
 
 value
     : '(' expression ')'
+    | methodCall
+    | arrayAccess
     | 'this'
     | 'super'
     | literal
     | qualifiedName
-    | Identifier
-    | methodCall
-    | arrayRead;
+    | Identifier;
 
 primary
     : '(' expression ')'
+    | methodCall
     | 'this'
     | 'super' // ToDo: das voll überdenken/implementieren
     | qualifiedName
-    | Identifier
-    | methodCall;
+    | Identifier;
 
 expressionList : expression (',' expression)*;
 
-methodCall : qualifiedName '(' expressionList? ')' ';';
+methodCall : qualifiedName '(' expressionList? ')'; // ToDo: Methode kann auch auf andere Sachen aufgerufen werden, relevant tho?
 
-arrayRead : arrayAccess ';';
 arrayAccess : primary ('[' expression ']')? ;
 
 newObject: 'new' (qualifiedName | methodCall) (classBody)?;
@@ -181,7 +180,7 @@ OR : '||';
 statement
     : block
     | assignment
-    | methodCall
+    | methodCall ';'
     | ifThen
     | ifThenElse
     | whileStatement
