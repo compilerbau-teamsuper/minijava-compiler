@@ -64,7 +64,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     val modifiers: ListBuffer[Modifier] = if ctx.classModifier() != null then ListBuffer(toModifier(ctx.classModifier().getText)) else ListBuffer()
     if ctx.Public() != null then modifiers.addOne(Modifier.Public)
     val name = ctx.Identifier().getText
-    val superclass =  if ctx.superclass() != null then visitQualifiedName(ctx.superclass().qualifiedName()) else QualifiedName(List("Object"))
+    val superclass =  if ctx.superclass() != null then visitQualifiedName(ctx.superclass().qualifiedName()) else QualifiedName(List(), "Object")
     val interfaces = if ctx.superinterfaces() != null then ctx.superinterfaces().qualifiedName().asScala.map(visitQualifiedName).toList else List.empty
     val body = visitClassBody(ctx.classBody())
 
@@ -105,7 +105,10 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   override def visitQualifiedName(ctx: QualifiedNameContext): QualifiedName = {
-    QualifiedName(ctx.Identifier().asScala.map(_.getText).toList)
+    val parts = ctx.Identifier().asScala.map(_.getText)
+    val last = parts.last
+    parts.remove(parts.length - 1)
+    QualifiedName(parts.toList, last)
   }
 
   private def getModifiers(ctx: ParserRuleContext): List[Modifier] = {
@@ -201,14 +204,14 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
 
   private def standardInitializer(t: Type) : Expression = {
     t match {
-      case i: (PrimitiveType.Int.type | ObjectType.Integer.type) => AST.IntLiteral(0)
-      case b: (PrimitiveType.Boolean.type | ObjectType.Boolean.type) => AST.BooleanLiteral(false)
-      case c: (PrimitiveType.Char.type | ObjectType.Character.type) => AST.CharacterLiteral('0')
-      case s: (PrimitiveType.Short.type | ObjectType.Short.type) => AST.ShortLiteral(0)
-      case l: (PrimitiveType.Long.type | ObjectType.Long.type) => AST.LongLiteral(0)
-      case f: (PrimitiveType.Float.type | ObjectType.Float.type) => AST.FloatLiteral(0)
-      case d: (PrimitiveType.Double.type | ObjectType.Double.type) => AST.DoubleLiteral(0)
-      case s: ObjectType.String.type => AST.StringLiteral("")
+      case PrimitiveType.Int | ObjectType.Integer => AST.IntLiteral(0)
+      case PrimitiveType.Boolean | ObjectType.Boolean => AST.BooleanLiteral(false)
+      case PrimitiveType.Char | ObjectType.Character => AST.CharacterLiteral('0')
+      case PrimitiveType.Short | ObjectType.Short => AST.ShortLiteral(0)
+      case PrimitiveType.Long | ObjectType.Long => AST.LongLiteral(0)
+      case PrimitiveType.Float | ObjectType.Float => AST.FloatLiteral(0)
+      case PrimitiveType.Double | ObjectType.Double => AST.DoubleLiteral(0)
+      case ObjectType.String => AST.StringLiteral("")
       case _ => throw new IllegalArgumentException("Custom Types must be initialized?!")
     }
   }
@@ -256,7 +259,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
       case sm: Statement => statements.addOne(sm)
       case sms: List[Statement] => statements.addAll(sms)
     })
-    Block(statements.toList) // ToDo: Methodbody = Block?
+    Block(statements.toList)
   }
 
   // Methode: visitBlock
@@ -310,6 +313,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
       case i: (IfThenContext | IfThenElseContext) => visitIfThenElse(i)
       // case s: SwitchContext => visitSwitch(s) // ToDo: Überhaupt notwendig?
       case w: WhileStatementContext => visitWhileStatement(w)
+      case r: ReturnContext => ReturnStatement(Option(visitExpression(r.expression())))
       case b: BreakStatement => BreakStatement()
       case c: ContinueStatement => ContinueStatement()
       case f: ForStatementContext => visitForStatement(f)
@@ -318,16 +322,14 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   override def visitAssignment(ctx: AssignmentContext): Assignment = {
-    Assignment(ArrayRead(), visitExpression(ctx.expression())) // ToDo ArrayRead() nur Platzhalter
+    ctx.getChild(0) match {
+      case v: ValueContext => Assignment(visitValue(v), visitExpression(ctx.expression()))
+      case a: ArrayAccessContext => Assignment(visitArrayAccess(a), visitExpression(ctx.expression()))
+    }
   }
 
-  override def visitMethodCall(ctx: MethodCallContext): MethodCall = { // ToDo
-    // MethodCall(target: Option[Expression], methodName: String, arguments: List[Expression])
-    // methodCall : qualifiedName '(' expressionList? ')' ';';
-    val names = visitQualifiedName(ctx.qualifiedName()).parts
-    // if names.length > 1 then MethodCall(Some(QualifiedName(names.)), names.last, visitExpressionList(ctx.expressionList()))
-    // MethodCall
-    null
+  override def visitMethodCall(ctx: MethodCallContext): MethodCall = {
+    MethodCall(visitQualifiedName(ctx.qualifiedName()), ctx.expressionList().expression().asScala.map(visitExpression).toList)
   }
 
   private def visitIfThenElse(ctx: IfThenContext | IfThenElseContext): IfStatement = {
@@ -352,6 +354,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   // Weitere Hilfsmethoden für Expressions, Typen und andere Knoten
   override def visitExpression(ctx: ExpressionContext): Expression = {
     // Implementiere den Besuch von Expressions (z. B. calcFunction, primary, booleanFunction)
+    if ctx == null then return null
     if ctx.value() != null then visitValue(ctx.value())
     else if ctx.newObject() != null then visitNewObject(ctx.newObject())
     else if ctx.booleanFunction() != null then visitBooleanFunction(ctx.booleanFunction())
@@ -368,7 +371,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
       case c: TerminalNodeImpl if c.toString == "(" => visitExpression(ctx.getChild(1) match {case e: ExpressionContext => e})
       case l: LiteralContext => visitLiteral(l)
       case q: QualifiedNameContext => visitQualifiedName(q)
-      case i: IdentifierContext => QualifiedName(List(i.Identifier().getText))
+      case i: IdentifierContext => QualifiedName(List(), i.Identifier().getText)
       //case m: MethodCallContext => visitMethodCall(m)
       // ToDo: Rest der Fälle
     }
@@ -389,8 +392,9 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
     else throw new IllegalArgumentException("Unknown literal")
   }
 
-  override def visitArrayRead(ctx: ArrayReadContext): ArrayRead = {
-    ArrayRead() // ToDo
+  override def visitArrayAccess(ctx: ArrayAccessContext): ArrayAccess = {
+    val i = Option(visitExpression(ctx.expression()))
+    ArrayAccess(visitPrimary(ctx.primary()), i)
   }
 
   override def visitNewObject(ctx: NewObjectContext): Expression = {

@@ -90,8 +90,8 @@ def typecheck_expr(
             case AST.BinaryOperator.LessOrEqual => throw RuntimeException("TODO")
     }
     case AST.UnaryExpression(operator, operand) => throw RuntimeException("TODO")
-    case AST.MethodCall(target, methodName, arguments) => throw RuntimeException("TODO")
-    case AST.FieldAccess(target, fieldName) => throw RuntimeException("TODO")
+    case AST.MethodCall(target, arguments) => throw RuntimeException("TODO")
+    case AST.FieldAccess(target) => throw RuntimeException("TODO")
     case AST.ArrayInitializer(initializers) => throw RuntimeException("TODO")
 
 def typecheck(ast: AST.CompilationUnit): IR.CompilationUnit = {

@@ -72,18 +72,18 @@ case class ForStatement(init: Option[LocalVariableDeclaration], condition: Optio
 case class ReturnStatement(expression: Option[Expression]) extends Statement
 case class BreakStatement() extends Statement
 case class ContinueStatement() extends Statement
-case class Assignment(left: Expression, right: Expression) extends Statement // ToDo: Links nur Qualified Name?!
+case class Assignment(left: Expression, right: Expression) extends Statement
 case class LocalVariableDeclaration(varType: Type, variable: VariableDeclarator) extends Statement
 
 // Expressions
 sealed trait Expression extends ASTNode
 case class BinaryExpression(left: Expression, operator: BinaryOperator, right: Expression) extends Expression
 case class UnaryExpression(operator: UnaryOperator, operand: Expression) extends Expression // ToDo: Syntactic Sugar entfernen?! Not ohne XOR bisschen tricky glaub
-case class MethodCall(target: Option[Expression], methodName: String, arguments: List[Expression]) extends Expression, Statement
-case class FieldAccess(target: Expression, fieldName: String) extends Expression // ToDo: Hier (und bei MethodCall usw) bei namen anstatt String n QualifiedName?
+case class MethodCall(target: Expression, arguments: List[Expression]) extends Expression, Statement
+case class FieldAccess(target: Expression) extends Expression // ToDo: Hier (und bei MethodCall usw) bei namen anstatt String n QualifiedName?
 case class VarAccess(fieldName: String) extends Expression // ToDo: Zusammenfassen in FieldAccess?
 case class ArrayInitializer(initializers: List[Expression]) extends Expression
-case class ArrayRead() extends Expression // ToDo: Argumente/Umsetzung
+case class ArrayAccess(target: Expression, index: Option[Expression]) extends Expression // ToDo: Argumente/Umsetzung
 
 // Literals
 sealed trait Literal extends Expression
@@ -164,5 +164,5 @@ enum Modifier {
 }
 
 // Hilfsklassen
-case class QualifiedName(parts: List[String]) extends ASTNode, Expression
+case class QualifiedName(target: List[String], name: String) extends ASTNode, Expression
 

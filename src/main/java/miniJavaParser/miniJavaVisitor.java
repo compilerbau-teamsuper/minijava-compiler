@@ -191,12 +191,6 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitMethodCall(miniJavaParser.MethodCallContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#arrayRead}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitArrayRead(miniJavaParser.ArrayReadContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#arrayAccess}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

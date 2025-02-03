@@ -308,16 +308,6 @@ public interface miniJavaListener extends ParseTreeListener {
 	 */
 	void exitMethodCall(miniJavaParser.MethodCallContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#arrayRead}.
-	 * @param ctx the parse tree
-	 */
-	void enterArrayRead(miniJavaParser.ArrayReadContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#arrayRead}.
-	 * @param ctx the parse tree
-	 */
-	void exitArrayRead(miniJavaParser.ArrayReadContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link miniJavaParser#arrayAccess}.
 	 * @param ctx the parse tree
 	 */
