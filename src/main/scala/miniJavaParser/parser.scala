@@ -348,10 +348,22 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   }
 
   override def visitAssignment(ctx: AssignmentContext): Assignment = {
-    ctx.getChild(0) match {
-      case v: ValueContext => Assignment(visitValue(v), visitExpression(ctx.expression()))
-      case a: ArrayAccessContext => Assignment(visitArrayAccess(a), visitExpression(ctx.expression()))
+    val left = ctx.getChild(0) match {
+      case v: ValueContext => visitValue(v)
+      case a: ArrayAccessContext => visitArrayAccess(a)
     }
+    val pre_right = visitExpression(ctx.expression())
+    val right = ctx.assignmentType().getText match {
+      case "==" => pre_right
+      case "+=" => BinaryExpression(left, BinaryOperator.Add, pre_right)
+      case "-=" => BinaryExpression(left, BinaryOperator.Subtract, pre_right)
+      case "*=" => BinaryExpression(left, BinaryOperator.Multiply, pre_right)
+      case "/=" => BinaryExpression(left, BinaryOperator.Divide, pre_right)
+      case "%=" => BinaryExpression(left, BinaryOperator.Modulo, pre_right)
+      case "&=" => BinaryExpression(left, BinaryOperator.And, pre_right)
+      case "|=" =>BinaryExpression(left, BinaryOperator.Or, pre_right)
+    }
+    Assignment(left, right)
   }
 
   override def visitMethodCall(ctx: MethodCallContext): MethodCall = {
