@@ -117,10 +117,7 @@ object BinaryOperator {
 
 sealed trait UnaryOperator
 object UnaryOperator {
-  case object Negate extends UnaryOperator // -x
   case object Not extends UnaryOperator    // !x
-  case object Increment extends UnaryOperator
-  case object Decrement extends UnaryOperator
 }
 
 // Typen
