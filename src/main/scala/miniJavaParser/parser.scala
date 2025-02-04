@@ -80,7 +80,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
 
   override def visitClassDeclaration(ctx: ClassDeclarationContext): ClassDeclaration = {
     val modifiers: ListBuffer[Modifier] = if ctx.classModifier() != null then ListBuffer(toModifier(ctx.classModifier().getText)) else ListBuffer()
-    if ctx.Public() != null then modifiers.addOne(Modifier.Public) // ToDo: hier sowie bei MethodDec und so Standard modifier hinzufügen falls keiner gesetzt (sofern möglich)?
+    if ctx.Public() != null then modifiers.addOne(Modifier.Public)
     val name = ctx.Identifier().getText
     currentThis = name
     val superclass =  if ctx.superclass() != null then visitQualifiedName(ctx.superclass().qualifiedName()) else QualifiedName(List(), "Object")
