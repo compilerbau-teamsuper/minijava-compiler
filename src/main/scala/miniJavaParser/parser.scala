@@ -9,12 +9,15 @@ import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters.*
 
 object JavaASTBuilder {
-  def main(args: Array[String]): Unit = {
-    // Beispiel-Dateipfad (ersetzen mit dem Pfad zu deiner Java-Datei)
-    val filePath = "src/main/java/test.java"
 
-    // Parse die Datei
-    val input = CharStreams.fromFileName(filePath)
+  def main(args: Array[String]): Unit = {
+    val filePath = "src/main/java/test.java"
+    val ast = parseFromFile(filePath)
+    println(ast)
+  }
+
+  def parseFromText(text: String): CompilationUnit = {
+    val input = CharStreams.fromString(text)
     val lexer = new miniJavaLexer(input)
     val tokens = new CommonTokenStream(lexer)
     val parser = new miniJavaParser(tokens)
@@ -24,15 +27,30 @@ object JavaASTBuilder {
 
     // Besuch den Parse Tree und baue den AST
     val astBuilder = new ASTBuilderVisitor()
-    val ast = astBuilder.visitCompilationUnit(tree)
+    astBuilder.visitCompilationUnit(tree)
+  }
 
-    // Gib den AST aus (als Beispiel in JSON-ähnlicher Struktur)
-    println(ast)
+  def parseFromFile(path: String): CompilationUnit = {
+    val input = CharStreams.fromFileName(path)
+    val lexer = new miniJavaLexer(input)
+    val tokens = new CommonTokenStream(lexer)
+    val parser = new miniJavaParser(tokens)
+
+    // Baue die AST-Root-Knoten
+    val tree = parser.compilationUnit()
+
+    // Besuch den Parse Tree und baue den AST
+    val astBuilder = new ASTBuilderVisitor()
+    astBuilder.visitCompilationUnit(tree)
   }
 }
 
 // Visitor-Klasse zur Generierung des AST
-class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
+class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse private machen? Nicht so wichtig tho
+
+  private var currentThis: String = ""
+  private var currentSuper: QualifiedName = QualifiedName(List(), "")
+
   override def visitCompilationUnit(ctx: CompilationUnitContext): CompilationUnit = {
     val packageDeclaration = Option(ctx.packageDeclaration())
       .map(visitPackageDeclaration)
@@ -62,9 +80,11 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
 
   override def visitClassDeclaration(ctx: ClassDeclarationContext): ClassDeclaration = {
     val modifiers: ListBuffer[Modifier] = if ctx.classModifier() != null then ListBuffer(toModifier(ctx.classModifier().getText)) else ListBuffer()
-    if ctx.Public() != null then modifiers.addOne(Modifier.Public)
+    if ctx.Public() != null then modifiers.addOne(Modifier.Public) // ToDo: hier sowie bei MethodDec und so Standard modifier hinzufügen falls keiner gesetzt (sofern möglich)?
     val name = ctx.Identifier().getText
+    currentThis = name
     val superclass =  if ctx.superclass() != null then visitQualifiedName(ctx.superclass().qualifiedName()) else QualifiedName(List(), "Object")
+    currentSuper = superclass
     val interfaces = if ctx.superinterfaces() != null then ctx.superinterfaces().qualifiedName().asScala.map(visitQualifiedName).toList else List.empty
     val body = visitClassBody(ctx.classBody())
 
@@ -106,6 +126,14 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
 
   override def visitQualifiedName(ctx: QualifiedNameContext): QualifiedName = {
     val parts = ctx.Identifier().asScala.map(_.getText)
+    if (parts.head.equals("this")) {
+      parts.remove(0)
+      parts.insert(0, currentThis) // ToDo: Passt das so für Bitcodegen?
+    }
+    else if (parts.head.equals("super")) {
+      parts.remove(0)
+      parts.insertAll(0, currentSuper.target :+ currentSuper.name)
+    }
     val last = parts.last
     parts.remove(parts.length - 1)
     QualifiedName(parts.toList, last)
@@ -222,12 +250,10 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
       .map(am => toModifier(am.getText))
       .toList
     val name = ctx.Identifier().getText
-//    val parameters = Option(ctx.formalParameters())
-//      .map(_.formalParameter().asScala.map(visitFormalParameter).toList)
-//      .getOrElse(List.empty)
+    val parameters = getFormalParameters(ctx.formalParameters())
     val body = visitBlock(ctx.block())
 
-    ConstructorDeclaration(modifiers, name, List(), body) // ToDo
+    ConstructorDeclaration(modifiers, name, parameters, body)
   }
 
   private def getFormalParameters(ctx: FormalParametersContext): List[Parameter] = {
@@ -371,8 +397,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
       case c: TerminalNodeImpl if c.toString == "(" => visitExpression(ctx.getChild(1) match {case e: ExpressionContext => e})
       case l: LiteralContext => visitLiteral(l)
       case q: QualifiedNameContext => visitQualifiedName(q)
-      case i: IdentifierContext => QualifiedName(List(), i.Identifier().getText)
-      //case m: MethodCallContext => visitMethodCall(m)
+      case m: MethodCallContext => visitMethodCall(m)
+      case a: ArrayAccessContext => visitArrayAccess(a)
       // ToDo: Rest der Fälle
     }
   }
@@ -402,13 +428,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
   }
 
   override def visitBooleanFunction(ctx: BooleanFunctionContext): Expression = {
-    // BooleanFunction:
-    // - Either involves a comparison (`booleanNumberOp`) between two values/calcFunctions
-    // - Or involves a logical operation (`AND`, `OR`) between other boolean functions
-    // - Could also include a negation (inverse)
-
     if (ctx.booleanNumberOp() != null || ctx.booleanOp() != null) {
-      // Case 1: Comparison operation
       val left = ctx.getChild(0) match {
         case c: CalcFunctionContext => visitCalcFunction(c)
         case v: ValueContext => visitValue(v)
@@ -424,7 +444,6 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] {
       val operator = getBoolOperator(ctx.getChild(1).getText)
       BinaryExpression(left, operator, right)
     } else if (ctx.inverse() != null) {
-      // Case 3: Negation (inverse)
       val expression = visitExpression(ctx.inverse().expression()) // Negated expression
       UnaryExpression(UnaryOperator.Not, expression)
     } else {

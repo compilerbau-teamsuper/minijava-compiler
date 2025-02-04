@@ -91,25 +91,19 @@ value
     : '(' expression ')'
     | methodCall
     | arrayAccess
-    | 'this'
-    | 'super'
     | literal
-    | qualifiedName
-    | Identifier;
+    | qualifiedName;
 
 primary
     : '(' expression ')'
     | methodCall
-    | 'this'
-    | 'super' // ToDo: das voll überdenken/implementieren
-    | qualifiedName
-    | Identifier;
+    | qualifiedName;
 
 expressionList : expression (',' expression)*;
 
 methodCall : qualifiedName '(' expressionList? ')'; // ToDo: Methode kann auch auf andere Sachen aufgerufen werden, relevant tho?
 
-arrayAccess : primary ('[' expression ']')? ;
+arrayAccess : primary '[' expression ']' ;
 
 newObject: 'new' (qualifiedName | methodCall) (classBody)?;
 
