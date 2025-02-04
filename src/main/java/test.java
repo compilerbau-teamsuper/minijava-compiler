@@ -1,10 +1,15 @@
 public class test{
-
-    private void abfahrt(String alk, int promille){
-
+    static int x;
+    test(int x){
+        this(2, 2);
     }
-
-    private void main(){
-        abfahrt("Rum", 40);
+    test(int x, int y){
+        
     }
 }
+class testext extends test {
+    testext(){
+        super(2);
+    }
+}
+
