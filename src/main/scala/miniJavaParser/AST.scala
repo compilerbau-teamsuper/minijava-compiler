@@ -79,7 +79,7 @@ case class LocalVariableDeclaration(varType: Type, variable: VariableDeclarator)
 sealed trait Expression extends ASTNode
 case class BinaryExpression(left: Expression, operator: BinaryOperator, right: Expression) extends Expression
 case class MethodCall(target: Expression, arguments: List[Expression]) extends Expression, Statement
-case class FieldAccess(target: Expression) extends Expression // ToDo: Hier (und bei MethodCall usw) bei namen anstatt String n QualifiedName?
+case class FieldAccess(target: Expression) extends Expression
 case class VarAccess(fieldName: String) extends Expression // ToDo: Zusammenfassen in FieldAccess?
 case class ArrayInitializer(initializers: List[Expression]) extends Expression
 case class ArrayAccess(target: Expression, index: Option[Expression]) extends Expression // ToDo: Argumente/Umsetzung
@@ -108,11 +108,7 @@ object BinaryOperator {
   case object Or extends BinaryOperator
   case object Xor extends BinaryOperator
   case object Equals extends BinaryOperator
-  case object NotEquals extends BinaryOperator
   case object Greater extends BinaryOperator
-  case object GreaterOrEqual extends BinaryOperator
-  case object Less extends BinaryOperator
-  case object LessOrEqual extends BinaryOperator
 }
 
 // Typen

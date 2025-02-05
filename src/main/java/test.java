@@ -1,5 +1,5 @@
 public class test{
-    boolean x = true || false ^ true && false && !true;
+    boolean x = 4 >= 3;
 }
 
 

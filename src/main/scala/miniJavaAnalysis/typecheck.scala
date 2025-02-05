@@ -81,13 +81,8 @@ def typecheck_expr(
             AST.BinaryOperator.Divide |
             AST.BinaryOperator.Modulo => binary_numeric(l, operator, r)
             case AST.BinaryOperator.And | AST.BinaryOperator.Or => throw RuntimeException("TODO")
-            case AST.BinaryOperator.Equals |
-            AST.BinaryOperator.NotEquals => throw RuntimeException("TODO")
-
+            case AST.BinaryOperator.Equals => throw RuntimeException("TODO")
             case AST.BinaryOperator.Greater => throw RuntimeException("TODO")
-            case AST.BinaryOperator.GreaterOrEqual => throw RuntimeException("TODO")
-            case AST.BinaryOperator.Less => throw RuntimeException("TODO")
-            case AST.BinaryOperator.LessOrEqual => throw RuntimeException("TODO")
     }
     case AST.MethodCall(target, arguments) => throw RuntimeException("TODO")
     case AST.FieldAccess(target) => throw RuntimeException("TODO")

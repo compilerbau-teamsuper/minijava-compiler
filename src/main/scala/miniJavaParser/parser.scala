@@ -492,9 +492,11 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   private def buildDesugaredBoolFun(l: Expression, op: String, r: Expression) : BinaryExpression = {
     op match {
       case ">" => BinaryExpression(l, BinaryOperator.Greater, r)
-      case "<" => BinaryExpression(l, BinaryOperator.Less, r)
+      case "<" => BinaryExpression(r, BinaryOperator.Greater, l)
       case ">=" => BinaryExpression(BinaryExpression(l, BinaryOperator.Greater, r), BinaryOperator.Or, BinaryExpression(l, BinaryOperator.Equals, r))
-      case "<=" => BinaryExpression(BinaryExpression(l, BinaryOperator.Less, r), BinaryOperator.Or, BinaryExpression(l, BinaryOperator.Equals, r))
+      case "<=" => BinaryExpression(BinaryExpression(r, BinaryOperator.Greater, l), BinaryOperator.Or, BinaryExpression(l, BinaryOperator.Equals, r))
+      case "==" => BinaryExpression(l, BinaryOperator.Equals, r)
+      case "!=" => BinaryExpression(BinaryExpression(l, BinaryOperator.Equals, r), BinaryOperator.Xor, AST.BooleanLiteral(true))
       case "&&" => BinaryExpression(l, BinaryOperator.And, r)
       case "||" => BinaryExpression(l, BinaryOperator.Or, r)
       case "^" => BinaryExpression(l, BinaryOperator.Xor, r)
