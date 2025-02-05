@@ -78,7 +78,6 @@ case class LocalVariableDeclaration(varType: Type, variable: VariableDeclarator)
 // Expressions
 sealed trait Expression extends ASTNode
 case class BinaryExpression(left: Expression, operator: BinaryOperator, right: Expression) extends Expression
-case class UnaryExpression(operator: UnaryOperator, operand: Expression) extends Expression // ToDo: Syntactic Sugar entfernen?! Not ohne XOR bisschen tricky glaub
 case class MethodCall(target: Expression, arguments: List[Expression]) extends Expression, Statement
 case class FieldAccess(target: Expression) extends Expression // ToDo: Hier (und bei MethodCall usw) bei namen anstatt String n QualifiedName?
 case class VarAccess(fieldName: String) extends Expression // ToDo: Zusammenfassen in FieldAccess?
@@ -107,17 +106,13 @@ object BinaryOperator {
   case object Modulo extends BinaryOperator
   case object And extends BinaryOperator
   case object Or extends BinaryOperator
+  case object Xor extends BinaryOperator
   case object Equals extends BinaryOperator
   case object NotEquals extends BinaryOperator
   case object Greater extends BinaryOperator
   case object GreaterOrEqual extends BinaryOperator
   case object Less extends BinaryOperator
   case object LessOrEqual extends BinaryOperator
-}
-
-sealed trait UnaryOperator
-object UnaryOperator {
-  case object Not extends UnaryOperator    // !x
 }
 
 // Typen

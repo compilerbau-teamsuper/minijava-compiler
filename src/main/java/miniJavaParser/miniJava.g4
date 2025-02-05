@@ -135,24 +135,36 @@ negate : '-' expression;
 
 booleanFunction // ToDo: Xor (^)
     : (value | calcFunction) booleanNumberOp (value | calcFunction)
-    | booleanFunHigh booleanOp (booleanFunction | value)
-    | booleanFunMiddle AND (booleanFunction | value)
-    | booleanFunLow OR (booleanFunction | value)
+    | booleanFunHigh booleanOp (booleanFunHigh | booleanFunMiddle)
+    | booleanFunMiddle XOR (booleanFunMiddle | booleanFunLow)
+    | booleanFunLow AND (booleanFunLow | booleanFunUnderground)
+    | booleanFunUnderground OR (booleanFunction | value)
     | inverse;
 
 booleanFunHigh
     : (value | calcFunction) booleanNumberOp (value | calcFunction)
+    | inverse
     | value;
 
 booleanFunMiddle
     : (value | calcFunction) booleanNumberOp (value | calcFunction)
-    | booleanFunHigh booleanOp booleanFunction
+    | booleanFunHigh booleanOp (booleanFunHigh | booleanFunMiddle)
+    | inverse
     | value;
 
 booleanFunLow
     : (value | calcFunction) booleanNumberOp (value | calcFunction)
-    | booleanFunHigh booleanOp booleanFunction
-    | booleanFunMiddle AND booleanFunction
+    | booleanFunHigh booleanOp (booleanFunHigh | booleanFunMiddle)
+    | booleanFunMiddle XOR (booleanFunMiddle | booleanFunLow)
+    | inverse
+    | value;
+
+booleanFunUnderground
+    : (value | calcFunction) booleanNumberOp (value | calcFunction)
+    | booleanFunHigh booleanOp booleanFunHigh+
+    | booleanFunMiddle XOR (booleanFunMiddle | booleanFunLow)
+    | booleanFunLow AND (booleanFunLow | booleanFunUnderground)
+    | inverse
     | value;
 
 inverse: '!' expression;
@@ -167,6 +179,7 @@ booleanOp
     : '==' #EQUAL
     | '!=' #NOTEQUAL;
 
+XOR : '^';
 AND : '&&';
 OR : '||';
 
