@@ -453,8 +453,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
         case b: BooleanFunctionContext => visitBooleanFunction(b)
         case x: (BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext | BooleanFunUndergroundContext) => getBoolFun(x)
       }
-      val operator = getBoolOperator(ctx.getChild(1).getText)
-      BinaryExpression(left, operator, right)
+      buildDesugaredBoolFun(left, ctx.getChild(1).getText, right)
     } else if (ctx.inverse() != null) {
       val expression = visitExpression(ctx.inverse().expression())
       BinaryExpression(expression, BinaryOperator.Xor, AST.BooleanLiteral(true))
@@ -464,25 +463,13 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
 
   }
 
-  private def getBoolOperator(op: String): BinaryOperator = {
-    op match {
-      case ">" => BinaryOperator.Greater
-      case "<" => BinaryOperator.Less
-      case ">=" => BinaryOperator.GreaterOrEqual
-      case "<=" => BinaryOperator.LessOrEqual
-      case "&&" => BinaryOperator.And
-      case "||" => BinaryOperator.Or
-      case "^" => BinaryOperator.Xor
-    }
-  }
-
   private def getBoolFun(ctx: BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext | BooleanFunUndergroundContext): Expression = {
     if (ctx.getChild(1) != null) {
       ctx.getChild(0) match {
-        case c: CalcFunctionContext => BinaryExpression(visitCalcFunction(c), getBoolOperator(ctx.getChild(1).getText), getRightBoolFun(ctx))
-        case v: ValueContext => BinaryExpression(visitValue(v), getBoolOperator(ctx.getChild(1).getText), getRightBoolFun(ctx))
+        case c: CalcFunctionContext =>  buildDesugaredBoolFun(visitCalcFunction(c), ctx.getChild(1).getText, getRightBoolFun(ctx))
+        case v: ValueContext =>  buildDesugaredBoolFun(visitValue(v), ctx.getChild(1).getText, getRightBoolFun(ctx))
         case x: (BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext) =>
-          BinaryExpression(getBoolFun(x), getBoolOperator(ctx.getChild(1).getText), getRightBoolFun(ctx))
+          buildDesugaredBoolFun(getBoolFun(x), ctx.getChild(1).getText, getRightBoolFun(ctx))
       }
     } else ctx.getChild(0) match {
       case v: ValueContext => visitValue(v)
@@ -499,6 +486,18 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       case v: ValueContext => visitValue(v)
       case b: BooleanFunctionContext => visitBooleanFunction(b)
       case x: (BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext | BooleanFunUndergroundContext) => getBoolFun(x)
+    }
+  }
+
+  private def buildDesugaredBoolFun(l: Expression, op: String, r: Expression) : BinaryExpression = {
+    op match {
+      case ">" => BinaryExpression(l, BinaryOperator.Greater, r)
+      case "<" => BinaryExpression(l, BinaryOperator.Less, r)
+      case ">=" => BinaryExpression(BinaryExpression(l, BinaryOperator.Greater, r), BinaryOperator.Or, BinaryExpression(l, BinaryOperator.Equals, r))
+      case "<=" => BinaryExpression(BinaryExpression(l, BinaryOperator.Less, r), BinaryOperator.Or, BinaryExpression(l, BinaryOperator.Equals, r))
+      case "&&" => BinaryExpression(l, BinaryOperator.And, r)
+      case "||" => BinaryExpression(l, BinaryOperator.Or, r)
+      case "^" => BinaryExpression(l, BinaryOperator.Xor, r)
     }
   }
 
