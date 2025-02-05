@@ -126,7 +126,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
 
   override def visitQualifiedName(ctx: QualifiedNameContext): QualifiedName = {
     val parts = ctx.Identifier().asScala.map(_.getText)
-    if (parts.head.equals("this")) {
+    if (parts.head.equals("this")) { // ToDo: This und so auch an anderen Stellen im Qualified Name möglich?
       parts.remove(0)
       parts.insert(0, currentThis) // ToDo: Passt das so für Bitcodegen?
     }
@@ -440,27 +440,28 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   }
 
   override def visitBooleanFunction(ctx: BooleanFunctionContext): Expression = {
-    if (ctx.booleanNumberOp() != null || ctx.booleanOp() != null) {
+    if ctx == null then return null
+    if (ctx.getChild(1) != null) {
       val left = ctx.getChild(0) match {
         case c: CalcFunctionContext => visitCalcFunction(c)
         case v: ValueContext => visitValue(v)
-        case h: BooleanFunHighContext => getLeftBoolFun(h)
-        case m: BooleanFunMiddleContext => getLeftBoolFun(m)
-        case l: BooleanFunLowContext => getLeftBoolFun(l)
+        case x: (BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext | BooleanFunUndergroundContext) => getBoolFun(x)
       }
       val right = ctx.getChild(2) match {
         case c: CalcFunctionContext => visitCalcFunction(c)
         case v: ValueContext => visitValue(v)
         case b: BooleanFunctionContext => visitBooleanFunction(b)
+        case x: (BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext | BooleanFunUndergroundContext) => getBoolFun(x)
       }
       val operator = getBoolOperator(ctx.getChild(1).getText)
       BinaryExpression(left, operator, right)
     } else if (ctx.inverse() != null) {
-      val expression = visitExpression(ctx.inverse().expression()) // Negated expression
-      UnaryExpression(UnaryOperator.Not, expression)
+      val expression = visitExpression(ctx.inverse().expression())
+      BinaryExpression(expression, BinaryOperator.Xor, AST.BooleanLiteral(true))
     } else {
       throw new IllegalArgumentException("Invalid BooleanFunction structure")
     }
+
   }
 
   private def getBoolOperator(op: String): BinaryOperator = {
@@ -471,24 +472,33 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       case "<=" => BinaryOperator.LessOrEqual
       case "&&" => BinaryOperator.And
       case "||" => BinaryOperator.Or
+      case "^" => BinaryOperator.Xor
     }
   }
 
-  private def getLeftBoolFun(ctx: BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext): Expression = {
+  private def getBoolFun(ctx: BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext | BooleanFunUndergroundContext): Expression = {
     if (ctx.getChild(1) != null) {
       ctx.getChild(0) match {
         case c: CalcFunctionContext => BinaryExpression(visitCalcFunction(c), getBoolOperator(ctx.getChild(1).getText), getRightBoolFun(ctx))
         case v: ValueContext => BinaryExpression(visitValue(v), getBoolOperator(ctx.getChild(1).getText), getRightBoolFun(ctx))
-        case h: BooleanFunHighContext => BinaryExpression(getLeftBoolFun(h), getBoolOperator(ctx.getChild(1).getText), getRightBoolFun(ctx))
-        case m: BooleanFunMiddleContext => BinaryExpression(getLeftBoolFun(m), getBoolOperator(ctx.getChild(1).getText), getRightBoolFun(ctx))
+        case x: (BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext) =>
+          BinaryExpression(getBoolFun(x), getBoolOperator(ctx.getChild(1).getText), getRightBoolFun(ctx))
       }
-    } else ctx.getChild(0) match {case v: ValueContext => visitValue(v)}
+    } else ctx.getChild(0) match {
+      case v: ValueContext => visitValue(v)
+      case i: InverseContext =>
+        BinaryExpression(visitExpression(i.expression()), BinaryOperator.Xor, AST.BooleanLiteral(true))
+    }
   }
 
-  private def getRightBoolFun(ctx: BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext): Expression = {
+  private def getRightBoolFun(ctx: BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext | BooleanFunUndergroundContext): Expression = {
     ctx.getChild(2) match {
-      case b: BooleanFunctionContext => visitBooleanFunction(b)
+      case i: InverseContext =>
+        BinaryExpression(visitExpression(i.expression()), BinaryOperator.Xor, AST.BooleanLiteral(true))
+      case c: CalcFunctionContext => visitCalcFunction(c)
       case v: ValueContext => visitValue(v)
+      case b: BooleanFunctionContext => visitBooleanFunction(b)
+      case x: (BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext | BooleanFunUndergroundContext) => getBoolFun(x)
     }
   }
 

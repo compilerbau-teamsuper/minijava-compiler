@@ -1,4 +1,4 @@
-// Generated from C:/Study/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
+// Generated from G:/Git/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
 package miniJavaParser;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
@@ -293,6 +293,12 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitBooleanFunLow(miniJavaParser.BooleanFunLowContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link miniJavaParser#booleanFunUnderground}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitBooleanFunUnderground(miniJavaParser.BooleanFunUndergroundContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#inverse}.
 	 * @param ctx the parse tree

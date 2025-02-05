@@ -1,15 +1,5 @@
 public class test{
-    static int x;
-    test(int x){
-        this(2, 2);
-    }
-    test(int x, int y){
-        
-    }
+    boolean x = true || false ^ true && false && !true;
 }
-class testext extends test {
-    testext(){
-        super(2);
-    }
-}
+
 

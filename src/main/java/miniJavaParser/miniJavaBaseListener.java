@@ -1,4 +1,4 @@
-// Generated from C:/Study/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
+// Generated from G:/Git/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
 package miniJavaParser;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -564,6 +564,18 @@ public class miniJavaBaseListener implements miniJavaListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitBooleanFunLow(miniJavaParser.BooleanFunLowContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterBooleanFunUnderground(miniJavaParser.BooleanFunUndergroundContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitBooleanFunUnderground(miniJavaParser.BooleanFunUndergroundContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

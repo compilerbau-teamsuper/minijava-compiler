@@ -1,4 +1,4 @@
-// Generated from C:/Study/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
+// Generated from G:/Git/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
 package miniJavaParser;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
@@ -481,6 +481,16 @@ public interface miniJavaListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitBooleanFunLow(miniJavaParser.BooleanFunLowContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link miniJavaParser#booleanFunUnderground}.
+	 * @param ctx the parse tree
+	 */
+	void enterBooleanFunUnderground(miniJavaParser.BooleanFunUndergroundContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link miniJavaParser#booleanFunUnderground}.
+	 * @param ctx the parse tree
+	 */
+	void exitBooleanFunUnderground(miniJavaParser.BooleanFunUndergroundContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link miniJavaParser#inverse}.
 	 * @param ctx the parse tree
