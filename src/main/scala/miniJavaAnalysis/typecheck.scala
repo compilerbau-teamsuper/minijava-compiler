@@ -60,15 +60,12 @@ def typecheck_expr(
     names: Map[String, QualifiedName],
     types: Map[QualifiedName, ObjectInfo],
 )(expr: AST.Expression): IR.TypedExpression[IR.Type]  = expr match
-    case literal: AST.Literal => literal match
-        case AST.IntLiteral(value) => value match
-            case _ if value.isValidByte => IR.ByteLiteral(value.toByte)
-            case _ if value.isValidShort => IR.ShortLiteral(value.toShort)
-            case _ if value.isValidInt => IR.IntLiteral(value.toInt)
-            case _ => IR.LongLiteral(value)
-        case AST.StringLiteral(value) => IR.StringLiteral(value)
-        case AST.BooleanLiteral(value) => IR.BooleanLiteral(value)
-        case AST.NullLiteral => IR.NullLiteral
+    case AST.BooleanLiteral(value) => IR.BooleanLiteral(value)
+    case AST.IntLiteral(value) => IR.IntLiteral(value)
+    case AST.ShortLiteral(value) => IR.ShortLiteral(value)
+    case AST.LongLiteral(value) => IR.LongLiteral(value)
+    case AST.StringLiteral(value) => IR.StringLiteral(value)
+    case AST.NullLiteral => IR.NullLiteral
     case AST.BinaryExpression(left, operator, right) => {
         val l = typecheck_expr(names, types)(left)
         val r = typecheck_expr(names, types)(right)
@@ -83,10 +80,17 @@ def typecheck_expr(
             case AST.BinaryOperator.And | AST.BinaryOperator.Or => throw RuntimeException("TODO")
             case AST.BinaryOperator.Equals => throw RuntimeException("TODO")
             case AST.BinaryOperator.Greater => throw RuntimeException("TODO")
+            case AST.BinaryOperator.Xor => throw RuntimeException("TODO")
     }
     case AST.MethodCall(target, arguments) => throw RuntimeException("TODO")
     case AST.FieldAccess(target) => throw RuntimeException("TODO")
     case AST.ArrayInitializer(initializers) => throw RuntimeException("TODO")
+    case AST.VarAccess(_) => ???
+    case AST.ArrayAccess(_, _) => ???
+    case AST.FloatLiteral(value) => ???
+    case AST.DoubleLiteral(_) => ???
+    case AST.CharacterLiteral(_) => ???
+    case AST.QualifiedName(_, _) => ???
 
 def typecheck(ast: AST.CompilationUnit): IR.CompilationUnit = {
     ast.packageDeclaration.get.name
