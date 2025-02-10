@@ -32,7 +32,7 @@ def stringify(ty: IR.Type): String = ty match
         case IR.PrimitiveType.Long => "long"
         case IR.PrimitiveType.Short => "short"
         case IR.PrimitiveType.Byte => "byte"
-    case _ => throw RuntimeException("TODO")
+    case _ => ???
 
 def is_subtype(ctx: Map[QualifiedName, ObjectInfo], ty: IR.Type, of: IR.Type): Boolean = (ty, of) match
     case (IR.ObjectType(sub), IR.ObjectType(sup)) if sub == sup => true
@@ -70,21 +70,19 @@ def typecheck_expr(
         val l = typecheck_expr(names, types)(left)
         val r = typecheck_expr(names, types)(right)
         operator match
-            case AST.BinaryOperator.Add if is_subtype(types, l.ty, IR.LangTypes.String) || is_subtype(types, r.ty, IR.LangTypes.String) => {
-                throw RuntimeException("TODO: string concatenation")
-            }
+            case AST.BinaryOperator.Add if is_subtype(types, l.ty, IR.LangTypes.String) || is_subtype(types, r.ty, IR.LangTypes.String) => ???
             case AST.BinaryOperator.Add | AST.BinaryOperator.Subtract |
             AST.BinaryOperator.Multiply |
             AST.BinaryOperator.Divide |
             AST.BinaryOperator.Modulo => binary_numeric(l, operator, r)
-            case AST.BinaryOperator.And | AST.BinaryOperator.Or => throw RuntimeException("TODO")
-            case AST.BinaryOperator.Equals => throw RuntimeException("TODO")
-            case AST.BinaryOperator.Greater => throw RuntimeException("TODO")
-            case AST.BinaryOperator.Xor => throw RuntimeException("TODO")
+            case AST.BinaryOperator.And | AST.BinaryOperator.Or => ???
+            case AST.BinaryOperator.Equals => ???
+            case AST.BinaryOperator.Greater => ???
+            case AST.BinaryOperator.Xor => ???
     }
-    case AST.MethodCall(target, arguments) => throw RuntimeException("TODO")
-    case AST.FieldAccess(target) => throw RuntimeException("TODO")
-    case AST.ArrayInitializer(initializers) => throw RuntimeException("TODO")
+    case AST.MethodCall(target, arguments) => ???
+    case AST.FieldAccess(target) => ???
+    case AST.ArrayInitializer(initializers) => ???
     case AST.VarAccess(_) => ???
     case AST.ArrayAccess(_, _) => ???
     case AST.FloatLiteral(value) => ???
@@ -98,5 +96,5 @@ def typecheck(ast: AST.CompilationUnit): IR.CompilationUnit = {
 
 
 
-    throw RuntimeException("TODO")
+    ???
 }
