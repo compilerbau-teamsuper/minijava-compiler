@@ -19,7 +19,7 @@ val prelude = Map(
 )
 
 case class Context(
-    
+    types: Map[QualifiedName, ObjectInfo],
 )
 
 def stringify(ty: IR.Type): String = ty match
@@ -34,10 +34,10 @@ def stringify(ty: IR.Type): String = ty match
         case IR.PrimitiveType.Byte => "byte"
     case _ => ???
 
-def is_subtype(ctx: Map[QualifiedName, ObjectInfo], ty: IR.Type, of: IR.Type): Boolean = (ty, of) match
+def is_subtype(ty: IR.Type, of: IR.Type)(ctx: Context): Boolean = (ty, of) match
     case (IR.ObjectType(sub), IR.ObjectType(sup)) if sub == sup => true
-    case (IR.ObjectType(sub), IR.LangTypes.Object) => false
-    case (IR.ObjectType(sub), IR.ObjectType(sup)) => is_subtype(ctx, IR.ObjectType(ctx(sub).superclass), of)
+    case (IR.ObjectType(sub), IR.LangTypes.Object) => true
+    case (IR.ObjectType(sub), IR.ObjectType(sup)) => is_subtype(IR.ObjectType(ctx.types(sub).superclass), of)(ctx)
     case _ => false
 
 def unbox(expr: IR.TypedExpression[IR.Type]): Option[IR.TypedExpression[IR.PrimitiveType]] = expr.ty match
@@ -56,10 +56,7 @@ def binary_numeric(
         case _ => throw RuntimeException("TODO: error")
 }
 
-def typecheck_expr(
-    names: Map[String, QualifiedName],
-    types: Map[QualifiedName, ObjectInfo],
-)(expr: AST.Expression): IR.TypedExpression[IR.Type]  = expr match
+def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression[IR.Type]  = expr match
     case AST.BooleanLiteral(value) => IR.BooleanLiteral(value)
     case AST.IntLiteral(value) => IR.IntLiteral(value)
     case AST.ShortLiteral(value) => IR.ShortLiteral(value)
@@ -67,10 +64,10 @@ def typecheck_expr(
     case AST.StringLiteral(value) => IR.StringLiteral(value)
     case AST.NullLiteral => IR.NullLiteral
     case AST.BinaryExpression(left, operator, right) => {
-        val l = typecheck_expr(names, types)(left)
-        val r = typecheck_expr(names, types)(right)
+        val l = typecheck_expr(left)(ctx)
+        val r = typecheck_expr(right)(ctx)
         operator match
-            case AST.BinaryOperator.Add if is_subtype(types, l.ty, IR.LangTypes.String) || is_subtype(types, r.ty, IR.LangTypes.String) => ???
+            case AST.BinaryOperator.Add if is_subtype(l.ty, IR.LangTypes.String)(ctx) || is_subtype(r.ty, IR.LangTypes.String)(ctx) => ???
             case AST.BinaryOperator.Add | AST.BinaryOperator.Subtract |
             AST.BinaryOperator.Multiply |
             AST.BinaryOperator.Divide |
