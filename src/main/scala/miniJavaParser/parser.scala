@@ -219,7 +219,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   // Methode: visitFieldDeclaration
   private def visitFieldDec(ctx: FieldDeclarationContext): List[FieldDeclaration] = {
     val modifiers = getModifiers(ctx.fieldModifier())
-    val fieldType = visitType(ctx.`type`())
+    val fieldType = getType(ctx.`type`())
     val variables = ctx.variableDeclarator().asScala.map { declarator =>
       val name = declarator.Identifier().getText
       val initializer = if declarator.variableInitializer() != null
@@ -258,7 +258,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
 
   private def getFormalParameters(ctx: FormalParametersContext): List[Parameter] = {
     if ctx == null then return List.empty
-    (ctx.`type`().asScala zip ctx.Identifier().asScala).map{case (t, n) =>  Parameter(n.getText, visitType(t))}.toList
+    (ctx.`type`().asScala zip ctx.Identifier().asScala).map{case (t, n) =>  Parameter(n.getText, getType(t))}.toList
   }
 
   // Methode: visitVariableInitializer
@@ -308,7 +308,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   }
 
   private def visitLocalVariableDec(ctx: LocalVariableDeclarationContext): List[LocalVariableDeclaration] = {
-    val t = visitType(ctx.`type`())
+    val t = getType(ctx.`type`())
     val variables = ctx.variableDeclarator().asScala.map(v => visitVariableDeclarator(v, t)).toList
     variables.map(v => LocalVariableDeclaration(t, v))
   }
@@ -406,7 +406,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     ctx.getChild(0) match {
       case c: TerminalNodeImpl if c.toString == "(" => visitExpression(ctx.getChild(1) match {case e: ExpressionContext => e})
       case l: LiteralContext => visitLiteral(l)
-      case q: QualifiedNameContext => visitQualifiedName(q)
+      case q: QualifiedNameContext => FieldAccess(visitQualifiedName(q))
       case m: MethodCallContext => visitMethodCall(m)
       case a: ArrayAccessContext => visitArrayAccess(a)
     }
@@ -545,15 +545,17 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
 
   override def visitTypeOrVoid(ctx: TypeOrVoidContext): TypeOrVoid = {
     if (ctx.`type`() != null) {
-      visitType(ctx.`type`())
+      getType(ctx.`type`())
     } else {
       AST.VoidType
     }
   }
 
-  override def visitType(ctx: TypeContext): Type = {
-    if ctx.arrayType() != null then toType(ctx.arrayType().getChild(0).getText)
-    else toType(ctx.getChild(0).getText)
+  private def getType(ctx: TypeContext | ArrayTypeContext): Type = {
+    ctx.getChild(0) match {
+      case t: (PrimitiveTypeContext | ObjectTypeContext) => toType(t.getText)
+      case a: ArrayTypeContext => ArrayType(getType(a))
+    }
   }
 
   private def toType(typeName: String): Type = typeName match {

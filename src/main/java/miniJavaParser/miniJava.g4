@@ -305,7 +305,7 @@ primitiveType
     | 'boolean' #BooleanType
     | 'char' #CharType;
 
-arrayType : (primitiveType | objectType) '[' ']' ;
+arrayType : (primitiveType | objectType) '[' ']' ; // ToDo: Support für mehrdimensionale Arrays?
 
 VoidType : 'void';
 

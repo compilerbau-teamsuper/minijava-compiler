@@ -17,9 +17,15 @@ object ParserTest extends TestSuite {
             val expected = CompilationUnit(None,List(), List(ClassDeclaration(List(Modifier.Public),"methodTest",QualifiedName(List(),"Object"),List(),
                 ClassBody(List(
                     MethodDeclaration(List(Modifier.Private, Modifier.Static),PrimitiveType.Int,"plusOne",List(Parameter("x",PrimitiveType.Int)),
-                        Block(List(ReturnStatement(Some(BinaryExpression(QualifiedName(List(),"x"),BinaryOperator.Add,IntLiteral(1))))))),
+                        Block(List(ReturnStatement(Some(BinaryExpression(FieldAccess(QualifiedName(List(),"x")),BinaryOperator.Add,IntLiteral(1))))))),
                     MethodDeclaration(List(Modifier.Public),VoidType,"doNothing",List(),
-                        Block(List(ReturnStatement(None)))))))))
+                        Block(List(ReturnStatement(None)))),
+                    MethodDeclaration(List(),ArrayType(PrimitiveType.Int),"doubleAddOne",List(Parameter("x",PrimitiveType.Int),Parameter("y",PrimitiveType.Int)),
+                        Block(List(
+                            LocalVariableDeclaration(ArrayType(PrimitiveType.Int),VariableDeclarator("res", ArrayInitializer(List(
+                                MethodCall(QualifiedName(List(), "plusOne"), List(FieldAccess(QualifiedName(List(), "x")))),
+                                MethodCall(QualifiedName(List(), "plusOne"), List(FieldAccess(QualifiedName(List(), "y")))))))),
+                            ReturnStatement(Some(FieldAccess(QualifiedName(List(), "res"))))))))))))
 
             ast ==> expected
         }
