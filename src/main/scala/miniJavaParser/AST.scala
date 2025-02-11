@@ -83,6 +83,7 @@ case class FieldAccess(target: Expression) extends Expression
 case class VarAccess(fieldName: String) extends Expression // ToDo: Zusammenfassen in FieldAccess?
 case class ArrayInitializer(initializers: List[Expression]) extends Expression
 case class ArrayAccess(target: Expression, index: Option[Expression]) extends Expression // ToDo: Argumente/Umsetzung
+case class NewObject(target: Expression, arguments: List[Expression]) extends Expression
 
 // Literals
 sealed trait Literal extends Expression
