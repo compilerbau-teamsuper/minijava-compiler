@@ -80,7 +80,6 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression[IR.Ty
     case AST.MethodCall(target, arguments) => ???
     case AST.FieldAccess(target) => ???
     case AST.ArrayInitializer(initializers) => ???
-    case AST.VarAccess(_) => ???
     case AST.ArrayAccess(_, _) => ???
     case AST.FloatLiteral(value) => ???
     case AST.DoubleLiteral(_) => ???

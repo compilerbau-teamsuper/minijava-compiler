@@ -80,7 +80,6 @@ sealed trait Expression extends ASTNode
 case class BinaryExpression(left: Expression, operator: BinaryOperator, right: Expression) extends Expression
 case class MethodCall(target: Expression, arguments: List[Expression]) extends Expression, Statement
 case class FieldAccess(target: Expression) extends Expression
-case class VarAccess(fieldName: String) extends Expression // ToDo: Zusammenfassen in FieldAccess?
 case class ArrayInitializer(initializers: List[Expression]) extends Expression
 case class ArrayAccess(target: Expression, index: Option[Expression]) extends Expression // ToDo: Argumente/Umsetzung
 case class NewObject(target: Expression, arguments: List[Expression]) extends Expression
@@ -141,6 +140,7 @@ object ObjectType {
   case class Custom(name: String) extends ObjectType // Für benutzerdefinierte Typen
 }
 
+case class ArrayType(arrayType: Type) extends Type
 
 // Modifiers
 enum Modifier {
