@@ -105,7 +105,7 @@ methodCall : qualifiedName '(' expressionList? ')'; // ToDo: Methode kann auch a
 
 arrayAccess : primary '[' expression ']' ;
 
-newObject: 'new' (qualifiedName | methodCall) (classBody)?;
+newObject: 'new' methodCall; // 'new' qualifiedName | methodCall) (classBody)?;
 
 // Basic Functions
 calcFunction
