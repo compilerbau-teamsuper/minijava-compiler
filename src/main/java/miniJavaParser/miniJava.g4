@@ -16,11 +16,15 @@ typeDeclaration
 
 Wildcard: ('.' '*');
 
-classDeclaration : Public? classModifier? 'class' Identifier superclass? superinterfaces? classBody;
+classDeclaration : accessModifier? classModifier? 'class' Identifier superclass? superinterfaces? classBody;
 
 interfaceDeclaration : Public? 'interface' Identifier extendsInterfaces? interfaceBody;
 
-methodDeclaration : accessModifier? methodModifier? typeOrVoid Identifier '(' formalParameters? ')' ('[' ']')* methodBody;
+methodDeclaration
+    : accessModifier? (Final? Static | Static? Final)? typeOrVoid Identifier '(' formalParameters? ')' ('[' ']')* methodBody
+    | accessModifier? Abstract typeOrVoid Identifier '(' formalParameters? ')' ('[' ']')* ';';
+
+interfaceMethodDeclaration : Public? typeOrVoid Identifier '(' formalParameters? ')' ('[' ']')* ';';
 
 constructorDeclaration : accessModifier? Identifier '(' formalParameters? ')' block;
 
@@ -41,7 +45,7 @@ classBodyDeclaration
     | block
     | memberDeclaration;
 
-memberDeclaration
+memberDeclaration // ToDo: @Override als Annotation wichtig?
     : methodDeclaration
     | fieldDeclaration
     | constructorDeclaration
@@ -55,7 +59,7 @@ interfaceBodyDeclaration
     | interfaceMemberDeclaration;
 
 interfaceMemberDeclaration //ToDo: Interface in Interface möglich?
-    : methodDeclaration
+    : interfaceMethodDeclaration
     | fieldDeclaration;
 
 methodBody :  '{' methodBodyStatement* '}';
@@ -319,10 +323,6 @@ accessModifier
 classModifier
     : Abstract
     | Final;
-
-methodModifier
-    : (Final? Static | Static? Final)
-    | Abstract;
 
 fieldModifier
     : accessModifier (Final? Static | Static? Final)?

@@ -53,6 +53,12 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitMethodDeclaration(miniJavaParser.MethodDeclarationContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link miniJavaParser#interfaceMethodDeclaration}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitInterfaceMethodDeclaration(miniJavaParser.InterfaceMethodDeclarationContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#constructorDeclaration}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -616,12 +622,6 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitClassModifier(miniJavaParser.ClassModifierContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#methodModifier}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitMethodModifier(miniJavaParser.MethodModifierContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#fieldModifier}.
 	 * @param ctx the parse tree

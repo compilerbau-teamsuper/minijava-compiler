@@ -78,6 +78,16 @@ public interface miniJavaListener extends ParseTreeListener {
 	 */
 	void exitMethodDeclaration(miniJavaParser.MethodDeclarationContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link miniJavaParser#interfaceMethodDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void enterInterfaceMethodDeclaration(miniJavaParser.InterfaceMethodDeclarationContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link miniJavaParser#interfaceMethodDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void exitInterfaceMethodDeclaration(miniJavaParser.InterfaceMethodDeclarationContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link miniJavaParser#constructorDeclaration}.
 	 * @param ctx the parse tree
 	 */
@@ -1027,16 +1037,6 @@ public interface miniJavaListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitClassModifier(miniJavaParser.ClassModifierContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link miniJavaParser#methodModifier}.
-	 * @param ctx the parse tree
-	 */
-	void enterMethodModifier(miniJavaParser.MethodModifierContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link miniJavaParser#methodModifier}.
-	 * @param ctx the parse tree
-	 */
-	void exitMethodModifier(miniJavaParser.MethodModifierContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link miniJavaParser#fieldModifier}.
 	 * @param ctx the parse tree

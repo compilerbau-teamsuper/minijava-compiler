@@ -5,6 +5,7 @@ import miniJavaParser.*
 import org.antlr.v4.runtime.tree.TerminalNodeImpl
 import org.antlr.v4.runtime.{CharStreams, CommonTokenStream, ParserRuleContext}
 
+import scala.::
 import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters.*
 
@@ -79,8 +80,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   }
 
   override def visitClassDeclaration(ctx: ClassDeclarationContext): ClassDeclaration = {
-    val modifiers: ListBuffer[Modifier] = if ctx.classModifier() != null then ListBuffer(toModifier(ctx.classModifier().getText)) else ListBuffer()
-    if ctx.Public() != null then modifiers.addOne(Modifier.Public)
+    val modifiers = getModifiers(ctx)
     val name = ctx.Identifier().getText
     currentThis = name
     val superclass =  if ctx.superclass() != null then visitQualifiedName(ctx.superclass().qualifiedName()) else QualifiedName(List(), "Object")
@@ -88,7 +88,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     val interfaces = if ctx.superinterfaces() != null then ctx.superinterfaces().qualifiedName().asScala.map(visitQualifiedName).toList else List.empty
     val body = visitClassBody(ctx.classBody())
 
-    ClassDeclaration(modifiers.toList, name, superclass, interfaces, body)
+    ClassDeclaration(modifiers, name, superclass, interfaces, body)
   }
 
   override def visitInterfaceDeclaration(ctx: InterfaceDeclarationContext): InterfaceDeclaration = {
@@ -195,8 +195,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   }
 
   private def visitInterfaceMemberDec(ctx: InterfaceMemberDeclarationContext): InterfaceMember | List[InterfaceMember] = {
-    if (ctx.methodDeclaration() != null) {
-      visitMethodDeclaration(ctx.methodDeclaration())
+    if (ctx.interfaceMethodDeclaration() != null) {
+      visitInterfaceMethodDeclaration(ctx.interfaceMethodDeclaration())
     } else if (ctx.fieldDeclaration() != null) {
       val f = visitFieldDec(ctx.fieldDeclaration())
       if f.length == 1 then f.head else f
@@ -205,15 +205,23 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     }
   }
 
-  // Methode: visitMethodDeclaration
   override def visitMethodDeclaration(ctx: MethodDeclarationContext): MethodDeclaration = {
-    val modifiers = getModifiers(ctx.methodModifier()).:::(getModifiers(ctx.accessModifier()))
+    val modifiers = getModifiers(ctx)
     val name = ctx.Identifier().getText
     val returnType = visitTypeOrVoid(ctx.typeOrVoid())
     val parameters = getFormalParameters(ctx.formalParameters())
-    val body = visitMethodBody(ctx.methodBody())
+    val body = if modifiers.contains(Modifier.Abstract) then None else Option(visitMethodBody(ctx.methodBody()))
 
     MethodDeclaration(modifiers, returnType, name, parameters, body)
+  }
+
+  override def visitInterfaceMethodDeclaration(ctx: InterfaceMethodDeclarationContext): MethodDeclaration = {
+    val modifiers = getModifiers(ctx).::(Modifier.Abstract)
+    val name = ctx.Identifier().getText
+    val returnType = visitTypeOrVoid(ctx.typeOrVoid())
+    val parameters = getFormalParameters(ctx.formalParameters())
+
+    MethodDeclaration(modifiers, returnType, name, parameters, None)
   }
 
   // Methode: visitFieldDeclaration
