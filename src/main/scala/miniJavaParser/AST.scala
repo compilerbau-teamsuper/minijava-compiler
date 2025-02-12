@@ -43,7 +43,7 @@ case class MethodDeclaration(
                               returnType: TypeOrVoid,
                               name: String,
                               parameters: List[Parameter],
-                              body: Block
+                              body: Option[Block]
                             ) extends ClassMember with InterfaceMember
 case class FieldDeclaration(
                              modifiers: List[Modifier],

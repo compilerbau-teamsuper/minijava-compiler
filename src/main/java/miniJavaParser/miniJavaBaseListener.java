@@ -101,6 +101,18 @@ public class miniJavaBaseListener implements miniJavaListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterInterfaceMethodDeclaration(miniJavaParser.InterfaceMethodDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitInterfaceMethodDeclaration(miniJavaParser.InterfaceMethodDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterConstructorDeclaration(miniJavaParser.ConstructorDeclarationContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -1164,18 +1176,6 @@ public class miniJavaBaseListener implements miniJavaListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitClassModifier(miniJavaParser.ClassModifierContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterMethodModifier(miniJavaParser.MethodModifierContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitMethodModifier(miniJavaParser.MethodModifierContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
