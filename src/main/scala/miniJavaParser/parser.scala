@@ -5,7 +5,6 @@ import miniJavaParser.*
 import org.antlr.v4.runtime.tree.TerminalNodeImpl
 import org.antlr.v4.runtime.{CharStreams, CommonTokenStream, ParserRuleContext}
 
-import scala.::
 import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters.*
 
@@ -461,7 +460,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       }
       buildDesugaredBoolFun(left, ctx.getChild(1).getText, right)
     } else if (ctx.inverse() != null) {
-      val expression = visitExpression(ctx.inverse().expression())
+      val expression = visitValueOrPrimary(ctx.inverse().value())
       BinaryExpression(expression, BinaryOperator.Xor, AST.BooleanLiteral(true))
     } else {
       throw new IllegalArgumentException("Invalid BooleanFunction structure")
@@ -480,14 +479,14 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     } else ctx.getChild(0) match {
       case v: ValueContext => visitValueOrPrimary(v)
       case i: InverseContext =>
-        BinaryExpression(visitExpression(i.expression()), BinaryOperator.Xor, AST.BooleanLiteral(true))
+        BinaryExpression(visitValueOrPrimary(i.value()), BinaryOperator.Xor, AST.BooleanLiteral(true))
     }
   }
 
   private def getRightBoolFun(ctx: BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext | BooleanFunUndergroundContext): Expression = {
     ctx.getChild(2) match {
       case i: InverseContext =>
-        BinaryExpression(visitExpression(i.expression()), BinaryOperator.Xor, AST.BooleanLiteral(true))
+        BinaryExpression(visitValueOrPrimary(i.value()), BinaryOperator.Xor, AST.BooleanLiteral(true))
       case c: CalcFunctionContext => visitCalcFunction(c)
       case v: ValueContext => visitValueOrPrimary(v)
       case b: BooleanFunctionContext => visitBooleanFunction(b)

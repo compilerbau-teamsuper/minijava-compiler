@@ -43,5 +43,50 @@ object ParserTest extends TestSuite {
 
           ast ==> expected
         }
+        test("calculations parsing") {
+          val ast = JavaASTBuilder.parseFromFile("src/test/java/calculationsTest.java")
+          val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public),"calculationsTest",QualifiedName(List(),"Object"),List(),ClassBody(List(
+            FieldDeclaration(List(),PrimitiveType.Boolean,VariableDeclarator("f", BinaryExpression(BooleanLiteral(true), BinaryOperator.Or, BooleanLiteral(false)))),
+            FieldDeclaration(List(),PrimitiveType.Boolean,VariableDeclarator("g",
+              BinaryExpression(
+                BinaryExpression(FieldAccess(QualifiedName(List(),"f")), BinaryOperator.Xor, BooleanLiteral(true)),
+                BinaryOperator.Xor,
+                BinaryExpression(
+                  BinaryExpression(
+                    MethodCall(QualifiedName(List(), "alwaysTrue"), List()),
+                    BinaryOperator.Equals,
+                    BinaryExpression(
+                      BooleanLiteral(true),
+                      BinaryOperator.Equals,
+                      BinaryExpression(
+                        IntLiteral(4),
+                        BinaryOperator.Greater,
+                        IntLiteral(5)))),
+                  BinaryOperator.Xor,
+                  BooleanLiteral(true))))),
+            FieldDeclaration(List(),PrimitiveType.Int,VariableDeclarator("x",
+              BinaryExpression(
+                IntLiteral(0),
+                BinaryOperator.Subtract,
+                BinaryExpression(
+                  MethodCall(QualifiedName(List(), "alwaysOne"), List()),
+                  BinaryOperator.Subtract,
+                  BinaryExpression(
+                    BinaryExpression(
+                      IntLiteral(5),
+                      BinaryOperator.Multiply,
+                      BinaryExpression(
+                        IntLiteral(2),
+                        BinaryOperator.Divide,
+                        IntLiteral(4))),
+                    BinaryOperator.Add,
+                    IntLiteral(3)))))),
+            MethodDeclaration(List(),PrimitiveType.Boolean,"alwaysTrue",List(),
+              Option(Block(List(ReturnStatement(Option(BinaryExpression(BooleanLiteral(true), BinaryOperator.And, BooleanLiteral(true)))))))),
+            MethodDeclaration(List(),PrimitiveType.Int,"alwaysOne",List(),
+              Option(Block(List(ReturnStatement(Option(IntLiteral(1))))))))))))
+
+          ast ==> expected
+        }
     }
 }
