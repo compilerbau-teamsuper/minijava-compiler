@@ -58,7 +58,7 @@ case class ConstructorDeclaration(
                                  ) extends ClassMember
 
 // Variablen und Parameter
-case class VariableDeclarator(name: String, initializer: Expression) extends ASTNode
+case class VariableDeclarator(name: String, initializer: Expression) extends ASTNode // ToDo: evtl weglassen und in FieldDec integrierern
 case class Parameter(name: String, paramType: Type) extends ASTNode
 
 // Blöcke und Statements
@@ -73,7 +73,7 @@ case class ReturnStatement(expression: Option[Expression]) extends Statement
 case class BreakStatement() extends Statement
 case class ContinueStatement() extends Statement
 case class Assignment(left: Expression, right: Expression) extends Statement
-case class LocalVariableDeclaration(varType: Type, variable: VariableDeclarator) extends Statement
+case class LocalVariableDeclaration(varType: Type, variable: VariableDeclarator) extends Statement // ToDo: Mit FieldDeclaration zusammenlegen?
 
 // Expressions
 sealed trait Expression extends ASTNode
