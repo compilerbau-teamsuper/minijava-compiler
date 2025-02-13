@@ -88,5 +88,27 @@ object ParserTest extends TestSuite {
 
           ast ==> expected
         }
+        test("statements parsing 1") {
+          val ast = JavaASTBuilder.parseFromFile("src/test/java/statementsTest1.java")
+          val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public),"statementsTest1",QualifiedName(List(),"Object"),List(),ClassBody(List(
+            MethodDeclaration(List(),VoidType,"forTest", List(),Option(Block(List(
+              ForStatement(
+                Option(LocalVariableDeclaration(PrimitiveType.Int,VariableDeclarator("i", IntLiteral(0)))),
+                Option(BinaryExpression(IntLiteral(5), BinaryOperator.Greater, FieldAccess(QualifiedName(List(),"i")))),
+                Option(BinaryExpression(FieldAccess(QualifiedName(List(),"i")), BinaryOperator.Add, IntLiteral(1))),
+                Block(List(BreakStatement()))))))),
+            MethodDeclaration(List(),VoidType,"whileTest", List(),Option(Block(List(
+              LocalVariableDeclaration(PrimitiveType.Boolean, VariableDeclarator("loopVar", BooleanLiteral(true))),
+              WhileStatement(
+                FieldAccess(QualifiedName(List(),"loopVar")),
+                Block(List(
+                  MethodCall(QualifiedName(List(),"forTest"), List()),
+                  Assignment(FieldAccess(QualifiedName(List(), "loopVar")), BooleanLiteral(false)),
+                  ContinueStatement()
+                )))))))
+          )))))
+
+          ast ==> expected
+        }
     }
 }

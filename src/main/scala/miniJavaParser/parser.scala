@@ -347,8 +347,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       // case s: SwitchContext => visitSwitch(s) // ToDo: Überhaupt notwendig?
       case w: WhileStatementContext => visitWhileStatement(w)
       case r: ReturnContext => ReturnStatement(Option(visitExpression(r.expression())))
-      case b: BreakStatement => BreakStatement()
-      case c: ContinueStatement => ContinueStatement()
+      case b: BreakContext => BreakStatement()
+      case c: ContinueContext => ContinueStatement()
       case f: ForStatementContext => visitForStatement(f)
       case _ => throw new IllegalArgumentException("Unknown statement")
     }
@@ -361,7 +361,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     }
     val pre_right = visitExpression(ctx.expression())
     val right = ctx.assignmentType().getText match {
-      case "==" => pre_right
+      case "=" => pre_right
       case "+=" => BinaryExpression(left, BinaryOperator.Add, pre_right)
       case "-=" => BinaryExpression(left, BinaryOperator.Subtract, pre_right)
       case "*=" => BinaryExpression(left, BinaryOperator.Multiply, pre_right)
@@ -522,8 +522,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     } else if (ctx.calcUnOp() != null) {
       // Case 2: Unary operation
       ctx.getChild(1).getText match {
-        case "++" => BinaryExpression(visitQualifiedName(ctx.qualifiedName()), Add, IntLiteral(1))
-        case "--" => BinaryExpression(visitQualifiedName(ctx.qualifiedName()), Subtract, IntLiteral(1))
+        case "++" => BinaryExpression(FieldAccess(visitQualifiedName(ctx.qualifiedName())), Add, IntLiteral(1))
+        case "--" => BinaryExpression(FieldAccess(visitQualifiedName(ctx.qualifiedName())), Subtract, IntLiteral(1))
       }
     } else if ctx.negate() != null then BinaryExpression(IntLiteral(0), Subtract, visitExpression(ctx.negate().expression()))
     else {

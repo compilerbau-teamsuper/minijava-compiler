@@ -115,7 +115,7 @@ newObject: 'new' methodCall; // 'new' qualifiedName | methodCall) (classBody)?;
 calcFunction
     : value calcBinOpHigher term
     | term calcBinOpLower (calcFunction | value)
-    | qualifiedName calcUnOp
+    | qualifiedName calcUnOp // ToDo: Hier auch expression möglich?
     | negate;
 
 term
@@ -218,7 +218,7 @@ whileStatement : 'while' '(' expression ')' statement;
 
 forStatement : 'for' '(' forControl ')' statement; // ToDo: Foreach wäre noch nice.
 // Generell an Abstrakter Syntax aus Vorlesung orientiern
-forControl : localVariableDeclaration? ';' booleanFunction? ';' calcFunction?;
+forControl : (localVariableDeclaration | ';') booleanFunction? ';' calcFunction?;
 
 //forControlStatement
 //    : assignment
