@@ -171,7 +171,7 @@ booleanFunUnderground
     | inverse
     | value;
 
-inverse: '!' expression;
+inverse: '!' value;
 
 booleanNumberOp
     : '>' #GT
