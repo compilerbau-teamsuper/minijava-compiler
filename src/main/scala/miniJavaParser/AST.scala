@@ -45,11 +45,11 @@ case class MethodDeclaration(
                               parameters: List[Parameter],
                               body: Option[Block]
                             ) extends ClassMember with InterfaceMember
-case class FieldDeclaration(
+case class VarOrFieldDeclaration(
                              modifiers: List[Modifier],
                              fieldType: Type,
                              variables: VariableDeclarator
-                           ) extends ClassMember with InterfaceMember
+                           ) extends ClassMember, InterfaceMember, Statement
 case class ConstructorDeclaration(
                                    modifiers: List[Modifier],
                                    name: String,
@@ -68,12 +68,11 @@ sealed trait Statement extends ASTNode
 case class ExpressionStatement(expression: Expression) extends Statement
 case class IfStatement(condition: Expression, thenStmt: Statement, elseStmt: Option[Statement]) extends Statement
 case class WhileStatement(condition: Expression, body: Statement) extends Statement
-case class ForStatement(init: Option[LocalVariableDeclaration], condition: Option[Expression], update: Option[Expression], body: Statement) extends Statement
+case class ForStatement(init: Option[VarOrFieldDeclaration], condition: Option[Expression], update: Option[Expression], body: Statement) extends Statement
 case class ReturnStatement(expression: Option[Expression]) extends Statement
 case class BreakStatement() extends Statement
 case class ContinueStatement() extends Statement
 case class Assignment(left: Expression, right: Expression) extends Statement
-case class LocalVariableDeclaration(varType: Type, variable: VariableDeclarator) extends Statement // ToDo: Mit FieldDeclaration zusammenlegen?
 
 // Expressions
 sealed trait Expression extends ASTNode
@@ -81,7 +80,7 @@ case class BinaryExpression(left: Expression, operator: BinaryOperator, right: E
 case class MethodCall(target: Expression, arguments: List[Expression]) extends Expression, Statement
 case class FieldAccess(target: Expression) extends Expression
 case class ArrayInitializer(initializers: List[Expression]) extends Expression
-case class ArrayAccess(target: Expression, index: Option[Expression]) extends Expression // ToDo: Argumente/Umsetzung
+case class ArrayAccess(target: Expression, index: Expression) extends Expression // ToDo: Mehrdimensionale arrays
 case class NewObject(target: Expression, arguments: List[Expression]) extends Expression
 
 // Literals

@@ -224,7 +224,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   }
 
   // Methode: visitFieldDeclaration
-  private def visitFieldDec(ctx: FieldDeclarationContext): List[FieldDeclaration] = {
+  private def visitFieldDec(ctx: FieldDeclarationContext): List[VarOrFieldDeclaration] = {
     val modifiers = getModifiers(ctx.fieldModifier())
     val fieldType = getType(ctx.`type`())
     val variables = ctx.variableDeclarator().asScala.map { declarator =>
@@ -234,7 +234,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
         else standardInitializer(fieldType)
       VariableDeclarator(name, initializer) 
     }.toList
-    variables.map(v => FieldDeclaration(modifiers, fieldType, v))
+    variables.map(v => VarOrFieldDeclaration(modifiers, fieldType, v))
   }
 
   private def standardInitializer(t: Type) : Expression = {
@@ -314,10 +314,10 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     else {throw new IllegalArgumentException("Unknown block statement")}
   }
 
-  private def visitLocalVariableDec(ctx: LocalVariableDeclarationContext): List[LocalVariableDeclaration] = {
+  private def visitLocalVariableDec(ctx: LocalVariableDeclarationContext): List[VarOrFieldDeclaration] = {
     val t = getType(ctx.`type`())
     val variables = ctx.variableDeclarator().asScala.map(v => visitVariableDeclarator(v, t)).toList
-    variables.map(v => LocalVariableDeclaration(t, v))
+    variables.map(v => VarOrFieldDeclaration(List(), t, v))
   }
 
   private def visitVariableDeclarator(ctx: VariableDeclaratorContext, t: Type): VariableDeclarator = {
@@ -435,7 +435,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   }
 
   override def visitArrayAccess(ctx: ArrayAccessContext): ArrayAccess = {
-    val i = Option(visitExpression(ctx.expression()))
+    val i = visitExpression(ctx.expression())
     ArrayAccess(visitValueOrPrimary(ctx.primary()), i)
   }
 
