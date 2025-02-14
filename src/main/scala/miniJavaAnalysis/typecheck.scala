@@ -113,7 +113,7 @@ def typecheck_stmts(stmts: List[AST.Statement], expected: IR.Type)(context: Cont
         case ReturnStatement(expression) => {
             val expr = expression.map(e => typecheck_expr(e)(context))
             val ty = expr.map(e => e.ty).getOrElse(IR.VoidType)
-            if (ty != expected) throw new ReturnTypeMismatch(ty, expected)
+            if (!is_subtype(ty, expected)(context)) throw new ReturnTypeMismatch(ty, expected)
             IR.ReturnStatement(expr) :: typecheck_stmts(stmts, expected)(context)
         }
         case BreakStatement() => ???
