@@ -3,8 +3,21 @@ import miniJavaParser.AST
 import miniJavaParser.AST.QualifiedName
 import miniJavaAnalysis.IR.ObjectType
 import miniJavaAnalysis.IR.TypedExpression
+import miniJavaParser.AST.VarOrFieldDeclaration
+import miniJavaParser.AST.Block
+import miniJavaParser.AST.ExpressionStatement
+import miniJavaParser.AST.IfStatement
+import miniJavaParser.AST.WhileStatement
+import miniJavaParser.AST.ForStatement
+import miniJavaParser.AST.ReturnStatement
+import miniJavaParser.AST.BreakStatement
+import miniJavaParser.AST.ContinueStatement
+import miniJavaParser.AST.Assignment
+import miniJavaParser.AST.MethodCall
 
 sealed trait TypeError extends Throwable
+
+case class ReturnTypeMismatch(ty: IR.Type, expected: IR.Type) extends TypeError
 
 case class ObjectInfo(
     name: QualifiedName,
@@ -88,6 +101,26 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression  = ex
     case AST.QualifiedName(_, _) => ???
     case AST.NewObject(_, _) => ???
 
+def typecheck_stmts(stmts: List[AST.Statement], expected: IR.Type)(context: Context): List[IR.TypedStatement] = stmts match
+    case Nil => Nil
+    case head :: next => head match
+        case VarOrFieldDeclaration(modifiers, fieldType, name, initializer) => ???
+        case Block(statements) => ???
+        case ExpressionStatement(expression) => ???
+        case IfStatement(condition, thenStmt, elseStmt) => ???
+        case WhileStatement(condition, body) => ???
+        case ForStatement(init, condition, update, body) => ???
+        case ReturnStatement(expression) => {
+            val expr = expression.map(e => typecheck_expr(e)(context))
+            val ty = expr.map(e => e.ty).getOrElse(IR.VoidType)
+            if (ty != expected) throw new ReturnTypeMismatch(ty, expected)
+            IR.ReturnStatement(expr) :: typecheck_stmts(stmts, expected)(context)
+        }
+        case BreakStatement() => ???
+        case ContinueStatement() => ???
+        case Assignment(left, right) => ???
+        case MethodCall(target, arguments) => ???
+    
 def typecheck(ast: AST.CompilationUnit): IR.CompilationUnit = {
     ast.packageDeclaration.get.name
     val names = prelude ++ ast.importDeclarations.map(decl => new RuntimeException("TODO: implement importing"))
