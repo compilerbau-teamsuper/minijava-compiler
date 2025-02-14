@@ -192,13 +192,14 @@ statement
     : block
     | assignment
     | methodCall ';'
-    | ifThen
     | ifThenElse
+    | ifThen
     | whileStatement
     | forStatement
     | switch
     | break
     | continue
+    | return // ToDo: evtl noch restricten wo das vorkommen darf auf scala Seite? Vermutlich nicht super wichtig tho..
     | tryStatement // ToDo auf scala Seite
     | throwStatement; // ToDo auf scala Seite
 
@@ -212,7 +213,7 @@ localVariableDeclaration : type variableDeclarator (',' variableDeclarator)* ';'
 
 ifThen : 'if' '(' expression ')' statement;
 
-ifThenElse : 'if' '(' expression ')' statement 'else' statement ;
+ifThenElse : 'if' '(' expression ')' statement 'else' statement;
 
 whileStatement : 'while' '(' expression ')' statement;
 

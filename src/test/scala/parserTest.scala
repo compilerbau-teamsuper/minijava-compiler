@@ -112,5 +112,25 @@ object ParserTest extends TestSuite {
 
           ast ==> expected
         }
+        test("statements parsing 2") {
+          val ast = JavaASTBuilder.parseFromFile("src/test/java/statementsTest2.java")
+          val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public), "statementsTest2", QualifiedName(List(), "Object"), List(), ClassBody(List(
+            MethodDeclaration(List(), VoidType, "ifTest", List(), Option(Block(List(
+              IfStatement(
+                BinaryExpression(BinaryExpression(IntLiteral(5), BinaryOperator.Greater, IntLiteral(4)), BinaryOperator.Or, BinaryExpression(IntLiteral(5), BinaryOperator.Equals, IntLiteral(4))),
+                Block(List(Block(List()))),
+                Option(Block(List(
+                  IfStatement(BooleanLiteral(true), Block(List(ReturnStatement(None))), None)
+                )))))))),
+            MethodDeclaration(List(), VoidType, "assignmentTest", List(), Option(Block(List(
+              VarOrFieldDeclaration(List(), PrimitiveType.Boolean, "b", BooleanLiteral(false)),
+              Assignment(FieldAccess(QualifiedName(List(),"b")), BooleanLiteral(true)),
+              Assignment(FieldAccess(QualifiedName(List(),"b")), BinaryExpression(FieldAccess(QualifiedName(List(),"b")), BinaryOperator.Or, BooleanLiteral(false))),
+              VarOrFieldDeclaration(List(), PrimitiveType.Int, "x", IntLiteral(1)),
+              Assignment(FieldAccess(QualifiedName(List(),"x")), BinaryExpression(FieldAccess(QualifiedName(List(),"x")), BinaryOperator.Multiply, IntLiteral(4))),
+              Assignment(FieldAccess(QualifiedName(List(),"x")), BinaryExpression(FieldAccess(QualifiedName(List(),"x")), BinaryOperator.Modulo, IntLiteral(2))))))))))))
+
+          ast ==> expected
+        }
     }
 }
