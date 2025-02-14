@@ -29,9 +29,9 @@ object LangTypes {
     val String = ObjectType(QualifiedName(List("java", "lang"), "String"))
 }
 
-sealed trait TypedStatement[+T <: Type](val ty: T)
+sealed trait TypedStatement(val ty: Type)
 
-sealed trait TypedExpression[+T <: Type](val ty: T)
+sealed trait TypedExpression(val ty: Type)
 
 // Literals
 case class ByteLiteral(value: Byte) extends TypedExpression(PrimitiveType.Byte)
@@ -42,11 +42,11 @@ case class StringLiteral(value: String) extends TypedExpression(LangTypes.String
 case class BooleanLiteral(value: Boolean) extends TypedExpression(PrimitiveType.Boolean)
 case object NullLiteral extends TypedExpression(NullType)
 
-case class Conversion[From <: Type, To <: PrimitiveType](to: To, value: TypedExpression[From]) extends TypedExpression[To](to)
+case class Conversion(to: PrimitiveType, value: TypedExpression) extends TypedExpression(to)
 
 // Binary expressions
-case class NumericBinaryExpression[Ty <: NumericOperandType](
-    left: TypedExpression[Ty],
+case class NumericBinaryExpression(
+    left: TypedExpression,
     operator: AST.BinaryOperator,
-    right: TypedExpression[Ty],
-) extends TypedExpression[Ty](left.ty)
+    right: TypedExpression,
+) extends TypedExpression(left.ty)

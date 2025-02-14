@@ -2,6 +2,7 @@ package miniJavaAnalysis
 import miniJavaParser.AST
 import miniJavaParser.AST.QualifiedName
 import miniJavaAnalysis.IR.ObjectType
+import miniJavaAnalysis.IR.TypedExpression
 
 sealed trait TypeError extends Throwable
 
@@ -40,15 +41,15 @@ def is_subtype(ty: IR.Type, of: IR.Type)(ctx: Context): Boolean = (ty, of) match
     case (IR.ObjectType(sub), IR.ObjectType(sup)) => is_subtype(IR.ObjectType(ctx.types(sub).superclass), of)(ctx)
     case _ => false
 
-def unbox(expr: IR.TypedExpression[IR.Type]): Option[IR.TypedExpression[IR.PrimitiveType]] = expr.ty match
-    case ty: IR.PrimitiveType => Some(IR.Conversion(ty, expr))
+def unbox(expr: IR.TypedExpression): Option[IR.TypedExpression] = expr.ty match
+    case ty: IR.PrimitiveType => Some(expr)
     case _ => throw RuntimeException("TODO: unboxing")
 
 def binary_numeric(
-    left: IR.TypedExpression[IR.Type],
+    left: IR.TypedExpression,
     operator: AST.BinaryOperator,
-    right: IR.TypedExpression[IR.Type]
-): IR.TypedExpression[IR.NumericOperandType] = {
+    right: IR.TypedExpression
+): IR.TypedExpression = {
     val l = unbox(left).get
     val r = unbox(right).get
     (l.ty, r.ty) match
@@ -56,7 +57,7 @@ def binary_numeric(
         case _ => throw RuntimeException("TODO: error")
 }
 
-def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression[IR.Type]  = expr match
+def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression  = expr match
     case AST.BooleanLiteral(value) => IR.BooleanLiteral(value)
     case AST.IntLiteral(value) => IR.IntLiteral(value)
     case AST.ShortLiteral(value) => IR.ShortLiteral(value)
@@ -85,6 +86,7 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression[IR.Ty
     case AST.DoubleLiteral(_) => ???
     case AST.CharacterLiteral(_) => ???
     case AST.QualifiedName(_, _) => ???
+    case AST.NewObject(_, _) => ???
 
 def typecheck(ast: AST.CompilationUnit): IR.CompilationUnit = {
     ast.packageDeclaration.get.name
