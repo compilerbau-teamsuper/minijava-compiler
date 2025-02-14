@@ -48,7 +48,8 @@ case class MethodDeclaration(
 case class VarOrFieldDeclaration(
                              modifiers: List[Modifier],
                              fieldType: Type,
-                             variables: VariableDeclarator
+                             name: String,
+                             initializer: Expression
                            ) extends ClassMember, InterfaceMember, Statement
 case class ConstructorDeclaration(
                                    modifiers: List[Modifier],
@@ -57,8 +58,7 @@ case class ConstructorDeclaration(
                                    body: Block
                                  ) extends ClassMember
 
-// Variablen und Parameter
-case class VariableDeclarator(name: String, initializer: Expression) extends ASTNode // ToDo: evtl weglassen und in FieldDec integrierern
+// Parameter
 case class Parameter(name: String, paramType: Type) extends ASTNode
 
 // Blöcke und Statements

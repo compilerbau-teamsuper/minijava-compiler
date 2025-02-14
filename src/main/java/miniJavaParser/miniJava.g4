@@ -199,8 +199,8 @@ statement
     | switch
     | break
     | continue
-    | tryStatement
-    | throwStatement;
+    | tryStatement // ToDo auf scala Seite
+    | throwStatement; // ToDo auf scala Seite
 
 blockStatement
     : localVariableDeclaration

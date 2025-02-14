@@ -21,9 +21,9 @@ object ParserTest extends TestSuite {
                 Option(Block(List(ReturnStatement(None))))),
               MethodDeclaration(List(),ArrayType(PrimitiveType.Int),"doubleAddOne",List(Parameter("x",PrimitiveType.Int),Parameter("y",PrimitiveType.Int)),
                 Option(Block(List(
-                  VarOrFieldDeclaration(List(),ArrayType(PrimitiveType.Int), VariableDeclarator("res", ArrayInitializer(List(
+                  VarOrFieldDeclaration(List(),ArrayType(PrimitiveType.Int), "res", ArrayInitializer(List(
                     MethodCall(QualifiedName(List(), "plusOne"), List(FieldAccess(QualifiedName(List(), "x")))),
-                    MethodCall(QualifiedName(List(), "plusOne"), List(FieldAccess(QualifiedName(List(), "y")))))))),
+                    MethodCall(QualifiedName(List(), "plusOne"), List(FieldAccess(QualifiedName(List(), "y"))))))),
                   ReturnStatement(Option(FieldAccess(QualifiedName(List(), "res")))))))))))))
 
             ast ==> expected
@@ -36,9 +36,9 @@ object ParserTest extends TestSuite {
                 MethodDeclaration(List(Modifier.Public),VoidType,"nothing",List(),
                   Option(Block(List())))))),
               ClassDeclaration(List(),"extendClass",QualifiedName(List(),"subClass"),List(),ClassBody(List(
-                VarOrFieldDeclaration(List(Modifier.Private),PrimitiveType.Boolean,VariableDeclarator("why", BooleanLiteral(false))))))))),
+                VarOrFieldDeclaration(List(Modifier.Private),PrimitiveType.Boolean,"why", BooleanLiteral(false)))))))),
             InterfaceDeclaration(List(), "interfaze", List(), InterfaceBody(List(
-              VarOrFieldDeclaration(List(Modifier.Public),PrimitiveType.Int,VariableDeclarator("x", IntLiteral(2))),
+              VarOrFieldDeclaration(List(Modifier.Public),PrimitiveType.Int,"x", IntLiteral(2)),
               MethodDeclaration(List(Modifier.Abstract,Modifier.Public),VoidType,"nothing",List(),None))))))
 
           ast ==> expected
@@ -46,8 +46,8 @@ object ParserTest extends TestSuite {
         test("calculations parsing") {
           val ast = JavaASTBuilder.parseFromFile("src/test/java/calculationsTest.java")
           val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public),"calculationsTest",QualifiedName(List(),"Object"),List(),ClassBody(List(
-            VarOrFieldDeclaration(List(),PrimitiveType.Boolean,VariableDeclarator("f", BinaryExpression(BooleanLiteral(true), BinaryOperator.Or, BooleanLiteral(false)))),
-            VarOrFieldDeclaration(List(),PrimitiveType.Boolean,VariableDeclarator("g",
+            VarOrFieldDeclaration(List(),PrimitiveType.Boolean,"f", BinaryExpression(BooleanLiteral(true), BinaryOperator.Or, BooleanLiteral(false))),
+            VarOrFieldDeclaration(List(),PrimitiveType.Boolean,"g",
               BinaryExpression(
                 BinaryExpression(FieldAccess(QualifiedName(List(),"f")), BinaryOperator.Xor, BooleanLiteral(true)),
                 BinaryOperator.Xor,
@@ -63,8 +63,8 @@ object ParserTest extends TestSuite {
                         BinaryOperator.Greater,
                         IntLiteral(5)))),
                   BinaryOperator.Xor,
-                  BooleanLiteral(true))))),
-            VarOrFieldDeclaration(List(),PrimitiveType.Int,VariableDeclarator("x",
+                  BooleanLiteral(true)))),
+            VarOrFieldDeclaration(List(),PrimitiveType.Int,"x",
               BinaryExpression(
                 IntLiteral(0),
                 BinaryOperator.Subtract,
@@ -80,7 +80,7 @@ object ParserTest extends TestSuite {
                         BinaryOperator.Divide,
                         IntLiteral(4))),
                     BinaryOperator.Add,
-                    IntLiteral(3)))))),
+                    IntLiteral(3))))),
             MethodDeclaration(List(),PrimitiveType.Boolean,"alwaysTrue",List(),
               Option(Block(List(ReturnStatement(Option(BinaryExpression(BooleanLiteral(true), BinaryOperator.And, BooleanLiteral(true)))))))),
             MethodDeclaration(List(),PrimitiveType.Int,"alwaysOne",List(),
@@ -90,20 +90,22 @@ object ParserTest extends TestSuite {
         }
         test("statements parsing 1") {
           val ast = JavaASTBuilder.parseFromFile("src/test/java/statementsTest1.java")
-          val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public),"statementsTest1",QualifiedName(List(),"Object"),List(),ClassBody(List(
-            MethodDeclaration(List(),VoidType,"forTest", List(),Option(Block(List(
+          val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public), "statementsTest1", QualifiedName(List(), "Object"), List(), ClassBody(List(
+            MethodDeclaration(List(), VoidType, "forTest", List(), Option(Block(List(
               ForStatement(
-                Option(VarOrFieldDeclaration(List(),PrimitiveType.Int,VariableDeclarator("i", IntLiteral(0)))),
-                Option(BinaryExpression(IntLiteral(5), BinaryOperator.Greater, FieldAccess(QualifiedName(List(),"i")))),
-                Option(BinaryExpression(FieldAccess(QualifiedName(List(),"i")), BinaryOperator.Add, IntLiteral(1))),
-                Block(List(BreakStatement()))))))),
-            MethodDeclaration(List(),VoidType,"whileTest", List(),Option(Block(List(
-              VarOrFieldDeclaration(List(),PrimitiveType.Boolean, VariableDeclarator("loopVar", BooleanLiteral(true))),
-              WhileStatement(
-                FieldAccess(QualifiedName(List(),"loopVar")),
+                Option(VarOrFieldDeclaration(List(), PrimitiveType.Int, "i", IntLiteral(0))),
+                Option(BinaryExpression(IntLiteral(5), BinaryOperator.Greater, FieldAccess(QualifiedName(List(), "i")))),
+                Option(BinaryExpression(FieldAccess(QualifiedName(List(), "i")), BinaryOperator.Add, IntLiteral(1))),
                 Block(List(
-                  MethodCall(QualifiedName(List(),"forTest"), List()),
-                  Assignment(FieldAccess(QualifiedName(List(), "loopVar")), BooleanLiteral(false)),
+                  Assignment(FieldAccess(QualifiedName(List(), "i")), BinaryExpression(FieldAccess(QualifiedName(List(), "i")), BinaryOperator.Subtract, IntLiteral(1))),
+                  BreakStatement()))))))),
+            MethodDeclaration(List(), VoidType, "whileTest", List(), Option(Block(List(
+              VarOrFieldDeclaration(List(), PrimitiveType.Boolean, "loopVar", BooleanLiteral(true)),
+              WhileStatement(
+                FieldAccess(QualifiedName(List(), "loopVar")),
+                Block(List(
+                  MethodCall(QualifiedName(List(), "forTest"), List()),
+                  Assignment(FieldAccess(QualifiedName(List(), "loopVar")), BinaryExpression(FieldAccess(QualifiedName(List(), "loopVar")), BinaryOperator.And, BooleanLiteral(false))),
                   ContinueStatement()
                 )))))))
           )))))

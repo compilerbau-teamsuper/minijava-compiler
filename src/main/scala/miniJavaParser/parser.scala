@@ -232,9 +232,9 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       val initializer = if declarator.variableInitializer() != null
         then visitVariableInitializer(declarator.variableInitializer())
         else standardInitializer(fieldType)
-      VariableDeclarator(name, initializer) 
+      (name, initializer)
     }.toList
-    variables.map(v => VarOrFieldDeclaration(modifiers, fieldType, v))
+    variables.map(v => VarOrFieldDeclaration(modifiers, fieldType, v(0), v(1)))
   }
 
   private def standardInitializer(t: Type) : Expression = {
@@ -317,11 +317,11 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   private def visitLocalVariableDec(ctx: LocalVariableDeclarationContext): List[VarOrFieldDeclaration] = {
     val t = getType(ctx.`type`())
     val variables = ctx.variableDeclarator().asScala.map(v => visitVariableDeclarator(v, t)).toList
-    variables.map(v => VarOrFieldDeclaration(List(), t, v))
+    variables.map(v => VarOrFieldDeclaration(List(), t, v(0), v(1)))
   }
 
-  private def visitVariableDeclarator(ctx: VariableDeclaratorContext, t: Type): VariableDeclarator = {
-    VariableDeclarator(ctx.Identifier().getText,
+  private def visitVariableDeclarator(ctx: VariableDeclaratorContext, t: Type): (String, Expression) = {
+    (ctx.Identifier().getText,
       if ctx.variableInitializer() != null then visitVariableInitializer(ctx.variableInitializer()) else standardInitializer(t))
   }
 
@@ -369,6 +369,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       case "%=" => BinaryExpression(left, BinaryOperator.Modulo, pre_right)
       case "&=" => BinaryExpression(left, BinaryOperator.And, pre_right)
       case "|=" =>BinaryExpression(left, BinaryOperator.Or, pre_right)
+      case "^=" => BinaryExpression(left, BinaryOperator.Xor, pre_right)
     }
     Assignment(left, right)
   }
