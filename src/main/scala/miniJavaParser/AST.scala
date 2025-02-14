@@ -72,7 +72,6 @@ case class ForStatement(init: Option[VarOrFieldDeclaration], condition: Option[E
 case class ReturnStatement(expression: Option[Expression]) extends Statement
 case class BreakStatement() extends Statement
 case class ContinueStatement() extends Statement
-case class Assignment(left: Expression, right: Expression) extends Statement
 
 // Expressions
 sealed trait Expression extends ASTNode
@@ -82,6 +81,7 @@ case class FieldAccess(target: Expression) extends Expression
 case class ArrayInitializer(initializers: List[Expression]) extends Expression
 case class ArrayAccess(target: Expression, index: Expression) extends Expression // ToDo: Mehrdimensionale arrays
 case class NewObject(target: Expression, arguments: List[Expression]) extends Expression
+case class Assignment(left: Expression, right: Expression) extends Expression
 
 // Literals
 sealed trait Literal extends Expression

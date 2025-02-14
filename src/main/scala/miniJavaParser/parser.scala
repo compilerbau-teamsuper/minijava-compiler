@@ -341,7 +341,6 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     if ctx == null then return null
     ctx.getChild(0) match {
       case b: BlockContext => visitBlock(b)
-      case a: AssignmentContext => visitAssignment(a)
       case m: MethodCallContext => visitMethodCall(m)
       case i: (IfThenContext | IfThenElseContext) => visitIfThenElse(i)
       // case s: SwitchContext => visitSwitch(s) // ToDo: Überhaupt notwendig?
@@ -407,6 +406,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       case o: NewObjectContext => visitNewObject(o)
       case b: BooleanFunctionContext => visitBooleanFunction(b)
       case c: CalcFunctionContext => visitCalcFunction(c)
+      case a: AssignmentContext => visitAssignment(a)
     }
   }
 

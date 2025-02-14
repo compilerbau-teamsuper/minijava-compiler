@@ -100,6 +100,7 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression  = ex
     case AST.CharacterLiteral(_) => ???
     case AST.QualifiedName(_, _) => ???
     case AST.NewObject(_, _) => ???
+    case AST.Assignment(left, right) => ???
 
 def typecheck_stmts(stmts: List[AST.Statement], return_type: IR.Type)(context: Context): List[IR.TypedStatement] = stmts match
     case Nil => Nil
@@ -135,7 +136,6 @@ def typecheck_stmts(stmts: List[AST.Statement], return_type: IR.Type)(context: C
         }
         case BreakStatement() => typecheck_stmts(next, return_type)(context)
         case ContinueStatement() => typecheck_stmts(next, return_type)(context)
-        case Assignment(left, right) => ???
         case MethodCall(target, arguments) => ???
 
 def typecheck(ast: AST.CompilationUnit): IR.CompilationUnit = {

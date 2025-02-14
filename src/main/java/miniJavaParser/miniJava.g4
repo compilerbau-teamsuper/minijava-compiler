@@ -89,6 +89,7 @@ expression
     : calcFunction
     | booleanFunction
     | newObject
+    | assignment
     | value;
 
 value
@@ -190,7 +191,6 @@ OR : '||';
 // Statements
 statement
     : block
-    | assignment
     | methodCall ';'
     | ifThenElse
     | ifThen
