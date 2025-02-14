@@ -17,7 +17,7 @@ import miniJavaParser.AST.MethodCall
 
 sealed trait TypeError extends Throwable
 
-case class ReturnTypeMismatch(ty: IR.Type, expected: IR.Type) extends TypeError
+case class TypeMismatch(ty: IR.Type, expected: IR.Type) extends TypeError
 
 case class ObjectInfo(
     name: QualifiedName,
@@ -101,26 +101,43 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression  = ex
     case AST.QualifiedName(_, _) => ???
     case AST.NewObject(_, _) => ???
 
-def typecheck_stmts(stmts: List[AST.Statement], expected: IR.Type)(context: Context): List[IR.TypedStatement] = stmts match
+def typecheck_stmts(stmts: List[AST.Statement], return_type: IR.Type)(context: Context): List[IR.TypedStatement] = stmts match
     case Nil => Nil
     case head :: next => head match
         case VarOrFieldDeclaration(modifiers, fieldType, name, initializer) => ???
-        case Block(statements) => ???
-        case ExpressionStatement(expression) => ???
-        case IfStatement(condition, thenStmt, elseStmt) => ???
-        case WhileStatement(condition, body) => ???
+        case Block(statements) => {
+            val block = typecheck_stmts(statements, return_type)(context)
+            IR.Block(block) :: typecheck_stmts(next, return_type)(context)
+        }
+        case ExpressionStatement(expression) => {
+            val expr = typecheck_expr(expression)(context)
+            IR.ExpressionStatement(expr) :: typecheck_stmts(next, return_type)(context)
+        }
+        case IfStatement(condition, thenStmt, elseStmt) => {
+            val cond = typecheck_expr(condition)(context)
+            val cthen = typecheck_stmts(List(thenStmt), return_type)(context).head
+            val celse = elseStmt.map(s => typecheck_stmts(List(s), return_type)(context).head)
+            if (!is_subtype(cond.ty, IR.PrimitiveType.Boolean)(context)) throw new TypeMismatch(cond.ty, IR.PrimitiveType.Boolean)
+            IR.IfStatement(cond, cthen, celse) :: typecheck_stmts(next, return_type)(context)
+        }
+        case WhileStatement(condition, body) => {
+            val cond = typecheck_expr(condition)(context)
+            val cbody = typecheck_stmts(List(body), return_type)(context).head
+            if (!is_subtype(cond.ty, IR.PrimitiveType.Boolean)(context)) throw new TypeMismatch(cond.ty, IR.PrimitiveType.Boolean)
+            IR.WhileStatement(cond, cbody) :: typecheck_stmts(next, return_type)(context)
+        }
         case ForStatement(init, condition, update, body) => ???
         case ReturnStatement(expression) => {
             val expr = expression.map(e => typecheck_expr(e)(context))
             val ty = expr.map(e => e.ty).getOrElse(IR.VoidType)
-            if (!is_subtype(ty, expected)(context)) throw new ReturnTypeMismatch(ty, expected)
-            IR.ReturnStatement(expr) :: typecheck_stmts(stmts, expected)(context)
+            if (!is_subtype(ty, return_type)(context)) throw new TypeMismatch(ty, return_type)
+            IR.ReturnStatement(expr) :: typecheck_stmts(next, return_type)(context)
         }
-        case BreakStatement() => ???
-        case ContinueStatement() => ???
+        case BreakStatement() => typecheck_stmts(next, return_type)(context)
+        case ContinueStatement() => typecheck_stmts(next, return_type)(context)
         case Assignment(left, right) => ???
         case MethodCall(target, arguments) => ???
-    
+
 def typecheck(ast: AST.CompilationUnit): IR.CompilationUnit = {
     ast.packageDeclaration.get.name
     val names = prelude ++ ast.importDeclarations.map(decl => new RuntimeException("TODO: implement importing"))

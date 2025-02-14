@@ -29,10 +29,13 @@ object LangTypes {
     val String = ObjectType(QualifiedName(List("java", "lang"), "String"))
 }
 
-sealed trait TypedStatement(val ty: Type)
+sealed trait TypedStatement
 
-case class ReturnStatement(val expression: Option[TypedExpression])
-extends TypedStatement(expression.map(e => e.ty).getOrElse(VoidType))
+case class ReturnStatement(val expression: Option[TypedExpression]) extends TypedStatement
+case class Block(val statements: List[TypedStatement]) extends TypedStatement
+case class ExpressionStatement(val expression: TypedExpression) extends TypedStatement
+case class IfStatement(val condition: TypedExpression, val thenStmt: TypedStatement, val elseStmt: Option[TypedStatement]) extends TypedStatement
+case class WhileStatement(val condition: TypedExpression, val body: TypedStatement) extends TypedStatement
 
 sealed trait TypedExpression(val ty: Type)
 

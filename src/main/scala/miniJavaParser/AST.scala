@@ -153,4 +153,3 @@ enum Modifier {
 
 // Hilfsklassen
 case class QualifiedName(target: List[String], name: String) extends ASTNode, Expression
-
