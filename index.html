@@ -9,8 +9,98 @@
 A--&gt;B
 </code></pre>
 
-<div class="mermaid">graph LR
-A--&gt;B
+<div class="mermaid">classDiagram
+    %% Core AST hierarchy
+    ASTNode <|-- TypeDeclaration
+    ASTNode <|-- Statement
+    ASTNode <|-- Expression
+    ASTNode <|-- TypeOrVoid
+    
+    %% Type Declaration branch
+    TypeDeclaration <|-- ClassDeclaration
+    TypeDeclaration <|-- InterfaceDeclaration
+    
+    %% Statement branch
+    Statement <|-- Block
+    Statement <|-- ExpressionStatement
+    Statement <|-- IfStatement
+    Statement <|-- WhileStatement
+    Statement <|-- ForStatement
+    Statement <|-- ReturnStatement
+    Statement <|-- VarOrFieldDeclaration
+    
+    %% Expression branch
+    Expression <|-- Literal
+    Expression <|-- BinaryExpression
+    Expression <|-- MethodCall
+    Expression <|-- FieldAccess
+    Expression <|-- ArrayAccess
+    Expression <|-- NewObject
+    
+    %% Literal branch
+    Literal <|-- IntLiteral
+    Literal <|-- StringLiteral
+    Literal <|-- BooleanLiteral
+    Literal <|-- NullLiteral
+    
+    %% Type system
+    TypeOrVoid <|-- Type
+    Type <|-- PrimitiveType
+    Type <|-- ObjectType
+    Type <|-- ArrayType
+    
+    class ClassDeclaration {
+        +List[Modifier] modifiers
+        +String name
+        +String superclass
+        +List[ClassMember] body
+    }
+    
+    class MethodDeclaration {
+        +List[Modifier] modifiers
+        +TypeOrVoid returnType
+        +String name
+        +List[Parameter] parameters
+    }
+    
+    class VarOrFieldDeclaration {
+        +List[Modifier] modifiers
+        +Type fieldType
+        +String name
+        +Expression initializer
+    }
+    
+    class Block {
+        +List[Statement] statements
+    }
+    
+    class IfStatement {
+        +Expression condition
+        +Statement thenStmt
+        +Option[Statement] elseStmt
+    }
+    
+    class BinaryExpression {
+        +Expression left
+        +BinaryOperator operator
+        +Expression right
+    }
+    
+    class MethodCall {
+        +String name
+        +Option[Expression] target
+        +List[Expression] arguments
+    }
+    
+    class ArrayAccess {
+        +Expression target
+        +Expression index
+    }
+    
+    class Parameter {
+        +String name
+        +Type paramType
+    }
 </div>
 	
 </body>
