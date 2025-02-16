@@ -42,8 +42,14 @@ object TypecheckTest extends TestSuite {
                         Some(Code(1,List(
                             ReturnStatement(Some(GetField(PrimitiveType.Int,"field",LoadLocal(ObjectType("simpleTypeTest"),0))))
                         )))
+                    ),
+                    Method("invokeGetField",
+                        MethodType(List(),PrimitiveType.Int),
+                        Some(Code(1,List(
+                            ReturnStatement(Some(InvokeSpecial(PrimitiveType.Int,"getField",LoadLocal(ObjectType("simpleTypeTest"),0),List())))
+                        )))
                     )
-                ),
+                )
             )
 
             ir ==> expected

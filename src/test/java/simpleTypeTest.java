@@ -13,4 +13,8 @@ class simpleTypeTest {
     int getField() {
         return field;
     }
+
+    int invokeGetField() {
+        return getField();
+    }
 }

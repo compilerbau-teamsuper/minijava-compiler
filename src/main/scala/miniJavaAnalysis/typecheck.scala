@@ -6,6 +6,8 @@ sealed trait TypeError extends Throwable
 case class TypeMismatch(ty: IR.Type, expected: IR.Type) extends TypeError
 case object LocalVoidVariable extends TypeError
 case class NoSuchField(name: String, ty: Option[IR.Type]) extends TypeError
+case class NoSuchMethod(name: String, ty: Option[IR.Type]) extends TypeError
+case class ParameterCountMismatch(got: Int, expected: Int) extends TypeError
 
 case class ObjectInfo(
     supertypes: List[IR.ObjectType],
@@ -115,7 +117,28 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
             case AST.BinaryOperator.Greater => ???
             case AST.BinaryOperator.Xor => ???
     }
-    case AST.MethodCall(name, target, arguments) => ???
+    case AST.MethodCall(name, target, arguments) => {
+        val t = target match
+            case None => ctx.this_type match
+                case Some(this_type) => IR.LoadLocal(this_type, 0)
+                case None => throw new NoSuchMethod(name, None)
+            case Some(target) => typecheck_expr(target)(ctx)
+        
+        val method_type = t.ty match
+            case object_type @ IR.ObjectType(_) => ctx.types(object_type).methods.get(name) match
+                case Some(method_type) => method_type
+                case None => throw new NoSuchField(name, Some(object_type))
+            case ty => throw new NoSuchField(name, Some(ty))
+
+        val args = arguments.map(arg => typecheck_expr(arg)(ctx))
+        if (args.length != method_type.params.length) throw new ParameterCountMismatch(args.length, method_type.params.length)
+
+        for ((arg, ty) <- args.zip(method_type.params)) {
+            if (!is_subtype(arg.ty, ty)(ctx)) throw new TypeMismatch(arg.ty, ty)
+        }
+
+        IR.InvokeSpecial(method_type.ret, name, t, args)
+    }
     case AST.FieldAccess(name, target) => {
         val t = target match
             case None => ctx.locals.get(name) match
@@ -125,11 +148,13 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
                     case None => throw new NoSuchField(name, None)
             case Some(target) => typecheck_expr(target)(ctx)
 
-        t.ty match
+        val field_type = t.ty match
             case object_type @ IR.ObjectType(_) => ctx.types(object_type).fields.get(name) match
-                case Some(field_ty) => IR.GetField(field_ty, name, t)
+                case Some(field_type) => field_type
                 case None => throw new NoSuchField(name, Some(object_type))
             case ty => throw new NoSuchField(name, Some(ty))
+        
+        IR.GetField(field_type, name, t)
     }
     case AST.ArrayInitializer(initializers) => ???
     case AST.ArrayAccess(_, _) => ???
@@ -152,14 +177,14 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
                             case None => throw new NoSuchField(name, None)
                     case Some(target) => typecheck_expr(target)(ctx)
 
-                t.ty match
+                val field_type = t.ty match
                     case object_type @ IR.ObjectType(_) => ctx.types(object_type).fields.get(name) match
-                        case Some(field_ty) => {
-                            if (!is_subtype(r.ty, field_ty)(ctx)) throw new TypeMismatch(r.ty, field_ty)
-                            IR.DupPutField(name, t, r)
-                        }
+                        case Some(field_type) => field_type
                         case None => throw new NoSuchField(name, Some(object_type))
                     case ty => throw new NoSuchField(name, Some(ty))
+
+                if (!is_subtype(r.ty, field_type)(ctx)) throw new TypeMismatch(r.ty, field_type)
+                IR.DupPutField(name, t, r)
             }
             case AST.ArrayAccess(target, index) => ???
     }
