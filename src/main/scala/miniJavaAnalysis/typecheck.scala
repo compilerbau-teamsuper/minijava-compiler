@@ -76,6 +76,7 @@ def local_size(ty: IR.Type): Int = ty match
 def is_subtype(ty: IR.Type, of: IR.Type)(ctx: Context): Boolean = (ty, of) match
     case (sub, sup) if sub == sup => true
     case (_, IR.LangTypes.Object) => true
+    case (IR.NullType, _ @ IR.ObjectType(_)) => true
     case (sub @ IR.ObjectType(_), _ @ IR.ObjectType(_)) => ctx.types(sub).supertypes.exists(sup => is_subtype(sup, of)(ctx))
     case _ => false
 
