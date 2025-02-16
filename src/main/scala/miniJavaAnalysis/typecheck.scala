@@ -7,29 +7,32 @@ case class TypeMismatch(ty: IR.Type, expected: IR.Type) extends TypeError
 case object LocalVoidVariable extends TypeError
 
 case class ObjectInfo(
-    name: String,
-    superclass: String,
-    methods: Map[String, MethodType],
+    supertypes: List[IR.ObjectType],
+    methods: Map[String, IR.MethodType],
     fields: Map[String, IR.Type],
+    constructor: Option[IR.MethodType]
 )
-case class MethodType(params: List[IR.Type], ret: IR.Type)
 
 val prelude = Map(
     "Object" -> IR.LangTypes.Object,
     "String" -> IR.LangTypes.String,
 )
 
-sealed trait Variable
-case class LocalVariable(ty: IR.Type, idx: Int) extends Variable
-case class ClassField(ty: IR.Type, name: String) extends Variable
+val langtypes = Map(
+    IR.LangTypes.Object -> ObjectInfo(List.empty, Map.empty, Map.empty, None),
+    IR.LangTypes.String -> ObjectInfo(List(IR.LangTypes.Object), Map.empty, Map.empty, None)
+)
+
+case class Local(ty: IR.Type, idx: Int)
 
 case class Context(
-    types: Map[String, ObjectInfo],
-    variables: Map[String, Variable],
+    names: Map[String, IR.ObjectType],
+    types: Map[IR.ObjectType, ObjectInfo],
+    locals: Map[String, Local],
     return_type: IR.Type,
 )
 
-def resolve(ty: AST.Type)(ctx: Context): IR.Type = ty match
+def resolve(ty: AST.TypeOrVoid)(names: Map[String, IR.ObjectType]): IR.Type = ty match
     case AST.PrimitiveType.Int => IR.PrimitiveType.Int
     case AST.PrimitiveType.Boolean => IR.PrimitiveType.Boolean
     case AST.PrimitiveType.Char => IR.PrimitiveType.Char
@@ -45,8 +48,9 @@ def resolve(ty: AST.Type)(ctx: Context): IR.Type = ty match
     case AST.ObjectType.Double => ???
     case AST.ObjectType.Boolean => ???
     case AST.ObjectType.Character => ???
-    case AST.ObjectType.Custom(name) => ???
+    case AST.ObjectType.Custom(name) => names(name)
     case AST.ArrayType(arrayType) => ???
+    case AST.VoidType => IR.VoidType
 
 def stringify(ty: IR.Type): String = ty match
     case ty: IR.PrimitiveType => ty match
@@ -60,10 +64,15 @@ def stringify(ty: IR.Type): String = ty match
         case IR.PrimitiveType.Byte => "byte"
     case _ => ???
 
+def local_size(ty: IR.Type): Int = ty match
+    case IR.PrimitiveType.Long | IR.PrimitiveType.Double => 2
+    case IR.VoidType => throw LocalVoidVariable
+    case _ => 1
+
 def is_subtype(ty: IR.Type, of: IR.Type)(ctx: Context): Boolean = (ty, of) match
-    case (IR.ObjectType(sub), IR.ObjectType(sup)) if sub == sup => true
-    case (IR.ObjectType(sub), IR.LangTypes.Object) => true
-    case (IR.ObjectType(sub), IR.ObjectType(sup)) => is_subtype(IR.ObjectType(ctx.types(sub).superclass), of)(ctx)
+    case (sub, sup) if sub == sup => true
+    case (_, IR.LangTypes.Object) => true
+    case (sub @ IR.ObjectType(_), _ @ IR.ObjectType(_)) => ctx.types(sub).supertypes.exists(sup => is_subtype(sup, of)(ctx))
     case _ => false
 
 def unbox(expr: IR.TypedExpression): Option[IR.TypedExpression] = expr.ty match
@@ -74,12 +83,13 @@ def binary_numeric(
     left: IR.TypedExpression,
     operator: AST.BinaryOperator,
     right: IR.TypedExpression
-): IR.TypedExpression = {
+): IR.NumericBinaryExpression = {
     val l = unbox(left).get
     val r = unbox(right).get
     (l.ty, r.ty) match
-        case (IR.PrimitiveType.Double, IR.PrimitiveType.Double) => IR.NumericBinaryExpression(???, operator, ???)
-        case _ => throw RuntimeException("TODO: error")
+        case (IR.PrimitiveType.Double, IR.PrimitiveType.Double) => IR.NumericBinaryExpression(l, operator, r)
+        case (IR.PrimitiveType.Int, IR.PrimitiveType.Int) => IR.NumericBinaryExpression(l, operator, r)
+        case _ => ???
 }
 
 def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = expr match
@@ -105,9 +115,9 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
     }
     case AST.MethodCall(name, target, arguments) => ???
     case AST.FieldAccess(name, target) => target match
-        case None => ctx.variables(name) match
-            case LocalVariable(ty, idx) => IR.LoadLocal(ty, idx)
-            case ClassField(ty, name) => ???
+        case None => ctx.locals.get(name) match
+            case Some(Local(ty, idx)) => IR.LoadLocal(ty, idx)
+            case None => ???
         case Some(value) => ???
     case AST.ArrayInitializer(initializers) => ???
     case AST.ArrayAccess(_, _) => ???
@@ -118,12 +128,12 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
     case AST.Assignment(left, right) => {
         val r = typecheck_expr(right)(ctx)
         left match
-            case AST.FieldAccess(name, None) => ctx.variables(name) match
-                case LocalVariable(ty, idx) => {
+            case AST.FieldAccess(name, None) => ctx.locals.get(name) match
+                case Some(Local(ty, idx)) => {
                     if (!is_subtype(r.ty, ty)(ctx)) throw new TypeMismatch(r.ty, ty)
                     IR.DupStoreLocal(idx, r)
                 }
-                case ClassField(ty, name) => ???
+                case None => ???
 
             case AST.FieldAccess(name, Some(target)) => ???
             case AST.ArrayAccess(target, index) => ???
@@ -134,20 +144,16 @@ def typecheck_stmts(prev: IR.Code, stmts: List[AST.Statement])(ctx: Context): IR
     case head :: next => head match
         case AST.VarOrFieldDeclaration(modifiers, fieldType, name, initializer) => {
             assert(modifiers.isEmpty, "TODO: maybe support modifiers")
-            val ty = resolve(fieldType)(ctx)
+            val ty = resolve(fieldType)(ctx.names)
 
             val init = typecheck_expr(initializer)(ctx)
             if (!is_subtype(init.ty, ty)(ctx)) throw new TypeMismatch(init.ty, ty)
 
             val idx = prev.max_locals
-            val variable = LocalVariable(ty, idx)
-            val locals = ty match
-                case IR.PrimitiveType.Long | IR.PrimitiveType.Double => 2
-                case IR.VoidType => throw LocalVoidVariable
-                case _ => 1
+            val local = Local(ty, idx)
 
-            val context = Context(ctx.types, ctx.variables + (name -> variable), ctx.return_type)
-            val code = IR.Code(prev.max_locals + locals, prev.code :+ IR.ExpressionStatement(IR.DupStoreLocal(idx, init)))
+            val context = ctx.copy(locals = ctx.locals + (name -> local))
+            val code = IR.Code(prev.max_locals + local_size(ty), prev.code :+ IR.ExpressionStatement(IR.DupStoreLocal(idx, init)))
             typecheck_stmts(code, next)(context)
         }
         case AST.Block(statements) => {
@@ -185,11 +191,95 @@ def typecheck_stmts(prev: IR.Code, stmts: List[AST.Statement])(ctx: Context): IR
         case AST.BreakStatement() => ???
         case AST.ContinueStatement() => ???
 
-def typecheck(ast: AST.CompilationUnit): IR.CompilationUnit = {
-    ast.packageDeclaration.get.name
-    val names = prelude ++ ast.importDeclarations.map(decl => new RuntimeException("TODO: implement importing"))
+def typecheck_method(
+    modifiers: List[AST.Modifier],
+    name: String,
+    parameters: List[String],
+    ty: IR.MethodType,
+    body: Option[AST.Block],
+)(
+    names: Map[String, IR.ObjectType],
+    types: Map[IR.ObjectType, ObjectInfo],
+): IR.Method = {
+    assert(modifiers.isEmpty, "modifiers are unsupported")
 
+    val b = body match
+        case Some(b) => b
+        case None => return IR.Method(name, ty, None)
 
+    val this_param = 1
+    val (max_locals, locals) = parameters.zip(ty.params).foldLeft((this_param, Map.empty[String, Local]))((_, _) match
+        case ((idx, locals), (name, ty)) => (idx + local_size(ty), locals + (name -> Local(ty, idx)))
+    )
+    val ctx = Context(names, types, locals, ty.ret)
+    val code = typecheck_stmts(IR.Code(max_locals, List.empty), List(b))(ctx)
+    IR.Method(name, ty, Some(code))
+}
 
-    ???
+def typecheck_field(
+    modifiers: List[AST.Modifier],
+    name: String,
+    ty: IR.Type,
+    initializer: AST.Expression,
+)(
+    names: Map[String, IR.ObjectType],
+    types: Map[IR.ObjectType, ObjectInfo]
+) = {
+    val ctx = Context(names, types, Map.empty, IR.VoidType)
+    val init = typecheck_expr(initializer)(ctx)
+    if (!is_subtype(init.ty, ty)(ctx)) throw TypeMismatch(init.ty, ty)
+    IR.Field(name, ty, init)
+}
+
+def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
+    val pkg = ast.packageDeclaration.map(p => p.name).getOrElse("")
+    val List(decl) = ast.typeDeclarations
+
+    val name = decl match
+        case AST.ClassDeclaration(modifiers, name, superclass, interfaces, body) => name
+        case AST.InterfaceDeclaration(modifiers, name, superInterfaces, body) => name
+    
+    val this_ty = IR.ObjectType(pkg + '.' + name)
+    val names = prelude + (name -> this_ty)
+
+    val (supertypes, members) = decl match
+        case AST.ClassDeclaration(modifiers, name, superclass, interfaces, body) => (names(superclass) :: interfaces.map(i => names(i)), body)
+        case AST.InterfaceDeclaration(modifiers, name, superInterfaces, body) => (superInterfaces.map(i => names(i)), body)
+
+    var info = ObjectInfo(
+        supertypes,
+        Map.empty,
+        Map.empty,
+        None
+    )
+    var check_fields = List.empty[Map[IR.ObjectType, ObjectInfo] => IR.Field]
+    var check_methods = List.empty[Map[IR.ObjectType, ObjectInfo] => IR.Method]
+    for (member <- members) member match
+        case AST.ClassDeclaration(modifiers, name, superclass, interfaces, body) => ???
+        case AST.InterfaceDeclaration(modifiers, name, superInterfaces, body) => ???
+        case AST.MethodDeclaration(modifiers, returnType, name, parameters, body) => {
+            val ty = IR.MethodType(parameters.map(p => resolve(p.paramType)(names)), resolve(returnType)(names))
+            val params = parameters.map(p => p.name)
+            info = info.copy(methods = info.methods + (name -> ty))
+            check_methods = check_methods :+ (types => typecheck_method(modifiers, name, params, ty, body)(names, types))
+        }
+        case AST.VarOrFieldDeclaration(modifiers, fieldType, name, initializer) => {
+            val ty = resolve(fieldType)(names)
+            info = info.copy(fields = info.fields + (name -> ty))
+            check_fields = check_fields :+ (types => typecheck_field(modifiers, name, ty, initializer)(names, types))
+        }
+        case AST.ConstructorDeclaration(modifiers, name, parameters, body) => {
+            assert(info.constructor.isEmpty, "classes may only have one constructor")
+            val ty = IR.MethodType(parameters.map(p => resolve(p.paramType)(names)), IR.VoidType)
+            val params = parameters.map(p => p.name)
+            info = info.copy(constructor = Some(ty))
+            check_methods = check_methods :+ (types => typecheck_method(modifiers, "<init>", params, ty, Some(body))(names, types))
+        }
+        case AST.Block(statements) => ???
+
+    val types = langtypes + (this_ty -> info)
+
+    val fields = check_fields.map(check => check(types))
+    val methods = check_methods.map(check => check(types))
+    IR.ClassFile(name, fields, methods)
 }

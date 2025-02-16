@@ -1,7 +1,30 @@
 package miniJavaAnalysis.IR
 import miniJavaParser.AST
 
-case class CompilationUnit()
+case class ClassFile(
+    name: String,
+    fields: List[Field],
+    methods: List[Method],
+)
+
+case class Field(
+    name: String,
+    ty: Type,
+    value: TypedExpression,
+)
+
+case class Method(
+    name: String,
+    ty: MethodType,
+    code: Option[Code],
+)
+
+case class Code(
+    max_locals: Int,
+    code: List[TypedStatement],
+)
+
+case class MethodType(params: List[Type], ret: Type)
 
 sealed trait Type
 sealed trait PrimitiveType extends Type
@@ -57,8 +80,3 @@ case class NumericBinaryExpression(
 
 case class LoadLocal(local_ty: Type, index: Int) extends TypedExpression(local_ty)
 case class DupStoreLocal(index: Int, value: TypedExpression) extends TypedExpression(value.ty)
-
-case class Code(
-    max_locals: Int,
-    code: List[TypedStatement],
-)
