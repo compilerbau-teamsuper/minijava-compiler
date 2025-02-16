@@ -1,6 +1,5 @@
 package miniJavaAnalysis.IR
 import miniJavaParser.AST
-import miniJavaParser.AST.QualifiedName
 
 case class CompilationUnit()
 
@@ -19,14 +18,14 @@ object PrimitiveType {
     case object Boolean extends PrimitiveType
 }
 
-case class ObjectType(name: QualifiedName) extends Type
+case class ObjectType(name: String) extends Type
 case object NullType extends Type
 
 case object VoidType extends Type
 
 object LangTypes {
-    val Object = ObjectType(QualifiedName(List("java", "lang"), "Object"))
-    val String = ObjectType(QualifiedName(List("java", "lang"), "String"))
+    val Object = ObjectType("java.lang.Object")
+    val String = ObjectType("java.lang.String")
 }
 
 sealed trait TypedStatement

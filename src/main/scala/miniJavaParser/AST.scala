@@ -11,29 +11,26 @@ case class CompilationUnit(
                           ) extends ASTNode
 
 // Package und Import-Deklarationen
-case class PackageDeclaration(name: QualifiedName) extends ASTNode
-case class ImportDeclaration(name: QualifiedName, isStatic: Boolean, isWildcard: Boolean) extends ASTNode
+case class PackageDeclaration(name: String) extends ASTNode
+case class ImportDeclaration(name: String, isStatic: Boolean, isWildcard: Boolean) extends ASTNode
 
 // Typ-Deklarationen (Klassen und Interfaces)
 sealed trait TypeDeclaration extends ASTNode
 case class ClassDeclaration(
                              modifiers: List[Modifier],
                              name: String,
-                             superclass: QualifiedName,
-                             interfaces: List[QualifiedName],
-                             body: ClassBody
+                             superclass: String,
+                             interfaces: List[String],
+                             body: List[ClassMember]
                            ) extends TypeDeclaration with ClassMember
 case class InterfaceDeclaration(
                                  modifiers: List[Modifier],
                                  name: String,
-                                 superInterfaces: List[QualifiedName],
-                                 body: InterfaceBody
+                                 superInterfaces: List[String],
+                                 body: List[InterfaceMember]
                                ) extends TypeDeclaration with ClassMember
 
 // Klassen- und Interface-Körper
-case class ClassBody(members: List[ClassMember]) extends ASTNode
-case class InterfaceBody(members: List[InterfaceMember]) extends ASTNode
-
 sealed trait ClassMember extends ASTNode
 sealed trait InterfaceMember extends ASTNode
 
@@ -76,12 +73,13 @@ case class ContinueStatement() extends Statement
 // Expressions
 sealed trait Expression extends ASTNode
 case class BinaryExpression(left: Expression, operator: BinaryOperator, right: Expression) extends Expression
-case class MethodCall(target: Expression, arguments: List[Expression]) extends Expression, Statement
-case class FieldAccess(target: Expression) extends Expression
+case class MethodCall(name: String, target: Option[Expression], arguments: List[Expression]) extends Expression, Statement
+case class FieldAccess(name: String, target: Option[Expression]) extends Expression
 case class ArrayInitializer(initializers: List[Expression]) extends Expression
 case class ArrayAccess(target: Expression, index: Expression) extends Expression // ToDo: Mehrdimensionale arrays
-case class NewObject(target: Expression, arguments: List[Expression]) extends Expression
-case class Assignment(left: Expression, right: Expression) extends Expression
+case class NewObject(constuctorCall: MethodCall) extends Expression
+case class Assignment(left: FieldAccess | ArrayAccess, right: Expression) extends Expression
+
 
 // Literals
 sealed trait Literal extends Expression
@@ -150,6 +148,4 @@ enum Modifier {
   case Static
   case Final
 }
-
-// Hilfsklassen
-case class QualifiedName(target: List[String], name: String) extends ASTNode, Expression
+// ToDo: anstatt Qualified name einfach verschachtelte FieldAccess mit String namen

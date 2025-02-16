@@ -1677,7 +1677,7 @@ public class miniJavaParser extends Parser {
 			setState(362);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 288216694533431360L) != 0) || ((((_la - 82)) & ~0x3f) == 0 && ((1L << (_la - 82)) & 2303L) != 0)) {
+			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 288216694533431360L) != 0) || _la==Identifier) {
 				{
 				{
 				setState(359);
@@ -4374,9 +4374,6 @@ public class miniJavaParser extends Parser {
 		public BlockContext block() {
 			return getRuleContext(BlockContext.class,0);
 		}
-		public AssignmentContext assignment() {
-			return getRuleContext(AssignmentContext.class,0);
-		}
 		public MethodCallContext methodCall() {
 			return getRuleContext(MethodCallContext.class,0);
 		}
@@ -4400,6 +4397,9 @@ public class miniJavaParser extends Parser {
 		}
 		public ContinueContext continue_() {
 			return getRuleContext(ContinueContext.class,0);
+		}
+		public AssignmentContext assignment() {
+			return getRuleContext(AssignmentContext.class,0);
 		}
 		public ReturnContext return_() {
 			return getRuleContext(ReturnContext.class,0);
@@ -4447,65 +4447,65 @@ public class miniJavaParser extends Parser {
 				enterOuterAlt(_localctx, 2);
 				{
 				setState(653);
-				assignment();
+				methodCall();
+				setState(654);
+				match(T__1);
 				}
 				break;
 			case 3:
 				enterOuterAlt(_localctx, 3);
 				{
-				setState(654);
-				methodCall();
-				setState(655);
-				match(T__1);
+				setState(656);
+				ifThenElse();
 				}
 				break;
 			case 4:
 				enterOuterAlt(_localctx, 4);
 				{
 				setState(657);
-				ifThenElse();
+				ifThen();
 				}
 				break;
 			case 5:
 				enterOuterAlt(_localctx, 5);
 				{
 				setState(658);
-				ifThen();
+				whileStatement();
 				}
 				break;
 			case 6:
 				enterOuterAlt(_localctx, 6);
 				{
 				setState(659);
-				whileStatement();
+				forStatement();
 				}
 				break;
 			case 7:
 				enterOuterAlt(_localctx, 7);
 				{
 				setState(660);
-				forStatement();
+				switch_();
 				}
 				break;
 			case 8:
 				enterOuterAlt(_localctx, 8);
 				{
 				setState(661);
-				switch_();
+				break_();
 				}
 				break;
 			case 9:
 				enterOuterAlt(_localctx, 9);
 				{
 				setState(662);
-				break_();
+				continue_();
 				}
 				break;
 			case 10:
 				enterOuterAlt(_localctx, 10);
 				{
 				setState(663);
-				continue_();
+				assignment();
 				}
 				break;
 			case 11:
@@ -4642,7 +4642,7 @@ public class miniJavaParser extends Parser {
 			setState(677);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 288216694533431360L) != 0) || ((((_la - 82)) & ~0x3f) == 0 && ((1L << (_la - 82)) & 2303L) != 0)) {
+			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 288216694533431360L) != 0) || _la==Identifier) {
 				{
 				{
 				setState(674);
@@ -5705,8 +5705,8 @@ public class miniJavaParser extends Parser {
 		public ExpressionContext expression() {
 			return getRuleContext(ExpressionContext.class,0);
 		}
-		public ValueContext value() {
-			return getRuleContext(ValueContext.class,0);
+		public QualifiedNameContext qualifiedName() {
+			return getRuleContext(QualifiedNameContext.class,0);
 		}
 		public ArrayAccessContext arrayAccess() {
 			return getRuleContext(ArrayAccessContext.class,0);
@@ -5742,7 +5742,7 @@ public class miniJavaParser extends Parser {
 			case 1:
 				{
 				setState(798);
-				value();
+				qualifiedName();
 				}
 				break;
 			case 2:
@@ -7394,14 +7394,14 @@ public class miniJavaParser extends Parser {
 		"\u0000\u0000\u0287[\u0001\u0000\u0000\u0000\u0288\u028b\u0005\u001d\u0000"+
 		"\u0000\u0289\u028b\u0005\u001e\u0000\u0000\u028a\u0288\u0001\u0000\u0000"+
 		"\u0000\u028a\u0289\u0001\u0000\u0000\u0000\u028b]\u0001\u0000\u0000\u0000"+
-		"\u028c\u029c\u0003b1\u0000\u028d\u029c\u0003\u0084B\u0000\u028e\u028f"+
-		"\u0003<\u001e\u0000\u028f\u0290\u0005\u0002\u0000\u0000\u0290\u029c\u0001"+
-		"\u0000\u0000\u0000\u0291\u029c\u0003h4\u0000\u0292\u029c\u0003f3\u0000"+
-		"\u0293\u029c\u0003j5\u0000\u0294\u029c\u0003l6\u0000\u0295\u029c\u0003"+
-		"p8\u0000\u0296\u029c\u0003x<\u0000\u0297\u029c\u0003z=\u0000\u0298\u029c"+
+		"\u028c\u029c\u0003b1\u0000\u028d\u028e\u0003<\u001e\u0000\u028e\u028f"+
+		"\u0005\u0002\u0000\u0000\u028f\u029c\u0001\u0000\u0000\u0000\u0290\u029c"+
+		"\u0003h4\u0000\u0291\u029c\u0003f3\u0000\u0292\u029c\u0003j5\u0000\u0293"+
+		"\u029c\u0003l6\u0000\u0294\u029c\u0003p8\u0000\u0295\u029c\u0003x<\u0000"+
+		"\u0296\u029c\u0003z=\u0000\u0297\u029c\u0003\u0084B\u0000\u0298\u029c"+
 		"\u0003(\u0014\u0000\u0299\u029c\u0003|>\u0000\u029a\u029c\u0003\u0082"+
 		"A\u0000\u029b\u028c\u0001\u0000\u0000\u0000\u029b\u028d\u0001\u0000\u0000"+
-		"\u0000\u029b\u028e\u0001\u0000\u0000\u0000\u029b\u0291\u0001\u0000\u0000"+
+		"\u0000\u029b\u0290\u0001\u0000\u0000\u0000\u029b\u0291\u0001\u0000\u0000"+
 		"\u0000\u029b\u0292\u0001\u0000\u0000\u0000\u029b\u0293\u0001\u0000\u0000"+
 		"\u0000\u029b\u0294\u0001\u0000\u0000\u0000\u029b\u0295\u0001\u0000\u0000"+
 		"\u0000\u029b\u0296\u0001\u0000\u0000\u0000\u029b\u0297\u0001\u0000\u0000"+
@@ -7472,7 +7472,7 @@ public class miniJavaParser extends Parser {
 		"\u0000\u0000\u0000\u0317\u0318\u0005+\u0000\u0000\u0318\u0319\u0003b1"+
 		"\u0000\u0319\u0081\u0001\u0000\u0000\u0000\u031a\u031b\u0005,\u0000\u0000"+
 		"\u031b\u031c\u00034\u001a\u0000\u031c\u031d\u0005\u0002\u0000\u0000\u031d"+
-		"\u0083\u0001\u0000\u0000\u0000\u031e\u0321\u00036\u001b\u0000\u031f\u0321"+
+		"\u0083\u0001\u0000\u0000\u0000\u031e\u0321\u0003\u0098L\u0000\u031f\u0321"+
 		"\u0003>\u001f\u0000\u0320\u031e\u0001\u0000\u0000\u0000\u0320\u031f\u0001"+
 		"\u0000\u0000\u0000\u0321\u0322\u0001\u0000\u0000\u0000\u0322\u0323\u0003"+
 		"\u0086C\u0000\u0323\u0324\u00034\u001a\u0000\u0324\u0325\u0005\u0002\u0000"+

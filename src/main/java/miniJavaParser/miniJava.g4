@@ -89,7 +89,6 @@ expression
     : calcFunction
     | booleanFunction
     | newObject
-    | assignment
     | value;
 
 value
@@ -199,6 +198,7 @@ statement
     | switch
     | break
     | continue
+    | assignment
     | return // ToDo: evtl noch restricten wo das vorkommen darf auf scala Seite? Vermutlich nicht super wichtig tho..
     | tryStatement // ToDo auf scala Seite
     | throwStatement; // ToDo auf scala Seite
@@ -253,7 +253,7 @@ finallyClause: 'finally' block;
 throwStatement : 'throw' expression ';' ;
 
 // Assignments
-assignment : (value | arrayAccess) assignmentType expression ';';
+assignment : (qualifiedName | arrayAccess) assignmentType expression ';';
 
 assignmentType
     : ASSIGN

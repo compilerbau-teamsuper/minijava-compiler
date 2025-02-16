@@ -49,7 +49,7 @@ object JavaASTBuilder {
 class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse private machen? Nicht so wichtig tho
 
   private var currentThis: String = ""
-  private var currentSuper: QualifiedName = QualifiedName(List(), "")
+  private var currentSuper: String = ""
 
   override def visitCompilationUnit(ctx: CompilationUnitContext): CompilationUnit = {
     val packageDeclaration = Option(ctx.packageDeclaration())
@@ -61,12 +61,12 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   }
 
   override def visitPackageDeclaration(ctx: PackageDeclarationContext): PackageDeclaration = {
-    PackageDeclaration(visitQualifiedName(ctx.qualifiedName()))
+    PackageDeclaration(ctx.qualifiedName().getText)
   }
 
   override def visitImportDeclaration(ctx: ImportDeclarationContext): ImportDeclaration = {
     ImportDeclaration(
-      visitQualifiedName(ctx.qualifiedName()),
+      ctx.qualifiedName().getText,
       ctx.Static() != null,
       ctx.Wildcard() != null
     )
@@ -82,10 +82,10 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     val modifiers = getModifiers(ctx)
     val name = ctx.Identifier().getText
     currentThis = name
-    val superclass =  if ctx.superclass() != null then visitQualifiedName(ctx.superclass().qualifiedName()) else QualifiedName(List(), "Object")
+    val superclass =  if ctx.superclass() != null then ctx.superclass().qualifiedName().getText else "Object"
     currentSuper = superclass
-    val interfaces = if ctx.superinterfaces() != null then ctx.superinterfaces().qualifiedName().asScala.map(visitQualifiedName).toList else List.empty
-    val body = visitClassBody(ctx.classBody())
+    val interfaces = if ctx.superinterfaces() != null then ctx.superinterfaces().qualifiedName().asScala.map(_.getText).toList else List.empty
+    val body = getClassBody(ctx.classBody())
 
     ClassDeclaration(modifiers, name, superclass, interfaces, body)
   }
@@ -93,49 +93,51 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   override def visitInterfaceDeclaration(ctx: InterfaceDeclarationContext): InterfaceDeclaration = {
     val modifiers: List[Modifier] = if ctx.Public() != null then List(Modifier.Public) else List.empty
     val name = ctx.Identifier().getText
-    val superInterfaces = if ctx.extendsInterfaces() != null then ctx.extendsInterfaces().qualifiedName().asScala.map(visitQualifiedName).toList else List.empty
-    val body = visitInterfaceBody(ctx.interfaceBody())
+    val superInterfaces = if ctx.extendsInterfaces() != null then ctx.extendsInterfaces().qualifiedName().asScala.map(_.getText).toList else List.empty
+    val body = getInterfaceBody(ctx.interfaceBody())
 
     InterfaceDeclaration(modifiers, name, superInterfaces, body)
   }
 
-  override def visitClassBody(ctx: ClassBodyContext): ClassBody = {
+  private def getClassBody(ctx: ClassBodyContext): List[ClassMember] = {
     if !ctx.classBodyDeclaration().isEmpty then {
       val classBodyDecs : ListBuffer[ClassMember] = ListBuffer()
       ctx.classBodyDeclaration().asScala.toList.foreach(c => visitClassBodyDec(c) match {
         case cm: ClassMember => classBodyDecs.addOne(cm)
         case cms: List[ClassMember] => classBodyDecs.addAll(cms)
       })
-      ClassBody(classBodyDecs.toList)
+      classBodyDecs.toList
     }
-    else ClassBody(List.empty)
+    else List.empty
   }
 
-  override def visitInterfaceBody(ctx: InterfaceBodyContext): InterfaceBody = {
+  private def getInterfaceBody(ctx: InterfaceBodyContext): List[InterfaceMember] = {
     if !ctx.interfaceBodyDeclaration().isEmpty then {
       val interfaceBodyDecs: ListBuffer[InterfaceMember] = ListBuffer()
       ctx.interfaceBodyDeclaration().asScala.toList.foreach(i => visitInterfaceBodyDec(i) match {
         case im: InterfaceMember => interfaceBodyDecs.addOne(im)
         case ims: List[InterfaceMember] => interfaceBodyDecs.addAll(ims)
       })
-      InterfaceBody(interfaceBodyDecs.toList)
+      interfaceBodyDecs.toList
     }
-    else InterfaceBody(List.empty)
+    else List.empty
   }
 
-  override def visitQualifiedName(ctx: QualifiedNameContext): QualifiedName = {
-    val parts = ctx.Identifier().asScala.map(_.getText)
-    if (parts.head.equals("this")) { // ToDo: This und so auch an anderen Stellen im Qualified Name möglich?
-      parts.remove(0)
-      parts.insert(0, currentThis) // ToDo: Passt das so für Bitcodegen?
+  private def fieldAccessFromQualifiedName(ctx: QualifiedNameContext): FieldAccess = {
+    val parts = ctx.Identifier().asScala.map(p => p.getText).toList
+    buildNestedFieldAccess(parts)
+  }
+
+  private def buildNestedFieldAccess(parts: List[String]): FieldAccess = {
+    val first = parts.head match {
+      case "this" => currentThis
+      case "super" => currentSuper
+      case x => x
     }
-    else if (parts.head.equals("super")) {
-      parts.remove(0)
-      parts.insertAll(0, currentSuper.target :+ currentSuper.name)
+    parts.tail match {
+      case Nil => FieldAccess(first, None)
+      case xs => FieldAccess(first, Option(buildNestedFieldAccess(xs)))
     }
-    val last = parts.last
-    parts.remove(parts.length - 1)
-    QualifiedName(parts.toList, last)
   }
 
   private def getModifiers(ctx: ParserRuleContext): List[Modifier] = {
@@ -342,6 +344,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     ctx.getChild(0) match {
       case b: BlockContext => visitBlock(b)
       case m: MethodCallContext => visitMethodCall(m)
+      case a: AssignmentContext => ExpressionStatement(visitAssignment(a))
       case i: (IfThenContext | IfThenElseContext) => visitIfThenElse(i)
       // case s: SwitchContext => visitSwitch(s) // ToDo: Überhaupt notwendig?
       case w: WhileStatementContext => visitWhileStatement(w)
@@ -354,8 +357,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   }
 
   override def visitAssignment(ctx: AssignmentContext): Assignment = {
-    val left = ctx.getChild(0) match {
-      case v: ValueContext => visitValueOrPrimary(v)
+    val left: FieldAccess | ArrayAccess = ctx.getChild(0) match {
+      case v: QualifiedNameContext => fieldAccessFromQualifiedName(v)
       case a: ArrayAccessContext => visitArrayAccess(a)
     }
     val pre_right = visitExpression(ctx.expression())
@@ -374,10 +377,15 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   }
 
   override def visitMethodCall(ctx: MethodCallContext): MethodCall = {
+    val parts = ctx.qualifiedName().Identifier().asScala.map(p => p.getText).toList
+    val target = parts.tail match {
+      case Nil => None
+      case x => Option(buildNestedFieldAccess(x))
+    }
     if ctx.expressionList() != null then
-      MethodCall(visitQualifiedName(ctx.qualifiedName()), ctx.expressionList().expression().asScala.map(visitExpression).toList)
+      MethodCall(parts.head, target, ctx.expressionList().expression().asScala.map(visitExpression).toList)
     else
-      MethodCall(visitQualifiedName(ctx.qualifiedName()), List())
+      MethodCall(parts.head, target, List())
   }
 
   private def visitIfThenElse(ctx: IfThenContext | IfThenElseContext): IfStatement = {
@@ -406,7 +414,6 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       case o: NewObjectContext => visitNewObject(o)
       case b: BooleanFunctionContext => visitBooleanFunction(b)
       case c: CalcFunctionContext => visitCalcFunction(c)
-      case a: AssignmentContext => visitAssignment(a)
     }
   }
 
@@ -414,7 +421,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     ctx.getChild(0) match {
       case c: TerminalNodeImpl if c.toString == "(" => visitExpression(ctx.getChild(1) match {case e: ExpressionContext => e})
       case l: LiteralContext => visitLiteral(l)
-      case q: QualifiedNameContext => FieldAccess(visitQualifiedName(q))
+      case q: QualifiedNameContext => fieldAccessFromQualifiedName(q)
       case m: MethodCallContext => visitMethodCall(m)
       case a: ArrayAccessContext => visitArrayAccess(a)
     }
@@ -441,8 +448,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   }
 
   override def visitNewObject(ctx: NewObjectContext): Expression = {
-    val m = visitMethodCall(ctx.methodCall())
-    NewObject(m.target, m.arguments)
+    NewObject(visitMethodCall(ctx.methodCall()))
   }
 
   override def visitBooleanFunction(ctx: BooleanFunctionContext): Expression = {
@@ -523,8 +529,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     } else if (ctx.calcUnOp() != null) {
       // Case 2: Unary operation
       ctx.getChild(1).getText match {
-        case "++" => BinaryExpression(FieldAccess(visitQualifiedName(ctx.qualifiedName())), Add, IntLiteral(1))
-        case "--" => BinaryExpression(FieldAccess(visitQualifiedName(ctx.qualifiedName())), Subtract, IntLiteral(1))
+        case "++" => BinaryExpression(fieldAccessFromQualifiedName(ctx.qualifiedName()), Add, IntLiteral(1))
+        case "--" => BinaryExpression(fieldAccessFromQualifiedName(ctx.qualifiedName()), Subtract, IntLiteral(1))
       }
     } else if ctx.negate() != null then BinaryExpression(IntLiteral(0), Subtract, visitExpression(ctx.negate().expression()))
     else {

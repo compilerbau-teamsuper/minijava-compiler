@@ -1,6 +1,5 @@
 package miniJavaAnalysis
 import miniJavaParser.AST
-import miniJavaParser.AST.QualifiedName
 import miniJavaAnalysis.IR.ObjectType
 import miniJavaAnalysis.IR.TypedExpression
 import miniJavaParser.AST.VarOrFieldDeclaration
@@ -20,8 +19,8 @@ sealed trait TypeError extends Throwable
 case class TypeMismatch(ty: IR.Type, expected: IR.Type) extends TypeError
 
 case class ObjectInfo(
-    name: QualifiedName,
-    superclass: QualifiedName,
+    name: String,
+    superclass: String,
     methods: Map[String, MethodType],
     fields: Map[String, IR.Type],
 )
@@ -33,7 +32,7 @@ val prelude = Map(
 )
 
 case class Context(
-    types: Map[QualifiedName, ObjectInfo],
+    types: Map[String, ObjectInfo],
 )
 
 def stringify(ty: IR.Type): String = ty match
@@ -91,15 +90,14 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression  = ex
             case AST.BinaryOperator.Greater => ???
             case AST.BinaryOperator.Xor => ???
     }
-    case AST.MethodCall(target, arguments) => ???
-    case AST.FieldAccess(target) => ???
+    case AST.MethodCall(name, target, arguments) => ???
+    case AST.FieldAccess(name, target) => ???
     case AST.ArrayInitializer(initializers) => ???
     case AST.ArrayAccess(_, _) => ???
     case AST.FloatLiteral(value) => ???
     case AST.DoubleLiteral(_) => ???
     case AST.CharacterLiteral(_) => ???
-    case AST.QualifiedName(_, _) => ???
-    case AST.NewObject(_, _) => ???
+    case AST.NewObject(_) => ???
     case AST.Assignment(left, right) => ???
 
 def typecheck_stmts(stmts: List[AST.Statement], return_type: IR.Type)(context: Context): List[IR.TypedStatement] = stmts match
@@ -136,7 +134,7 @@ def typecheck_stmts(stmts: List[AST.Statement], return_type: IR.Type)(context: C
         }
         case BreakStatement() => typecheck_stmts(next, return_type)(context)
         case ContinueStatement() => typecheck_stmts(next, return_type)(context)
-        case MethodCall(target, arguments) => ???
+        case MethodCall(name, target, arguments) => ???
 
 def typecheck(ast: AST.CompilationUnit): IR.CompilationUnit = {
     ast.packageDeclaration.get.name
