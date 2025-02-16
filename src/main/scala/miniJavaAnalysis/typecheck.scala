@@ -1,22 +1,10 @@
 package miniJavaAnalysis
 import miniJavaParser.AST
-import miniJavaAnalysis.IR.ObjectType
-import miniJavaAnalysis.IR.TypedExpression
-import miniJavaParser.AST.VarOrFieldDeclaration
-import miniJavaParser.AST.Block
-import miniJavaParser.AST.ExpressionStatement
-import miniJavaParser.AST.IfStatement
-import miniJavaParser.AST.WhileStatement
-import miniJavaParser.AST.ForStatement
-import miniJavaParser.AST.ReturnStatement
-import miniJavaParser.AST.BreakStatement
-import miniJavaParser.AST.ContinueStatement
-import miniJavaParser.AST.Assignment
-import miniJavaParser.AST.MethodCall
 
 sealed trait TypeError extends Throwable
 
 case class TypeMismatch(ty: IR.Type, expected: IR.Type) extends TypeError
+case object LocalVoidVariable extends TypeError
 
 case class ObjectInfo(
     name: String,
@@ -31,9 +19,34 @@ val prelude = Map(
     "String" -> IR.LangTypes.String,
 )
 
+sealed trait Variable
+case class LocalVariable(ty: IR.Type, idx: Int) extends Variable
+case class ClassField(ty: IR.Type, name: String) extends Variable
+
 case class Context(
     types: Map[String, ObjectInfo],
+    variables: Map[String, Variable],
+    return_type: IR.Type,
 )
+
+def resolve(ty: AST.Type)(ctx: Context): IR.Type = ty match
+    case AST.PrimitiveType.Int => IR.PrimitiveType.Int
+    case AST.PrimitiveType.Boolean => IR.PrimitiveType.Boolean
+    case AST.PrimitiveType.Char => IR.PrimitiveType.Char
+    case AST.PrimitiveType.Double => IR.PrimitiveType.Double
+    case AST.PrimitiveType.Float => IR.PrimitiveType.Float
+    case AST.PrimitiveType.Long => IR.PrimitiveType.Long
+    case AST.PrimitiveType.Short => IR.PrimitiveType.Short
+    case AST.ObjectType.String => IR.ObjectType("java.lang.String")
+    case AST.ObjectType.Short => ???
+    case AST.ObjectType.Long => ???
+    case AST.ObjectType.Integer => ???
+    case AST.ObjectType.Float => ???
+    case AST.ObjectType.Double => ???
+    case AST.ObjectType.Boolean => ???
+    case AST.ObjectType.Character => ???
+    case AST.ObjectType.Custom(name) => ???
+    case AST.ArrayType(arrayType) => ???
 
 def stringify(ty: IR.Type): String = ty match
     case ty: IR.PrimitiveType => ty match
@@ -69,7 +82,7 @@ def binary_numeric(
         case _ => throw RuntimeException("TODO: error")
 }
 
-def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression  = expr match
+def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = expr match
     case AST.BooleanLiteral(value) => IR.BooleanLiteral(value)
     case AST.IntLiteral(value) => IR.IntLiteral(value)
     case AST.ShortLiteral(value) => IR.ShortLiteral(value)
@@ -91,50 +104,86 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression  = ex
             case AST.BinaryOperator.Xor => ???
     }
     case AST.MethodCall(name, target, arguments) => ???
-    case AST.FieldAccess(name, target) => ???
+    case AST.FieldAccess(name, target) => target match
+        case None => ctx.variables(name) match
+            case LocalVariable(ty, idx) => IR.LoadLocal(ty, idx)
+            case ClassField(ty, name) => ???
+        case Some(value) => ???
     case AST.ArrayInitializer(initializers) => ???
     case AST.ArrayAccess(_, _) => ???
     case AST.FloatLiteral(value) => ???
     case AST.DoubleLiteral(_) => ???
     case AST.CharacterLiteral(_) => ???
     case AST.NewObject(_) => ???
-    case AST.Assignment(left, right) => ???
+    case AST.Assignment(left, right) => {
+        val r = typecheck_expr(right)(ctx)
+        left match
+            case AST.FieldAccess(name, None) => ctx.variables(name) match
+                case LocalVariable(ty, idx) => {
+                    if (!is_subtype(r.ty, ty)(ctx)) throw new TypeMismatch(r.ty, ty)
+                    IR.DupStoreLocal(idx, r)
+                }
+                case ClassField(ty, name) => ???
 
-def typecheck_stmts(stmts: List[AST.Statement], return_type: IR.Type)(context: Context): List[IR.TypedStatement] = stmts match
-    case Nil => Nil
+            case AST.FieldAccess(name, Some(target)) => ???
+            case AST.ArrayAccess(target, index) => ???
+    }
+
+def typecheck_stmts(prev: IR.Code, stmts: List[AST.Statement])(ctx: Context): IR.Code = stmts match
+    case Nil => prev
     case head :: next => head match
-        case VarOrFieldDeclaration(modifiers, fieldType, name, initializer) => ???
-        case Block(statements) => {
-            val block = typecheck_stmts(statements, return_type)(context)
-            IR.Block(block) :: typecheck_stmts(next, return_type)(context)
+        case AST.VarOrFieldDeclaration(modifiers, fieldType, name, initializer) => {
+            assert(modifiers.isEmpty, "TODO: maybe support modifiers")
+            val ty = resolve(fieldType)(ctx)
+
+            val init = typecheck_expr(initializer)(ctx)
+            if (!is_subtype(init.ty, ty)(ctx)) throw new TypeMismatch(init.ty, ty)
+
+            val idx = prev.max_locals
+            val variable = LocalVariable(ty, idx)
+            val locals = ty match
+                case IR.PrimitiveType.Long | IR.PrimitiveType.Double => 2
+                case IR.VoidType => throw LocalVoidVariable
+                case _ => 1
+
+            val context = Context(ctx.types, ctx.variables + (name -> variable), ctx.return_type)
+            val code = IR.Code(prev.max_locals + locals, prev.code :+ IR.ExpressionStatement(IR.DupStoreLocal(idx, init)))
+            typecheck_stmts(code, next)(context)
         }
-        case ExpressionStatement(expression) => {
-            val expr = typecheck_expr(expression)(context)
-            IR.ExpressionStatement(expr) :: typecheck_stmts(next, return_type)(context)
+        case AST.Block(statements) => {
+            val block = typecheck_stmts(prev, statements)(ctx)
+            typecheck_stmts(block, next)(ctx)
         }
-        case IfStatement(condition, thenStmt, elseStmt) => {
-            val cond = typecheck_expr(condition)(context)
-            val cthen = typecheck_stmts(List(thenStmt), return_type)(context).head
-            val celse = elseStmt.map(s => typecheck_stmts(List(s), return_type)(context).head)
-            if (!is_subtype(cond.ty, IR.PrimitiveType.Boolean)(context)) throw new TypeMismatch(cond.ty, IR.PrimitiveType.Boolean)
-            IR.IfStatement(cond, cthen, celse) :: typecheck_stmts(next, return_type)(context)
+        case AST.ExpressionStatement(expression) => {
+            val expr = typecheck_expr(expression)(ctx)
+            val code = IR.Code(prev.max_locals, prev.code :+ IR.ExpressionStatement(expr))
+            typecheck_stmts(code, next)(ctx)
         }
-        case WhileStatement(condition, body) => {
-            val cond = typecheck_expr(condition)(context)
-            val cbody = typecheck_stmts(List(body), return_type)(context).head
-            if (!is_subtype(cond.ty, IR.PrimitiveType.Boolean)(context)) throw new TypeMismatch(cond.ty, IR.PrimitiveType.Boolean)
-            IR.WhileStatement(cond, cbody) :: typecheck_stmts(next, return_type)(context)
+        case AST.IfStatement(condition, thenStmt, elseStmt) => {
+            val cond = typecheck_expr(condition)(ctx)
+            if (!is_subtype(cond.ty, IR.PrimitiveType.Boolean)(ctx)) throw new TypeMismatch(cond.ty, IR.PrimitiveType.Boolean)
+            val cthen = typecheck_stmts(IR.Code(prev.max_locals, List.empty), List(thenStmt))(ctx)
+            val celse = typecheck_stmts(IR.Code(cthen.max_locals, List.empty), elseStmt.toList)(ctx)
+            val code = IR.Code(celse.max_locals, prev.code :+ IR.IfStatement(cond, cthen.code, celse.code))
+            typecheck_stmts(code, next)(ctx)
         }
-        case ForStatement(init, condition, update, body) => ???
-        case ReturnStatement(expression) => {
-            val expr = expression.map(e => typecheck_expr(e)(context))
+        case AST.WhileStatement(condition, body) => {
+            val cond = typecheck_expr(condition)(ctx)
+            if (!is_subtype(cond.ty, IR.PrimitiveType.Boolean)(ctx)) throw new TypeMismatch(cond.ty, IR.PrimitiveType.Boolean)
+            val cbody = typecheck_stmts(IR.Code(prev.max_locals, List.empty), List(body))(ctx)
+            val code = IR.Code(cbody.max_locals, prev.code :+ IR.WhileStatement(cond, cbody.code))
+            typecheck_stmts(code, next)(ctx)
+        }
+        case AST.ForStatement(init, condition, update, body) => ???
+        case AST.ReturnStatement(expression) => {
+            val expr = expression.map(e => typecheck_expr(e)(ctx))
             val ty = expr.map(e => e.ty).getOrElse(IR.VoidType)
-            if (!is_subtype(ty, return_type)(context)) throw new TypeMismatch(ty, return_type)
-            IR.ReturnStatement(expr) :: typecheck_stmts(next, return_type)(context)
+            if (!is_subtype(ty, ctx.return_type)(ctx)) throw new TypeMismatch(ty, ctx.return_type)
+            val code = IR.Code(prev.max_locals, prev.code :+ IR.ReturnStatement(expr))
+            typecheck_stmts(code, next)(ctx)
         }
-        case BreakStatement() => typecheck_stmts(next, return_type)(context)
-        case ContinueStatement() => typecheck_stmts(next, return_type)(context)
-        case MethodCall(name, target, arguments) => ???
+        case AST.BreakStatement() => ???
+        case AST.ContinueStatement() => ???
 
 def typecheck(ast: AST.CompilationUnit): IR.CompilationUnit = {
     ast.packageDeclaration.get.name

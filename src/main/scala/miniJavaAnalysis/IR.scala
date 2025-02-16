@@ -31,10 +31,9 @@ object LangTypes {
 sealed trait TypedStatement
 
 case class ReturnStatement(val expression: Option[TypedExpression]) extends TypedStatement
-case class Block(val statements: List[TypedStatement]) extends TypedStatement
 case class ExpressionStatement(val expression: TypedExpression) extends TypedStatement
-case class IfStatement(val condition: TypedExpression, val thenStmt: TypedStatement, val elseStmt: Option[TypedStatement]) extends TypedStatement
-case class WhileStatement(val condition: TypedExpression, val body: TypedStatement) extends TypedStatement
+case class IfStatement(val condition: TypedExpression, val thenStmt: List[TypedStatement], val elseStmt: List[TypedStatement]) extends TypedStatement
+case class WhileStatement(val condition: TypedExpression, val body: List[TypedStatement]) extends TypedStatement
 
 sealed trait TypedExpression(val ty: Type)
 
@@ -55,3 +54,11 @@ case class NumericBinaryExpression(
     operator: AST.BinaryOperator,
     right: TypedExpression,
 ) extends TypedExpression(left.ty)
+
+case class LoadLocal(local_ty: Type, index: Int) extends TypedExpression(local_ty)
+case class DupStoreLocal(index: Int, value: TypedExpression) extends TypedExpression(value.ty)
+
+case class Code(
+    max_locals: Int,
+    code: List[TypedStatement],
+)
