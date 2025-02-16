@@ -80,3 +80,5 @@ case class NumericBinaryExpression(
 
 case class LoadLocal(local_ty: Type, index: Int) extends TypedExpression(local_ty)
 case class DupStoreLocal(index: Int, value: TypedExpression) extends TypedExpression(value.ty)
+case class GetField(field_ty: Type, name: String, target: TypedExpression) extends TypedExpression(field_ty)
+case class DupPutField(name: String, target: TypedExpression, value: TypedExpression) extends TypedExpression(value.ty)

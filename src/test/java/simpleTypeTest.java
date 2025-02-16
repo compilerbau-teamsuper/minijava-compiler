@@ -1,4 +1,6 @@
 class simpleTypeTest {
+    int field = 0;
+
     void noopTest() {
         return;
     }
@@ -6,5 +8,9 @@ class simpleTypeTest {
         int a = 0;
         a = 1;
         return a;
+    }
+
+    int getField() {
+        return field;
     }
 }

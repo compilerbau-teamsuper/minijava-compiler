@@ -19,7 +19,9 @@ object TypecheckTest extends TestSuite {
             val ir = typecheck(ast)
             val expected = ClassFile(
                 "simpleTypeTest",
-                List(),
+                List(
+                    Field("field",PrimitiveType.Int,IntLiteral(0))
+                ),
                 List(
                     Method("noopTest",
                         MethodType(List(),VoidType),
@@ -34,8 +36,14 @@ object TypecheckTest extends TestSuite {
                             ExpressionStatement(DupStoreLocal(1,IntLiteral(1))),
                             ReturnStatement(Some(LoadLocal(PrimitiveType.Int,1)))
                         )))
+                    ),
+                    Method("getField",
+                        MethodType(List(),PrimitiveType.Int),
+                        Some(Code(1,List(
+                            ReturnStatement(Some(GetField(PrimitiveType.Int,"field",LoadLocal(ObjectType("simpleTypeTest"),0))))
+                        )))
                     )
-                )
+                ),
             )
 
             ir ==> expected

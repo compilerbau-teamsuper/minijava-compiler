@@ -5,6 +5,7 @@ sealed trait TypeError extends Throwable
 
 case class TypeMismatch(ty: IR.Type, expected: IR.Type) extends TypeError
 case object LocalVoidVariable extends TypeError
+case class NoSuchField(name: String, ty: Option[IR.Type]) extends TypeError
 
 case class ObjectInfo(
     supertypes: List[IR.ObjectType],
@@ -29,6 +30,7 @@ case class Context(
     names: Map[String, IR.ObjectType],
     types: Map[IR.ObjectType, ObjectInfo],
     locals: Map[String, Local],
+    this_type: Option[IR.ObjectType],
     return_type: IR.Type,
 )
 
@@ -114,11 +116,21 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
             case AST.BinaryOperator.Xor => ???
     }
     case AST.MethodCall(name, target, arguments) => ???
-    case AST.FieldAccess(name, target) => target match
-        case None => ctx.locals.get(name) match
-            case Some(Local(ty, idx)) => IR.LoadLocal(ty, idx)
-            case None => ???
-        case Some(value) => ???
+    case AST.FieldAccess(name, target) => {
+        val t = target match
+            case None => ctx.locals.get(name) match
+                case Some(Local(ty, idx)) => return IR.LoadLocal(ty, idx)
+                case None => ctx.this_type match
+                    case Some(this_type) => IR.LoadLocal(this_type, 0)
+                    case None => throw new NoSuchField(name, None)
+            case Some(target) => typecheck_expr(target)(ctx)
+
+        t.ty match
+            case object_type @ IR.ObjectType(_) => ctx.types(object_type).fields.get(name) match
+                case Some(field_ty) => IR.GetField(field_ty, name, t)
+                case None => throw new NoSuchField(name, Some(object_type))
+            case ty => throw new NoSuchField(name, Some(ty))
+    }
     case AST.ArrayInitializer(initializers) => ???
     case AST.ArrayAccess(_, _) => ???
     case AST.FloatLiteral(value) => ???
@@ -128,14 +140,27 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
     case AST.Assignment(left, right) => {
         val r = typecheck_expr(right)(ctx)
         left match
-            case AST.FieldAccess(name, None) => ctx.locals.get(name) match
-                case Some(Local(ty, idx)) => {
-                    if (!is_subtype(r.ty, ty)(ctx)) throw new TypeMismatch(r.ty, ty)
-                    IR.DupStoreLocal(idx, r)
-                }
-                case None => ???
+            case AST.FieldAccess(name, target) => {
+                val t = target match
+                    case None => ctx.locals.get(name) match
+                        case Some(Local(ty, idx)) => {
+                            if (!is_subtype(r.ty, ty)(ctx)) throw new TypeMismatch(r.ty, ty)
+                            return IR.DupStoreLocal(idx, r)
+                        }
+                        case None => ctx.this_type match
+                            case Some(this_type) => IR.LoadLocal(this_type, 0)
+                            case None => throw new NoSuchField(name, None)
+                    case Some(target) => typecheck_expr(target)(ctx)
 
-            case AST.FieldAccess(name, Some(target)) => ???
+                t.ty match
+                    case object_type @ IR.ObjectType(_) => ctx.types(object_type).fields.get(name) match
+                        case Some(field_ty) => {
+                            if (!is_subtype(r.ty, field_ty)(ctx)) throw new TypeMismatch(r.ty, field_ty)
+                            IR.DupPutField(name, t, r)
+                        }
+                        case None => throw new NoSuchField(name, Some(object_type))
+                    case ty => throw new NoSuchField(name, Some(ty))
+            }
             case AST.ArrayAccess(target, index) => ???
     }
 
@@ -196,6 +221,7 @@ def typecheck_method(
     name: String,
     parameters: List[String],
     ty: IR.MethodType,
+    this_type: IR.ObjectType,
     body: Option[AST.Block],
 )(
     names: Map[String, IR.ObjectType],
@@ -211,7 +237,7 @@ def typecheck_method(
     val (max_locals, locals) = parameters.zip(ty.params).foldLeft((this_param, Map.empty[String, Local]))((_, _) match
         case ((idx, locals), (name, ty)) => (idx + local_size(ty), locals + (name -> Local(ty, idx)))
     )
-    val ctx = Context(names, types, locals, ty.ret)
+    val ctx = Context(names, types, locals, Some(this_type), ty.ret)
     val code = typecheck_stmts(IR.Code(max_locals, List.empty), List(b))(ctx)
     IR.Method(name, ty, Some(code))
 }
@@ -220,27 +246,28 @@ def typecheck_field(
     modifiers: List[AST.Modifier],
     name: String,
     ty: IR.Type,
+    this_type: IR.ObjectType,
     initializer: AST.Expression,
 )(
     names: Map[String, IR.ObjectType],
     types: Map[IR.ObjectType, ObjectInfo]
 ) = {
-    val ctx = Context(names, types, Map.empty, IR.VoidType)
+    val ctx = Context(names, types, Map.empty, Some(this_type), IR.VoidType)
     val init = typecheck_expr(initializer)(ctx)
     if (!is_subtype(init.ty, ty)(ctx)) throw TypeMismatch(init.ty, ty)
     IR.Field(name, ty, init)
 }
 
 def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
-    val pkg = ast.packageDeclaration.map(p => p.name).getOrElse("")
+    val pkg = ast.packageDeclaration.map(p => p.name)
     val List(decl) = ast.typeDeclarations
 
     val name = decl match
         case AST.ClassDeclaration(modifiers, name, superclass, interfaces, body) => name
         case AST.InterfaceDeclaration(modifiers, name, superInterfaces, body) => name
     
-    val this_ty = IR.ObjectType(pkg + '.' + name)
-    val names = prelude + (name -> this_ty)
+    val this_type = IR.ObjectType(pkg.map(p => p + '.').getOrElse("") + name)
+    val names = prelude + (name -> this_type)
 
     val (supertypes, members) = decl match
         case AST.ClassDeclaration(modifiers, name, superclass, interfaces, body) => (names(superclass) :: interfaces.map(i => names(i)), body)
@@ -261,23 +288,23 @@ def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
             val ty = IR.MethodType(parameters.map(p => resolve(p.paramType)(names)), resolve(returnType)(names))
             val params = parameters.map(p => p.name)
             info = info.copy(methods = info.methods + (name -> ty))
-            check_methods = check_methods :+ (types => typecheck_method(modifiers, name, params, ty, body)(names, types))
+            check_methods = check_methods :+ (types => typecheck_method(modifiers, name, params, ty, this_type, body)(names, types))
         }
         case AST.VarOrFieldDeclaration(modifiers, fieldType, name, initializer) => {
             val ty = resolve(fieldType)(names)
             info = info.copy(fields = info.fields + (name -> ty))
-            check_fields = check_fields :+ (types => typecheck_field(modifiers, name, ty, initializer)(names, types))
+            check_fields = check_fields :+ (types => typecheck_field(modifiers, name, ty, this_type, initializer)(names, types))
         }
         case AST.ConstructorDeclaration(modifiers, name, parameters, body) => {
             assert(info.constructor.isEmpty, "classes may only have one constructor")
             val ty = IR.MethodType(parameters.map(p => resolve(p.paramType)(names)), IR.VoidType)
             val params = parameters.map(p => p.name)
             info = info.copy(constructor = Some(ty))
-            check_methods = check_methods :+ (types => typecheck_method(modifiers, "<init>", params, ty, Some(body))(names, types))
+            check_methods = check_methods :+ (types => typecheck_method(modifiers, "<init>", params, ty, this_type, Some(body))(names, types))
         }
         case AST.Block(statements) => ???
 
-    val types = langtypes + (this_ty -> info)
+    val types = langtypes + (this_type -> info)
 
     val fields = check_fields.map(check => check(types))
     val methods = check_methods.map(check => check(types))
