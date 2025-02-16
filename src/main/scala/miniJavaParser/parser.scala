@@ -183,7 +183,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       visitMethodDeclaration(ctx.methodDeclaration())
     } else if (ctx.fieldDeclaration() != null) {
       val f = visitFieldDec(ctx.fieldDeclaration())
-      if f.length == 1 then f.head else f
+      if f.sizeIs == 1 then f.head else f
     } else if (ctx.constructorDeclaration() != null) {
       visitConstructorDeclaration(ctx.constructorDeclaration())
     } else if (ctx.classDeclaration() != null) {
@@ -200,7 +200,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       visitInterfaceMethodDeclaration(ctx.interfaceMethodDeclaration())
     } else if (ctx.fieldDeclaration() != null) {
       val f = visitFieldDec(ctx.fieldDeclaration())
-      if f.length == 1 then f.head else f
+      if f.sizeIs == 1 then f.head else f
     } else {
       throw new IllegalArgumentException("Unknown member declaration")
     }
@@ -310,7 +310,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   private def visitBlockStmt(ctx: BlockStatementContext): Statement | List[Statement] = {
     if (ctx.localVariableDeclaration() != null) {
       val f = visitLocalVariableDec(ctx.localVariableDeclaration())
-      if f.length == 1 then f.head else f
+      if f.sizeIs == 1 then f.head else f
     }
     else if (ctx.statement() != null) { visitStatement(ctx.statement())}
     else {throw new IllegalArgumentException("Unknown block statement")}
@@ -343,7 +343,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     if ctx == null then return null
     ctx.getChild(0) match {
       case b: BlockContext => visitBlock(b)
-      case m: MethodCallContext => visitMethodCall(m)
+      case m: MethodCallContext => ExpressionStatement(visitMethodCall(m))
       case a: AssignmentContext => ExpressionStatement(visitAssignment(a))
       case i: (IfThenContext | IfThenElseContext) => visitIfThenElse(i)
       // case s: SwitchContext => visitSwitch(s) // ToDo: Überhaupt notwendig?
@@ -382,10 +382,15 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       case Nil => None
       case x => Option(buildNestedFieldAccess(x))
     }
+    val first = parts.head match {
+      case "this" => currentThis
+      case "super" => currentSuper
+      case x => x
+    }
     if ctx.expressionList() != null then
-      MethodCall(parts.head, target, ctx.expressionList().expression().asScala.map(visitExpression).toList)
+      MethodCall(first, target, ctx.expressionList().expression().asScala.map(visitExpression).toList)
     else
-      MethodCall(parts.head, target, List())
+      MethodCall(first, target, List())
   }
 
   private def visitIfThenElse(ctx: IfThenContext | IfThenElseContext): IfStatement = {

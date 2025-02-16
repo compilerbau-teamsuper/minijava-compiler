@@ -73,7 +73,7 @@ case class ContinueStatement() extends Statement
 // Expressions
 sealed trait Expression extends ASTNode
 case class BinaryExpression(left: Expression, operator: BinaryOperator, right: Expression) extends Expression
-case class MethodCall(name: String, target: Option[Expression], arguments: List[Expression]) extends Expression, Statement
+case class MethodCall(name: String, target: Option[Expression], arguments: List[Expression]) extends Expression
 case class FieldAccess(name: String, target: Option[Expression]) extends Expression
 case class ArrayInitializer(initializers: List[Expression]) extends Expression
 case class ArrayAccess(target: Expression, index: Expression) extends Expression // ToDo: Mehrdimensionale arrays

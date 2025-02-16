@@ -104,7 +104,7 @@ object ParserTest extends TestSuite {
           WhileStatement(
             FieldAccess("loopVar", None),
             Block(List(
-              MethodCall("forTest", None, List()),
+              ExpressionStatement(MethodCall("forTest", None, List())),
               ExpressionStatement(Assignment(FieldAccess("loopVar", None), BinaryExpression(FieldAccess("loopVar", None), BinaryOperator.And, BooleanLiteral(false)))),
               ContinueStatement()
             )))))))
