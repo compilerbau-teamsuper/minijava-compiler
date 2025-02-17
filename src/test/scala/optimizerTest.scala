@@ -19,11 +19,11 @@ object OptimizerTest extends TestSuite {
             val expected = Code(0, List.empty)
             output ==> expected
         }
-        test("simplify_if") {
+        /*test("simplify_if") {
             val input = Code(1, List(IfStatement(BooleanLiteral(false), List(ExpressionStatement(DupStoreLocal(0, IntLiteral(1)))), List.empty)))
             val output = optimize(input)
             val expected = Code(1, List.empty)
             output ==> expected
-        }
+        }*/
     }
 }

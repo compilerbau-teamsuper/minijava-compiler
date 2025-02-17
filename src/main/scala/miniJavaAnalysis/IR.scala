@@ -1,6 +1,4 @@
 package miniJavaAnalysis.IR
-import miniJavaParser.AST
-import miniJavaParser.AST.BinaryOperator
 
 case class ClassFile(
     name: String,
@@ -56,10 +54,23 @@ sealed trait TypedStatement
 
 case class ReturnStatement(val expression: Option[TypedExpression]) extends TypedStatement
 case class ExpressionStatement(val expression: TypedExpression) extends TypedStatement
-case class IfStatement(val condition: TypedExpression, val thenStmt: List[TypedStatement], val elseStmt: List[TypedStatement]) extends TypedStatement
-case class WhileStatement(val condition: TypedExpression, val body: List[TypedStatement]) extends TypedStatement
 case object BreakStatement extends TypedStatement
 case object ContinueStatement extends TypedStatement
+
+sealed trait Comparison
+object Comparison {
+    case object ACmpEq extends Comparison
+    case object ACmpNe extends Comparison
+    case object ICmpEq extends Comparison
+    case object ICmpGe extends Comparison
+    case object ICmpGt extends Comparison
+    case object ICmpLe extends Comparison
+    case object ICmpLt extends Comparison
+    case object ICmpNe extends Comparison
+}
+
+case class IfStatement(val cmp: Comparison, val left: TypedExpression, val right: TypedExpression, val thenStmt: List[TypedStatement], val elseStmt: List[TypedStatement]) extends TypedStatement
+case class WhileStatement(val cmp: Comparison, val left: TypedExpression, val right: TypedExpression, val body: List[TypedStatement]) extends TypedStatement
 
 sealed trait TypedExpression(val ty: Type)
 
@@ -91,10 +102,28 @@ case class FNeg(value: TypedExpression) extends TypedExpression(PrimitiveType.Fl
 case class DNeg(value: TypedExpression) extends TypedExpression(PrimitiveType.Double)
 
 // Binary expressions
+sealed trait BinaryOperator
+sealed trait BinaryNumericOperator extends BinaryOperator
+sealed trait BinaryIntegralOperator extends BinaryOperator
+object BinaryOperator {
+    case object Add extends BinaryNumericOperator
+    case object Sub extends BinaryNumericOperator
+    case object Mul extends BinaryNumericOperator
+    case object Div extends BinaryNumericOperator
+    case object Mod extends BinaryNumericOperator
+    case object And extends BinaryIntegralOperator
+    case object Or extends BinaryIntegralOperator
+    case object Xor extends BinaryIntegralOperator
+}
+
 case class IBinOp(left: TypedExpression, op: BinaryOperator, right: TypedExpression) extends TypedExpression(PrimitiveType.Int)
 case class LBinOp(left: TypedExpression, op: BinaryOperator, right: TypedExpression) extends TypedExpression(PrimitiveType.Long)
 case class FBinOp(left: TypedExpression, op: BinaryOperator, right: TypedExpression) extends TypedExpression(PrimitiveType.Float)
 case class DBinOp(left: TypedExpression, op: BinaryOperator, right: TypedExpression) extends TypedExpression(PrimitiveType.Double)
+
+case class LCmp(left: TypedExpression, right: TypedExpression) extends TypedExpression(PrimitiveType.Int)
+case class FCmp(left: TypedExpression, right: TypedExpression) extends TypedExpression(PrimitiveType.Int)
+case class DCmp(left: TypedExpression, right: TypedExpression) extends TypedExpression(PrimitiveType.Int)
 
 case class LoadLocal(local_ty: Type, index: Int) extends TypedExpression(local_ty)
 case class DupStoreLocal(index: Int, value: TypedExpression) extends TypedExpression(value.ty)
@@ -102,3 +131,5 @@ case class GetField(field_ty: Type, name: String, target: TypedExpression) exten
 case class DupPutField(name: String, target: TypedExpression, value: TypedExpression) extends TypedExpression(value.ty)
 
 case class InvokeSpecial(return_ty: Type, name: String, target: TypedExpression, args: List[TypedExpression]) extends TypedExpression(return_ty)
+
+case class Ternary(result_ty: Type, cmp: Comparison, left: TypedExpression, right: TypedExpression, yes: TypedExpression, no: TypedExpression) extends TypedExpression(result_ty)

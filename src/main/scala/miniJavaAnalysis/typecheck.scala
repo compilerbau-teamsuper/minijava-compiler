@@ -1,16 +1,6 @@
 package miniJavaAnalysis
 import miniJavaParser.AST
-import miniJavaParser.AST.BinaryOperator.Add
-import miniJavaParser.AST.BinaryOperator.Subtract
-import miniJavaParser.AST.BinaryOperator.Multiply
-import miniJavaParser.AST.BinaryOperator.Divide
-import miniJavaParser.AST.BinaryOperator.Modulo
-import miniJavaParser.AST.BinaryOperator.And
-import miniJavaParser.AST.BinaryOperator.Or
-import miniJavaParser.AST.BinaryOperator.Xor
-import miniJavaParser.AST.BinaryOperator.Greater
-import miniJavaParser.AST.BinaryOperator.Equals
-import miniJavaAnalysis.IR.TypedExpression
+import miniJavaAnalysis.IR.ObjectType
 
 sealed trait TypeError extends Throwable
 
@@ -21,7 +11,8 @@ case class NoSuchMethod(name: String, ty: Option[IR.Type]) extends TypeError
 case class ParameterCountMismatch(got: Int, expected: Int) extends TypeError
 case object BreakOutsideLoop extends TypeError
 case object ContinueOutsideLoop extends TypeError
-case object BooleanNumeric extends TypeError
+case object NonNumeric extends TypeError
+case object NonIntegral extends TypeError
 
 case class ObjectInfo(
     supertypes: List[IR.ObjectType],
@@ -99,26 +90,69 @@ def unbox(expr: IR.TypedExpression): IR.TypedExpression = expr.ty match
     case ty: IR.PrimitiveType => expr
     case _ => throw RuntimeException("TODO: unboxing")
 
-def binary_numeric(
-    left: IR.TypedExpression,
-    operator: AST.BinaryOperator,
-    right: IR.TypedExpression
-): IR.TypedExpression = {
-    val l = unbox(left)
-    val r = unbox(right)
-    if (l.ty == IR.PrimitiveType.Boolean || r.ty == IR.PrimitiveType.Boolean) throw BooleanNumeric
+def binary_numeric_promotion(
+    l: IR.TypedExpression,
+    r: IR.TypedExpression
+): (IR.NumericOperandType, IR.TypedExpression, IR.TypedExpression) = (r.ty, l.ty) match
+    case (lty: IR.PrimitiveType, rty: IR.PrimitiveType) => (lty, rty) match
+        case (IR.PrimitiveType.Boolean, _)
+        | (_, IR.PrimitiveType.Boolean) => throw NonNumeric
+        case (IR.PrimitiveType.Double, IR.PrimitiveType.Double) => (IR.PrimitiveType.Double, l, r)
+        case (IR.PrimitiveType.Double, _) => (IR.PrimitiveType.Double, l, IR.Convert(IR.PrimitiveType.Double, r))
+        case (_, IR.PrimitiveType.Double) => (IR.PrimitiveType.Double, IR.Convert(IR.PrimitiveType.Double, l), r)
+        case (IR.PrimitiveType.Float, IR.PrimitiveType.Float) => (IR.PrimitiveType.Float, l, r)
+        case (IR.PrimitiveType.Float, _) => (IR.PrimitiveType.Float, l, IR.Convert(IR.PrimitiveType.Float, r))
+        case (_, IR.PrimitiveType.Float) => (IR.PrimitiveType.Float, IR.Convert(IR.PrimitiveType.Float, l), r)
+        case (IR.PrimitiveType.Long, IR.PrimitiveType.Long) => (IR.PrimitiveType.Long, l, r)
+        case (IR.PrimitiveType.Long, _) => (IR.PrimitiveType.Long, l, IR.Convert(IR.PrimitiveType.Long, r))
+        case (_, IR.PrimitiveType.Long) => (IR.PrimitiveType.Long, IR.Convert(IR.PrimitiveType.Long, l), r)
+        case (_, _) => (IR.PrimitiveType.Int, l, r)
+    case _ => throw NonNumeric
 
-    (l.ty, r.ty) match
-        case (IR.PrimitiveType.Double, IR.PrimitiveType.Double) => IR.DBinOp(l, operator, r)
-        case (IR.PrimitiveType.Double, _) => IR.DBinOp(l, operator, IR.Convert(IR.PrimitiveType.Double, r))
-        case (_, IR.PrimitiveType.Double) => IR.DBinOp(IR.Convert(IR.PrimitiveType.Double, l), operator, r)
-        case (IR.PrimitiveType.Float, IR.PrimitiveType.Float) => IR.FBinOp(l, operator, r)
-        case (IR.PrimitiveType.Float, _) => IR.FBinOp(l, operator, IR.Convert(IR.PrimitiveType.Float, r))
-        case (_, IR.PrimitiveType.Float) => IR.FBinOp(IR.Convert(IR.PrimitiveType.Float, l), operator, r)
-        case (IR.PrimitiveType.Long, IR.PrimitiveType.Long) => IR.LBinOp(l, operator, r)
-        case (IR.PrimitiveType.Long, _) => IR.LBinOp(l, operator, IR.Convert(IR.PrimitiveType.Long, r))
-        case (_, IR.PrimitiveType.Long) => IR.LBinOp(IR.Convert(IR.PrimitiveType.Long, l), operator, r)
-        case (_, _) => IR.IBinOp(l, operator, r)
+def binary_numeric_operation(left: IR.TypedExpression, operator: IR.BinaryNumericOperator, right: IR.TypedExpression): IR.TypedExpression = {
+    val (ty, l, r) = binary_numeric_promotion(unbox(left), unbox(right))
+    ty match
+        case IR.PrimitiveType.Int => IR.IBinOp(l, operator, r)
+        case IR.PrimitiveType.Long => IR.LBinOp(l, operator, r)
+        case IR.PrimitiveType.Float => IR.FBinOp(l, operator, r)
+        case IR.PrimitiveType.Double => IR.DBinOp(l, operator, r)
+}
+
+def binary_integral_operation(left: IR.TypedExpression, operator: IR.BinaryIntegralOperator, right: IR.TypedExpression): IR.TypedExpression = {
+    val (ty, l, r) = binary_numeric_promotion(unbox(left), unbox(right))
+    ty match
+        case IR.PrimitiveType.Int => IR.IBinOp(l, operator, r)
+        case IR.PrimitiveType.Long => IR.LBinOp(l, operator, r)
+        case IR.PrimitiveType.Float => throw NonIntegral
+        case IR.PrimitiveType.Double => throw NonIntegral
+}
+
+def relational_operation(left: IR.TypedExpression, operator: AST.Comparison, right: IR.TypedExpression): IR.TypedExpression = {
+    (left.ty, right.ty) match
+        case (IR.ObjectType(_), IR.ObjectType(_)) => operator match
+            case AST.BinaryOperator.Equals => IR.Ternary(IR.PrimitiveType.Boolean, IR.Comparison.ACmpEq, left, right, IR.BooleanLiteral(true), IR.BooleanLiteral(false))
+            case _ => throw NonNumeric
+        case (_, _) => {
+            val l = unbox(left)
+            val r = unbox(right)
+            
+            val (a, b) = if (l.ty == IR.PrimitiveType.Boolean && r.ty == IR.PrimitiveType.Boolean) {
+                if (operator != AST.BinaryOperator.Equals) throw NonNumeric
+                (l, r)
+            } else {
+                binary_numeric_promotion(l, r) match
+                    case (IR.PrimitiveType.Int, a, b) => (a, b)
+                    case (IR.PrimitiveType.Long, a, b) => (IR.LCmp(a, b), IR.IntLiteral(0))
+                    case (IR.PrimitiveType.Float, a, b) => (IR.FCmp(a, b), IR.IntLiteral(0))
+                    case (IR.PrimitiveType.Double, a, b) => (IR.DCmp(a, b), IR.IntLiteral(0))
+            }
+
+            val op = operator match
+                case AST.BinaryOperator.Equals => IR.Comparison.ICmpEq
+                case AST.BinaryOperator.Greater => IR.Comparison.ICmpGt
+            
+            IR.Ternary(IR.PrimitiveType.Boolean, op, a, b, IR.BooleanLiteral(true), IR.BooleanLiteral(false))
+        }
 }
 
 def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = expr match
@@ -136,14 +170,16 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
         val r = typecheck_expr(right)(ctx)
         operator match
             case AST.BinaryOperator.Add if is_subtype(l.ty, IR.LangTypes.String)(ctx) || is_subtype(r.ty, IR.LangTypes.String)(ctx) => ???
-            case AST.BinaryOperator.Add | AST.BinaryOperator.Subtract |
-            AST.BinaryOperator.Multiply |
-            AST.BinaryOperator.Divide |
-            AST.BinaryOperator.Modulo => binary_numeric(l, operator, r)
-            case AST.BinaryOperator.And | AST.BinaryOperator.Or => ???
-            case AST.BinaryOperator.Equals => ???
-            case AST.BinaryOperator.Greater => ???
-            case AST.BinaryOperator.Xor => ???
+            case AST.BinaryOperator.Add => binary_numeric_operation(l, IR.BinaryOperator.Add, r)
+            case AST.BinaryOperator.Subtract => binary_numeric_operation(l, IR.BinaryOperator.Sub, r)
+            case AST.BinaryOperator.Multiply => binary_numeric_operation(l, IR.BinaryOperator.Mul, r)
+            case AST.BinaryOperator.Divide => binary_numeric_operation(l, IR.BinaryOperator.Div, r)
+            case AST.BinaryOperator.Modulo => binary_numeric_operation(l, IR.BinaryOperator.Mod, r)
+            case AST.BinaryOperator.And => binary_integral_operation(l, IR.BinaryOperator.And, r)
+            case AST.BinaryOperator.Or => binary_integral_operation(l, IR.BinaryOperator.Or, r)
+            case AST.BinaryOperator.Xor => binary_integral_operation(l, IR.BinaryOperator.Xor, r)
+            case AST.BinaryOperator.Equals => relational_operation(l, AST.BinaryOperator.Equals, r)
+            case AST.BinaryOperator.Greater => relational_operation(l, AST.BinaryOperator.Greater, r)
     }
     case AST.MethodCall(name, target, arguments) => {
         val t = target match
@@ -245,14 +281,14 @@ def typecheck_stmts(prev: IR.Code, stmts: List[AST.Statement])(ctx: Context): IR
             if (!is_subtype(cond.ty, IR.PrimitiveType.Boolean)(ctx)) throw new TypeMismatch(cond.ty, IR.PrimitiveType.Boolean)
             val cthen = typecheck_stmts(IR.Code(prev.max_locals, List.empty), List(thenStmt))(ctx)
             val celse = typecheck_stmts(IR.Code(cthen.max_locals, List.empty), elseStmt.toList)(ctx)
-            val code = IR.Code(celse.max_locals, prev.code :+ IR.IfStatement(cond, cthen.code, celse.code))
+            val code = IR.Code(celse.max_locals, prev.code :+ IR.IfStatement(IR.Comparison.ICmpNe, cond, IR.BooleanLiteral(false), cthen.code, celse.code))
             typecheck_stmts(code, next)(ctx)
         }
         case AST.WhileStatement(condition, body) => {
             val cond = typecheck_expr(condition)(ctx)
             if (!is_subtype(cond.ty, IR.PrimitiveType.Boolean)(ctx)) throw new TypeMismatch(cond.ty, IR.PrimitiveType.Boolean)
             val cbody = typecheck_stmts(IR.Code(prev.max_locals, List.empty), List(body))(ctx.copy(inside_loop = true))
-            val code = IR.Code(cbody.max_locals, prev.code :+ IR.WhileStatement(cond, cbody.code))
+            val code = IR.Code(cbody.max_locals, prev.code :+ IR.WhileStatement(IR.Comparison.ICmpNe, cond, IR.BooleanLiteral(false), cbody.code))
             typecheck_stmts(code, next)(ctx)
         }
         case AST.ForStatement(init, condition, update, body) => ???
