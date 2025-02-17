@@ -57,6 +57,8 @@ case class ReturnStatement(val expression: Option[TypedExpression]) extends Type
 case class ExpressionStatement(val expression: TypedExpression) extends TypedStatement
 case class IfStatement(val condition: TypedExpression, val thenStmt: List[TypedStatement], val elseStmt: List[TypedStatement]) extends TypedStatement
 case class WhileStatement(val condition: TypedExpression, val body: List[TypedStatement]) extends TypedStatement
+case object BreakStatement extends TypedStatement
+case object ContinueStatement extends TypedStatement
 
 sealed trait TypedExpression(val ty: Type)
 

@@ -8,6 +8,8 @@ case object LocalVoidVariable extends TypeError
 case class NoSuchField(name: String, ty: Option[IR.Type]) extends TypeError
 case class NoSuchMethod(name: String, ty: Option[IR.Type]) extends TypeError
 case class ParameterCountMismatch(got: Int, expected: Int) extends TypeError
+case object BreakOutsideLoop extends TypeError
+case object ContinueOutsideLoop extends TypeError
 
 case class ObjectInfo(
     supertypes: List[IR.ObjectType],
@@ -34,6 +36,7 @@ case class Context(
     locals: Map[String, Local],
     this_type: Option[IR.ObjectType],
     return_type: IR.Type,
+    inside_loop: Boolean,
 )
 
 def resolve(ty: AST.TypeOrVoid)(names: Map[String, IR.ObjectType]): IR.Type = ty match
@@ -227,7 +230,7 @@ def typecheck_stmts(prev: IR.Code, stmts: List[AST.Statement])(ctx: Context): IR
         case AST.WhileStatement(condition, body) => {
             val cond = typecheck_expr(condition)(ctx)
             if (!is_subtype(cond.ty, IR.PrimitiveType.Boolean)(ctx)) throw new TypeMismatch(cond.ty, IR.PrimitiveType.Boolean)
-            val cbody = typecheck_stmts(IR.Code(prev.max_locals, List.empty), List(body))(ctx)
+            val cbody = typecheck_stmts(IR.Code(prev.max_locals, List.empty), List(body))(ctx.copy(inside_loop = true))
             val code = IR.Code(cbody.max_locals, prev.code :+ IR.WhileStatement(cond, cbody.code))
             typecheck_stmts(code, next)(ctx)
         }
@@ -239,8 +242,16 @@ def typecheck_stmts(prev: IR.Code, stmts: List[AST.Statement])(ctx: Context): IR
             val code = IR.Code(prev.max_locals, prev.code :+ IR.ReturnStatement(expr))
             typecheck_stmts(code, next)(ctx)
         }
-        case AST.BreakStatement() => ???
-        case AST.ContinueStatement() => ???
+        case AST.BreakStatement() => {
+            if (!ctx.inside_loop) throw BreakOutsideLoop
+            val code = IR.Code(prev.max_locals, prev.code :+ IR.BreakStatement)
+            typecheck_stmts(code, next)(ctx)
+        }
+        case AST.ContinueStatement() => {
+            if (!ctx.inside_loop) throw BreakOutsideLoop
+            val code = IR.Code(prev.max_locals, prev.code :+ IR.ContinueStatement)
+            typecheck_stmts(code, next)(ctx)
+        }
 
 def typecheck_method(
     modifiers: List[AST.Modifier],
@@ -263,7 +274,7 @@ def typecheck_method(
     val (max_locals, locals) = parameters.zip(ty.params).foldLeft((this_param, Map.empty[String, Local]))((_, _) match
         case ((idx, locals), (name, ty)) => (idx + local_size(ty), locals + (name -> Local(ty, idx)))
     )
-    val ctx = Context(names, types, locals, Some(this_type), ty.ret)
+    val ctx = Context(names, types, locals, Some(this_type), ty.ret, false)
     val code = typecheck_stmts(IR.Code(max_locals, List.empty), List(b))(ctx)
     IR.Method(name, ty, Some(code))
 }
@@ -278,7 +289,7 @@ def typecheck_field(
     names: Map[String, IR.ObjectType],
     types: Map[IR.ObjectType, ObjectInfo]
 ) = {
-    val ctx = Context(names, types, Map.empty, Some(this_type), IR.VoidType)
+    val ctx = Context(names, types, Map.empty, Some(this_type), IR.VoidType, false)
     val init = typecheck_expr(initializer)(ctx)
     if (!is_subtype(init.ty, ty)(ctx)) throw TypeMismatch(init.ty, ty)
     IR.Field(name, ty, init)
