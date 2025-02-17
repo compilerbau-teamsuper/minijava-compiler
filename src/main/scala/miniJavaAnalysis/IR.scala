@@ -29,15 +29,16 @@ sealed trait Type
 sealed trait PrimitiveType extends Type
 sealed trait NumericType extends PrimitiveType
 sealed trait NumericOperandType extends NumericType
+sealed trait IntLikeType extends PrimitiveType
 object PrimitiveType {
-    case object Byte extends NumericType
-    case object Short extends NumericType
-    case object Int extends NumericOperandType
+    case object Byte extends NumericType with IntLikeType
+    case object Short extends NumericType with IntLikeType
+    case object Int extends NumericOperandType with IntLikeType
     case object Long extends NumericOperandType
     case object Float extends NumericOperandType
     case object Double extends NumericOperandType
-    case object Char extends PrimitiveType
-    case object Boolean extends PrimitiveType
+    case object Char extends NumericType with IntLikeType
+    case object Boolean extends PrimitiveType with IntLikeType
 }
 
 case class ObjectType(name: String) extends Type
@@ -75,16 +76,19 @@ case class WhileStatement(val cmp: Comparison, val left: TypedExpression, val ri
 sealed trait TypedExpression(val ty: Type)
 
 // Literals
-case class ByteLiteral(value: Byte) extends TypedExpression(PrimitiveType.Byte)
-case class ShortLiteral(value: Short) extends TypedExpression(PrimitiveType.Short)
-case class IntLiteral(value: Int) extends TypedExpression(PrimitiveType.Int)
+/** A literal that is treated like an `int`. The `actual_ty` is only relevant for type checking. */
+case class IntLikeLiteral(actual_ty: IntLikeType, value: Int) extends TypedExpression(actual_ty)
 case class LongLiteral(value: Long) extends TypedExpression(PrimitiveType.Long)
 case class FloatLiteral(value: Float) extends TypedExpression(PrimitiveType.Float)
 case class DoubleLiteral(value: Double) extends TypedExpression(PrimitiveType.Double)
-case class CharacterLiteral(value: Char) extends TypedExpression(PrimitiveType.Char)
 case class StringLiteral(value: String) extends TypedExpression(LangTypes.String)
-case class BooleanLiteral(value: Boolean) extends TypedExpression(PrimitiveType.Boolean)
 case object NullLiteral extends TypedExpression(NullType)
+
+def BooleanLiteral(value: Boolean): IntLikeLiteral = IntLikeLiteral(PrimitiveType.Boolean, if (value) 1 else 0)
+def ByteLiteral(value: Byte): IntLikeLiteral = IntLikeLiteral(PrimitiveType.Byte, value)
+def ShortLiteral(value: Short): IntLikeLiteral = IntLikeLiteral(PrimitiveType.Short, value)
+def CharLiteral(value: Char): IntLikeLiteral = IntLikeLiteral(PrimitiveType.Char, value)
+def IntLiteral(value: Int): IntLikeLiteral = IntLikeLiteral(PrimitiveType.Int, value)
 
 // Conversion
 
