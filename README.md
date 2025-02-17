@@ -11,5 +11,5 @@ sbt:minijava-compiler> run src/test/java/calculationsTest.java .
 ```
 
 ```
-sbt:minijava-compiler> run src/test/java/calculationsTest.java .
+sbt:minijava-compiler> run src/test/java/calculationsTest.java src/test
 ```
