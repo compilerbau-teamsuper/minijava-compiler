@@ -1,9 +1,9 @@
 package test
 
+import miniJavaAnalysis.IR.BinaryOperator.*
 import miniJavaAnalysis.IR.* 
 import miniJavaOptimizer.*
 import utest.*
-import miniJavaParser.AST.BinaryOperator.*
 
 object OptimizerTest extends TestSuite {
     val tests = Tests {
