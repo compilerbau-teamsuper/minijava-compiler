@@ -6,29 +6,33 @@ import miniJavaParser.AST.BinaryOperator.*
 def is_sideeffect_free(expr: TypedExpression): Boolean = expr match
     case ByteLiteral(_)
     | ShortLiteral(_)
+    | CharacterLiteral(_)
     | IntLiteral(_)
     | LongLiteral(_)
     | StringLiteral(_)
     | BooleanLiteral(_)
     | NullLiteral
     | LoadLocal(_, _) => true
-    case I2B(value) => is_sideeffect_free(value)
-    case I2S(value) => is_sideeffect_free(value)
-    case I2C(value) => is_sideeffect_free(value)
-    case I2L(value) => is_sideeffect_free(value)
-    case I2F(value) => is_sideeffect_free(value)
-    case I2D(value) => is_sideeffect_free(value)
-    case L2I(value) => is_sideeffect_free(value)
-    case L2F(value) => is_sideeffect_free(value)
-    case L2D(value) => is_sideeffect_free(value)
-    case F2I(value) => is_sideeffect_free(value)
-    case F2L(value) => is_sideeffect_free(value)
-    case F2D(value) => is_sideeffect_free(value)
-    case D2I(value) => is_sideeffect_free(value)
-    case D2L(value) => is_sideeffect_free(value)
-    case D2F(value) => is_sideeffect_free(value)
-    case IAdd(left, right) => is_sideeffect_free(left) && is_sideeffect_free(right)
-    case LAdd(left, right) => is_sideeffect_free(left) && is_sideeffect_free(right)
+    case Convert(_, value) => is_sideeffect_free(value)
+    case IBinOp(left, Divide | Modulo, right) => right match {
+        case ByteLiteral(0)
+        | ShortLiteral(0)
+        | CharacterLiteral(0)
+        | IntLiteral(0) => false
+        case ByteLiteral(_)
+        | ShortLiteral(_)
+        | CharacterLiteral(_)
+        | IntLiteral(_) => is_sideeffect_free(left)
+        case _ => false
+    }
+    case IBinOp(left, _, right) => is_sideeffect_free(left) && is_sideeffect_free(right)
+    case LBinOp(left, Divide | Modulo, right) => right match
+        case LongLiteral(0) => false
+        case LongLiteral(_) => is_sideeffect_free(left)
+        case _ => false
+    case LBinOp(left, _, right) => is_sideeffect_free(left) && is_sideeffect_free(right)
+    case FBinOp(left, _, right) => is_sideeffect_free(left) && is_sideeffect_free(right)
+    case DBinOp(left, _, right) => is_sideeffect_free(left) && is_sideeffect_free(right)
     case _ => false
 
 def constant_int(expr: TypedExpression): Option[Int] = expr match
@@ -49,87 +53,113 @@ def simplify_expr(expr: TypedExpression): TypedExpression = expr match
     | StringLiteral(_)
     | BooleanLiteral(_)
     | NullLiteral => expr
-    case I2B(value) => {
-        val v = simplify_expr(value)
-        constant_int(v) match
-            case None => I2B(v)
-            case Some(i) => ByteLiteral(i.toByte)
-    }
-    case I2S(value) => {
-        val v = simplify_expr(value)
-        constant_int(v) match
-            case None => I2S(v)
-            case Some(i) => ShortLiteral(i.toShort)
-    }
-    case I2C(value) => {
-        val v = simplify_expr(value)
-        constant_int(v) match
-            case None => I2C(v)
-            case Some(i) => CharacterLiteral(i.toChar)
-    }
-    case I2L(value) => {
-        val v = simplify_expr(value)
-        constant_int(v) match
-            case None => I2L(v)
-            case Some(i) => LongLiteral(i)
-    }
-    case I2F(value) => {
-        val v = simplify_expr(value)
-        constant_int(v) match
-            case None => I2F(v)
-            case Some(i) => FloatLiteral(i)
-    }
-    case I2D(value) => {
-        val v = simplify_expr(value)
-        constant_int(v) match
-            case None => I2D(v)
-            case Some(i) => DoubleLiteral(i)
-    }
-    case L2I(value) => simplify_expr(value) match
-        case LongLiteral(value) => IntLiteral(value.toInt)
-        case expr => expr
-    case L2F(value) => simplify_expr(value) match
-        case LongLiteral(value) => FloatLiteral(value.toFloat)
-        case expr => expr
-    case L2D(value) => simplify_expr(value) match
-        case LongLiteral(value) => DoubleLiteral(value.toDouble)
-        case expr => expr
-    case F2I(value) => simplify_expr(value) match
-        case FloatLiteral(value) => IntLiteral(value.toInt)
-        case expr => expr
-    case F2L(value) => simplify_expr(value) match
-        case FloatLiteral(value) => LongLiteral(value.toLong)
-        case expr => expr
-    case F2D(value) => simplify_expr(value) match
-        case FloatLiteral(value) => DoubleLiteral(value.toDouble)
-        case expr => expr
-    case D2I(value) => simplify_expr(value) match
-        case DoubleLiteral(value) => IntLiteral(value.toInt)
-        case expr => expr
-    case D2L(value) => simplify_expr(value) match
-        case DoubleLiteral(value) => LongLiteral(value.toLong)
-        case expr => expr
-    case D2F(value) => simplify_expr(value) match
-        case DoubleLiteral(value) => FloatLiteral(value.toFloat)
-        case expr => expr
+    case Convert(to, expr) => simplify_expr(expr) match
+        case LongLiteral(value) => to match
+            case PrimitiveType.Byte => ByteLiteral(value.toByte)
+            case PrimitiveType.Short => ShortLiteral(value.toShort)
+            case PrimitiveType.Char => CharacterLiteral(value.toChar)
+            case PrimitiveType.Int => IntLiteral(value.toInt)
+            case PrimitiveType.Long => LongLiteral(value)
+            case PrimitiveType.Float => FloatLiteral(value)
+            case PrimitiveType.Double => DoubleLiteral(value)
+            case PrimitiveType.Boolean => ???
+        case FloatLiteral(value) => to match
+            case PrimitiveType.Byte => ByteLiteral(value.toByte)
+            case PrimitiveType.Short => ShortLiteral(value.toShort)
+            case PrimitiveType.Char => CharacterLiteral(value.toChar)
+            case PrimitiveType.Int => IntLiteral(value.toInt)
+            case PrimitiveType.Long => LongLiteral(value.toLong)
+            case PrimitiveType.Float => FloatLiteral(value)
+            case PrimitiveType.Double => DoubleLiteral(value)
+            case PrimitiveType.Boolean => ???
+        case DoubleLiteral(value) => to match
+            case PrimitiveType.Byte => ByteLiteral(value.toByte)
+            case PrimitiveType.Short => ShortLiteral(value.toShort)
+            case PrimitiveType.Char => CharacterLiteral(value.toChar)
+            case PrimitiveType.Int => IntLiteral(value.toInt)
+            case PrimitiveType.Long => LongLiteral(value.toLong)
+            case PrimitiveType.Float => FloatLiteral(value.toFloat)
+            case PrimitiveType.Double => DoubleLiteral(value)
+            case PrimitiveType.Boolean => ???
+        case value => constant_int(value) match
+            case None => Convert(to, value)
+            case Some(value) => to match
+                case PrimitiveType.Byte => ByteLiteral(value.toByte)
+                case PrimitiveType.Short => ShortLiteral(value.toShort)
+                case PrimitiveType.Char => CharacterLiteral(value.toChar)
+                case PrimitiveType.Int => IntLiteral(value)
+                case PrimitiveType.Long => LongLiteral(value)
+                case PrimitiveType.Float => FloatLiteral(value)
+                case PrimitiveType.Double => DoubleLiteral(value)
+                case PrimitiveType.Boolean => ???
 
-    case IAdd(left, right) => {
+    case INeg(value) => {
+        val v = simplify_expr(value)
+        constant_int(v) match
+            case None => INeg(v)
+            case Some(value) => IntLiteral(-value)
+    }
+    case IBinOp(left, op, right) => {
         val l = simplify_expr(left)
         val r = simplify_expr(right)
-        (constant_int(l), constant_int(r)) match
-            case (Some(l), Some(r)) => IntLiteral(l + r)
-            case _ => IAdd(l, r)
+        (op, constant_int(l), constant_int(r)) match
+            case (Add, Some(a), Some(b)) => IntLiteral(a + b)
+            case (Add, None, Some(0)) => l
+            case (Add, Some(0), None) => r
+            case (Subtract, Some(a), Some(b)) => IntLiteral(a - b)
+            case (Subtract, None, Some(0)) => l
+            case (Subtract, Some(0), None) => INeg(r)
+            case (Multiply, Some(a), Some(b)) => IntLiteral(a * b)
+            case (Multiply, None, Some(0)) if is_sideeffect_free(l) => IntLiteral(0)
+            case (Multiply, Some(0), None) if is_sideeffect_free(r) => IntLiteral(0)
+            case (Multiply, None, Some(1)) => l
+            case (Multiply, Some(1), None) => r
+            case (Multiply, None, Some(-1)) => INeg(l)
+            case (Multiply, Some(-1), None) => INeg(r)
+            case (Divide, Some(a), Some(b)) if b != 0 => IntLiteral(a / b)
+            case (Divide, None, Some(1)) => l
+            case (Divide, None, Some(-1)) => INeg(l)
+            // TODO: do more optimization.
+            case (_, _, _) => IBinOp(l, op, r)
     }
-    case LAdd(left, right) => (simplify_expr(left), simplify_expr(right)) match
-        case (LongLiteral(l), LongLiteral(r)) => LongLiteral(l + r)
-        case (l, r) => LAdd(l, r)
-    case FAdd(left, right) => (simplify_expr(left), simplify_expr(right)) match
-        case (FloatLiteral(l), FloatLiteral(r)) => FloatLiteral(l + r)
-        case (l, r) => FAdd(l, r)
-    case DAdd(left, right) => (simplify_expr(left), simplify_expr(right)) match
-        case (DoubleLiteral(l), DoubleLiteral(r)) => DoubleLiteral(l + r)
-        case (l, r) => DAdd(l, r)
 
+    case LNeg(value) => simplify_expr(value) match
+        case LongLiteral(value) => LongLiteral(-value)
+        case value => LNeg(value)
+    case LBinOp(left, op, right) => (op, simplify_expr(left), simplify_expr(right)) match
+            case (Add, LongLiteral(a), LongLiteral(b)) => LongLiteral(a + b)
+            case (Add, l, LongLiteral(0)) => l
+            case (Add, LongLiteral(0), r) => r
+            case (Subtract, LongLiteral(a), LongLiteral(b)) => LongLiteral(a - b)
+            case (Subtract, l, LongLiteral(0)) => l
+            case (Subtract, LongLiteral(0), r) => LNeg(r)
+            case (Multiply, LongLiteral(a), LongLiteral(b)) => LongLiteral(a * b)
+            case (Multiply, l, LongLiteral(0)) if is_sideeffect_free(l) => LongLiteral(0)
+            case (Multiply, LongLiteral(0), r) if is_sideeffect_free(r) => LongLiteral(0)
+            case (Multiply, l, LongLiteral(1)) => l
+            case (Multiply, LongLiteral(1), r) => r
+            case (Multiply, l, LongLiteral(-1)) => LNeg(l)
+            case (Multiply, LongLiteral(-1), r) => LNeg(r)
+            case (Divide, LongLiteral(a), LongLiteral(b)) if b != 0 => LongLiteral(a / b)
+            case (Divide, l, LongLiteral(1)) => l
+            case (Divide, l, LongLiteral(-1)) => LNeg(l)
+            // TODO: do more optimization.
+            case (op, l, r) => LBinOp(l, op, r)
+    
+    case FNeg(value) => simplify_expr(value) match
+        case FloatLiteral(value) => FloatLiteral(-value)
+        case value => FNeg(value)
+    case FBinOp(left, op, right) => (op, simplify_expr(left), simplify_expr(right)) match
+        // TODO: do more optimization
+        case (op, l, r) => FBinOp(l, op, r)
+
+    case DNeg(value) => simplify_expr(value) match
+        case DoubleLiteral(value) => DoubleLiteral(-value)
+        case value => DNeg(value)
+    case DBinOp(left, op, right) => (op, simplify_expr(left), simplify_expr(right)) match
+        // TODO: do more optimization
+        case (op, l, r) => DBinOp(l, op, r)
+    
     case LoadLocal(_, _) => expr
     case DupStoreLocal(index, value) => DupStoreLocal(index, simplify_expr(value))
     case GetField(field_ty, name, target) => GetField(field_ty, name, simplify_expr(target))

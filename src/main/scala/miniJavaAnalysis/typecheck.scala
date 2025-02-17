@@ -10,6 +10,7 @@ import miniJavaParser.AST.BinaryOperator.Or
 import miniJavaParser.AST.BinaryOperator.Xor
 import miniJavaParser.AST.BinaryOperator.Greater
 import miniJavaParser.AST.BinaryOperator.Equals
+import miniJavaAnalysis.IR.TypedExpression
 
 sealed trait TypeError extends Throwable
 
@@ -98,33 +99,6 @@ def unbox(expr: IR.TypedExpression): IR.TypedExpression = expr.ty match
     case ty: IR.PrimitiveType => expr
     case _ => throw RuntimeException("TODO: unboxing")
 
-def widen_to_double(expr: IR.TypedExpression): IR.TypedExpression = expr.ty match
-    case IR.PrimitiveType.Byte
-    | IR.PrimitiveType.Short
-    | IR.PrimitiveType.Char
-    | IR.PrimitiveType.Int => IR.I2D(expr)
-    case IR.PrimitiveType.Long => IR.L2D(expr)
-    case IR.PrimitiveType.Float => IR.F2D(expr)
-    case IR.PrimitiveType.Double => expr
-    case _ => ???
-
-def widen_to_float(expr: IR.TypedExpression): IR.TypedExpression = expr.ty match
-    case IR.PrimitiveType.Byte
-    | IR.PrimitiveType.Short
-    | IR.PrimitiveType.Char
-    | IR.PrimitiveType.Int => IR.I2F(expr)
-    case IR.PrimitiveType.Long => IR.L2F(expr)
-    case IR.PrimitiveType.Float => expr
-    case _ => ???
-
-def widen_to_long(expr: IR.TypedExpression): IR.TypedExpression = expr.ty match
-    case IR.PrimitiveType.Byte
-    | IR.PrimitiveType.Short
-    | IR.PrimitiveType.Char
-    | IR.PrimitiveType.Int => IR.I2L(expr)
-    case IR.PrimitiveType.Long => expr
-    case _ => ???
-
 def binary_numeric(
     left: IR.TypedExpression,
     operator: AST.BinaryOperator,
@@ -135,56 +109,16 @@ def binary_numeric(
     if (l.ty == IR.PrimitiveType.Boolean || r.ty == IR.PrimitiveType.Boolean) throw BooleanNumeric
 
     (l.ty, r.ty) match
-        case (IR.PrimitiveType.Double, _)
-        | (_, IR.PrimitiveType.Double) => operator match
-            case Add => IR.DAdd(widen_to_double(l), widen_to_double(r))
-            case Subtract => ???
-            case Multiply => ???
-            case Divide => ???
-            case Modulo => ???
-            case And => ???
-            case Or => ???
-            case Xor => ???
-            case miniJavaParser.AST.BinaryOperator.Equals => ???
-            case Greater => ???
-
-        case (IR.PrimitiveType.Float, _)
-        | (_, IR.PrimitiveType.Float) => operator match
-            case Add => IR.FAdd(widen_to_float(l), widen_to_float(r))
-            case Subtract => ???
-            case Multiply => ???
-            case Divide => ???
-            case Modulo => ???
-            case And => ???
-            case Or => ???
-            case Xor => ???
-            case miniJavaParser.AST.BinaryOperator.Equals => ???
-            case Greater => ???
-
-        case (IR.PrimitiveType.Long, _)
-        | (_, IR.PrimitiveType.Long) => operator match
-            case Add => IR.LAdd(widen_to_long(l), widen_to_long(r))
-            case Subtract => ???
-            case Multiply => ???
-            case Divide => ???
-            case Modulo => ???
-            case And => ???
-            case Or => ???
-            case Xor => ???
-            case Equals => ???
-            case Greater => ???
-
-        case (_, _) => operator match
-            case Add => IR.IAdd(l, r)
-            case Subtract => ???
-            case Multiply => ???
-            case Divide => ???
-            case Modulo => ???
-            case And => ???
-            case Or => ???
-            case Xor => ???
-            case Equals => ???
-            case Greater => ???
+        case (IR.PrimitiveType.Double, IR.PrimitiveType.Double) => IR.DBinOp(l, operator, r)
+        case (IR.PrimitiveType.Double, _) => IR.DBinOp(l, operator, IR.Convert(IR.PrimitiveType.Double, r))
+        case (_, IR.PrimitiveType.Double) => IR.DBinOp(IR.Convert(IR.PrimitiveType.Double, l), operator, r)
+        case (IR.PrimitiveType.Float, IR.PrimitiveType.Float) => IR.FBinOp(l, operator, r)
+        case (IR.PrimitiveType.Float, _) => IR.FBinOp(l, operator, IR.Convert(IR.PrimitiveType.Float, r))
+        case (_, IR.PrimitiveType.Float) => IR.FBinOp(IR.Convert(IR.PrimitiveType.Float, l), operator, r)
+        case (IR.PrimitiveType.Long, IR.PrimitiveType.Long) => IR.LBinOp(l, operator, r)
+        case (IR.PrimitiveType.Long, _) => IR.LBinOp(l, operator, IR.Convert(IR.PrimitiveType.Long, r))
+        case (_, IR.PrimitiveType.Long) => IR.LBinOp(IR.Convert(IR.PrimitiveType.Long, l), operator, r)
+        case (_, _) => IR.IBinOp(l, operator, r)
 }
 
 def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = expr match

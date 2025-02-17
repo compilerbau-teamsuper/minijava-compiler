@@ -8,7 +8,7 @@ import miniJavaParser.AST.BinaryOperator.*
 object OptimizerTest extends TestSuite {
     val tests = Tests {
         test("simplify_expr_smoke") {
-            val input = IAdd(IntLiteral(1), IntLiteral(1))
+            val input = IBinOp(IntLiteral(1), Add, IntLiteral(1))
             val output = simplify_expr(input)
             val expected = IntLiteral(2)
             output ==> expected

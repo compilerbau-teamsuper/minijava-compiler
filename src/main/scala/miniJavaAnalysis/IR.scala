@@ -1,5 +1,6 @@
 package miniJavaAnalysis.IR
 import miniJavaParser.AST
+import miniJavaParser.AST.BinaryOperator
 
 case class ClassFile(
     name: String,
@@ -74,31 +75,26 @@ case class StringLiteral(value: String) extends TypedExpression(LangTypes.String
 case class BooleanLiteral(value: Boolean) extends TypedExpression(PrimitiveType.Boolean)
 case object NullLiteral extends TypedExpression(NullType)
 
-// Conversions
-case class I2B(value: TypedExpression) extends TypedExpression(PrimitiveType.Byte)
-case class I2S(value: TypedExpression) extends TypedExpression(PrimitiveType.Short)
-case class I2L(value: TypedExpression) extends TypedExpression(PrimitiveType.Long)
-case class I2F(value: TypedExpression) extends TypedExpression(PrimitiveType.Float)
-case class I2D(value: TypedExpression) extends TypedExpression(PrimitiveType.Double)
-case class I2C(value: TypedExpression) extends TypedExpression(PrimitiveType.Char)
+// Conversion
 
-case class L2I(value: TypedExpression) extends TypedExpression(PrimitiveType.Int)
-case class L2F(value: TypedExpression) extends TypedExpression(PrimitiveType.Float)
-case class L2D(value: TypedExpression) extends TypedExpression(PrimitiveType.Double)
+/** Converts the primitive expression `value` to the primitive type `to` using
+ * widening, rounding or truncating conversion.
+ *
+ * This corresponds to bytecode instructions like `i2l`. The specific instruction
+ * can be determined from the type of `value` and `to`.
+ */
+case class Convert(val to: PrimitiveType, value: TypedExpression) extends TypedExpression(to)
 
-case class F2I(value: TypedExpression) extends TypedExpression(PrimitiveType.Int)
-case class F2L(value: TypedExpression) extends TypedExpression(PrimitiveType.Long)
-case class F2D(value: TypedExpression) extends TypedExpression(PrimitiveType.Double)
-
-case class D2I(value: TypedExpression) extends TypedExpression(PrimitiveType.Int)
-case class D2L(value: TypedExpression) extends TypedExpression(PrimitiveType.Long)
-case class D2F(value: TypedExpression) extends TypedExpression(PrimitiveType.Float)
+case class INeg(value: TypedExpression) extends TypedExpression(PrimitiveType.Int)
+case class LNeg(value: TypedExpression) extends TypedExpression(PrimitiveType.Long)
+case class FNeg(value: TypedExpression) extends TypedExpression(PrimitiveType.Float)
+case class DNeg(value: TypedExpression) extends TypedExpression(PrimitiveType.Double)
 
 // Binary expressions
-case class IAdd(left: TypedExpression, right: TypedExpression) extends TypedExpression(PrimitiveType.Int)
-case class LAdd(left: TypedExpression, right: TypedExpression) extends TypedExpression(PrimitiveType.Long)
-case class FAdd(left: TypedExpression, right: TypedExpression) extends TypedExpression(PrimitiveType.Float)
-case class DAdd(left: TypedExpression, right: TypedExpression) extends TypedExpression(PrimitiveType.Double)
+case class IBinOp(left: TypedExpression, op: BinaryOperator, right: TypedExpression) extends TypedExpression(PrimitiveType.Int)
+case class LBinOp(left: TypedExpression, op: BinaryOperator, right: TypedExpression) extends TypedExpression(PrimitiveType.Long)
+case class FBinOp(left: TypedExpression, op: BinaryOperator, right: TypedExpression) extends TypedExpression(PrimitiveType.Float)
+case class DBinOp(left: TypedExpression, op: BinaryOperator, right: TypedExpression) extends TypedExpression(PrimitiveType.Double)
 
 case class LoadLocal(local_ty: Type, index: Int) extends TypedExpression(local_ty)
 case class DupStoreLocal(index: Int, value: TypedExpression) extends TypedExpression(value.ty)
