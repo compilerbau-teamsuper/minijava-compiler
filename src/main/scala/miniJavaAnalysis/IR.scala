@@ -74,14 +74,31 @@ case class StringLiteral(value: String) extends TypedExpression(LangTypes.String
 case class BooleanLiteral(value: Boolean) extends TypedExpression(PrimitiveType.Boolean)
 case object NullLiteral extends TypedExpression(NullType)
 
-case class Conversion(to: PrimitiveType, value: TypedExpression) extends TypedExpression(to)
+// Conversions
+case class I2B(value: TypedExpression) extends TypedExpression(PrimitiveType.Byte)
+case class I2S(value: TypedExpression) extends TypedExpression(PrimitiveType.Short)
+case class I2L(value: TypedExpression) extends TypedExpression(PrimitiveType.Long)
+case class I2F(value: TypedExpression) extends TypedExpression(PrimitiveType.Float)
+case class I2D(value: TypedExpression) extends TypedExpression(PrimitiveType.Double)
+case class I2C(value: TypedExpression) extends TypedExpression(PrimitiveType.Char)
+
+case class L2I(value: TypedExpression) extends TypedExpression(PrimitiveType.Int)
+case class L2F(value: TypedExpression) extends TypedExpression(PrimitiveType.Float)
+case class L2D(value: TypedExpression) extends TypedExpression(PrimitiveType.Double)
+
+case class F2I(value: TypedExpression) extends TypedExpression(PrimitiveType.Int)
+case class F2L(value: TypedExpression) extends TypedExpression(PrimitiveType.Long)
+case class F2D(value: TypedExpression) extends TypedExpression(PrimitiveType.Double)
+
+case class D2I(value: TypedExpression) extends TypedExpression(PrimitiveType.Int)
+case class D2L(value: TypedExpression) extends TypedExpression(PrimitiveType.Long)
+case class D2F(value: TypedExpression) extends TypedExpression(PrimitiveType.Float)
 
 // Binary expressions
-case class NumericBinaryExpression(
-    left: TypedExpression,
-    operator: AST.BinaryOperator,
-    right: TypedExpression,
-) extends TypedExpression(left.ty)
+case class IAdd(left: TypedExpression, right: TypedExpression) extends TypedExpression(PrimitiveType.Int)
+case class LAdd(left: TypedExpression, right: TypedExpression) extends TypedExpression(PrimitiveType.Long)
+case class FAdd(left: TypedExpression, right: TypedExpression) extends TypedExpression(PrimitiveType.Float)
+case class DAdd(left: TypedExpression, right: TypedExpression) extends TypedExpression(PrimitiveType.Double)
 
 case class LoadLocal(local_ty: Type, index: Int) extends TypedExpression(local_ty)
 case class DupStoreLocal(index: Int, value: TypedExpression) extends TypedExpression(value.ty)
