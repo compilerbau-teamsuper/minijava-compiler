@@ -72,6 +72,7 @@ object Comparison {
 
 case class IfStatement(val cmp: Comparison, val left: TypedExpression, val right: TypedExpression, val thenStmt: List[TypedStatement], val elseStmt: List[TypedStatement]) extends TypedStatement
 case class WhileStatement(val cmp: Comparison, val left: TypedExpression, val right: TypedExpression, val body: List[TypedStatement]) extends TypedStatement
+case class InfiniteWhileStatement(val body: List[TypedStatement]) extends TypedStatement
 
 sealed trait TypedExpression(val ty: Type)
 
@@ -136,4 +137,5 @@ case class DupPutField(name: String, target: TypedExpression, value: TypedExpres
 
 case class InvokeSpecial(return_ty: Type, name: String, target: TypedExpression, args: List[TypedExpression]) extends TypedExpression(return_ty)
 
+/** A ternary expression. `result_ty` is only used during type checking. */
 case class Ternary(result_ty: Type, cmp: Comparison, left: TypedExpression, right: TypedExpression, yes: TypedExpression, no: TypedExpression) extends TypedExpression(result_ty)

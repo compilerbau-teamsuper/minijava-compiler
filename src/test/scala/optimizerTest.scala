@@ -4,6 +4,7 @@ import miniJavaAnalysis.IR.BinaryOperator.*
 import miniJavaAnalysis.IR.* 
 import miniJavaOptimizer.*
 import utest.*
+import miniJavaAnalysis.IR.Comparison.ICmpEq
 
 object OptimizerTest extends TestSuite {
     val tests = Tests {
@@ -19,11 +20,11 @@ object OptimizerTest extends TestSuite {
             val expected = Code(0, List.empty)
             output ==> expected
         }
-        /*test("simplify_if") {
-            val input = Code(1, List(IfStatement(BooleanLiteral(false), List(ExpressionStatement(DupStoreLocal(0, IntLiteral(1)))), List.empty)))
+        test("simplify_if") {
+            val input = Code(1, List(IfStatement(ICmpEq, BooleanLiteral(true), BooleanLiteral(false), List(ExpressionStatement(DupStoreLocal(0, IntLiteral(1)))), List.empty)))
             val output = optimize(input)
             val expected = Code(1, List.empty)
             output ==> expected
-        }*/
+        }
     }
 }

@@ -33,6 +33,36 @@ def is_sideeffect_free(expr: TypedExpression): Boolean = expr match
     case DBinOp(left, _, right) => is_sideeffect_free(left) && is_sideeffect_free(right)
     case _ => false
 
+sealed trait SimplifiedComparison
+case object DefiniteYes extends SimplifiedComparison
+case object DefiniteNo extends SimplifiedComparison
+case class DoCompare(cmp: Comparison, left: TypedExpression, right: TypedExpression) extends SimplifiedComparison
+
+def invert_comparison(cmp: Comparison): Comparison = cmp match
+    case ACmpEq => ACmpNe
+    case ACmpNe => ACmpEq
+    case ICmpEq => ICmpNe
+    case ICmpGe => ICmpLt
+    case ICmpGt => ICmpLe
+    case ICmpLe => ICmpGt
+    case ICmpLt => ICmpGe
+    case ICmpNe => ICmpEq
+
+def decide_comparison(cmp: Comparison, left: TypedExpression, right: TypedExpression): SimplifiedComparison = (left, right) match
+    case (IntLikeLiteral(_, l), IntLikeLiteral(_, r)) => cmp match
+        case ICmpEq => if (l == r) DefiniteYes else DefiniteNo
+        case ICmpGe => if (l >= r) DefiniteYes else DefiniteNo
+        case ICmpGt => if (l > r) DefiniteYes else DefiniteNo
+        case ICmpLe => if (l <= r) DefiniteYes else DefiniteNo
+        case ICmpLt => if (l < r) DefiniteYes else DefiniteNo
+        case ICmpNe => if (l != r) DefiniteYes else DefiniteNo
+        case ACmpEq | ACmpNe => ??? // Something has gone horribly wrong...
+    case (Ternary(_, c, l, r, yesval, noval), cmpval) if decide_comparison(cmp, yesval, cmpval) == DefiniteYes && decide_comparison(cmp, noval, cmpval) == DefiniteNo => DoCompare(c, l, r)
+    case (Ternary(_, c, l, r, yesval, noval), cmpval) if decide_comparison(cmp, yesval, cmpval) == DefiniteNo && decide_comparison(cmp, noval, cmpval) == DefiniteYes => DoCompare(invert_comparison(c), l, r)
+    case (cmpval, Ternary(_, c, l, r, yesval, noval)) if decide_comparison(cmp, cmpval, yesval) == DefiniteYes && decide_comparison(cmp, cmpval, noval) == DefiniteNo => DoCompare(c, l, r)
+    case (cmpval, Ternary(_, c, l, r, yesval, noval)) if decide_comparison(cmp, cmpval, yesval) == DefiniteNo && decide_comparison(cmp, cmpval, noval) == DefiniteYes => DoCompare(invert_comparison(c), l, r)
+    case (l, r) => DoCompare(cmp, l, r)
+
 def simplify_expr(expr: TypedExpression): TypedExpression = expr match
     case IntLikeLiteral(_, _)
     | LongLiteral(_)
@@ -156,7 +186,10 @@ def simplify_expr(expr: TypedExpression): TypedExpression = expr match
     case DupPutField(name, target, value) => DupPutField(name, simplify_expr(target), simplify_expr(value))
     case InvokeSpecial(return_ty, name, target, args) => InvokeSpecial(return_ty, name, simplify_expr(target), args.map(simplify_expr))
 
-    case Ternary(_, _, _, _, _, _) => expr
+    case Ternary(ty, cmp, left, right, yes, no) => decide_comparison(cmp, simplify_expr(left), simplify_expr(right)) match
+        case DefiniteYes => simplify_expr(yes)
+        case DefiniteNo => simplify_expr(no)
+        case DoCompare(c, l, r) => Ternary(ty, c, l, r, simplify_expr(yes), simplify_expr(no))
 
 def simplify_stmt(stmt: TypedStatement): List[TypedStatement] = stmt match
     case ReturnStatement(expression) => List(ReturnStatement(expression.map(simplify_expr)))
@@ -164,8 +197,24 @@ def simplify_stmt(stmt: TypedStatement): List[TypedStatement] = stmt match
         val expr = simplify_expr(expression)
         if (is_sideeffect_free(expr)) List.empty else List(ExpressionStatement(expr))
     }
-    case IfStatement(_, _, _, thenStmt, elseStmt) => List(stmt)
-    case WhileStatement(_, _, _, body) => List(stmt)
+    case IfStatement(cmp, left, right, thenStmt, elseStmt) => decide_comparison(cmp, simplify_expr(left), simplify_expr(right)) match
+        case DefiniteYes => thenStmt.flatMap(simplify_stmt)
+        case DefiniteNo => elseStmt.flatMap(simplify_stmt)
+        case DoCompare(c, l, r) => (thenStmt.flatMap(simplify_stmt), elseStmt.flatMap(simplify_stmt)) match
+            case (Nil, Nil) => (is_sideeffect_free(l), is_sideeffect_free(r)) match
+                case (true, true) => List.empty
+                case (false, true) => List(ExpressionStatement(l))
+                case (true, false) => List(ExpressionStatement(r))
+                case (false, false) => List(ExpressionStatement(l), ExpressionStatement(r))
+            case (Nil, no) => List(IfStatement(invert_comparison(c), l, r, no, List.empty))
+            case (yes, no) => List(IfStatement(c, l, r, yes, no))
+
+    case WhileStatement(cmp, left, right, body) => decide_comparison(cmp, simplify_expr(left), simplify_expr(right)) match
+        case DefiniteYes => List(InfiniteWhileStatement(body.flatMap(simplify_stmt)))
+        case DefiniteNo => List.empty
+        case DoCompare(c, l, r) => List(WhileStatement(c, l, r, body.flatMap(simplify_stmt)))
+    case InfiniteWhileStatement(body) => List(InfiniteWhileStatement(body.flatMap(simplify_stmt)))
+
     case BreakStatement => List(BreakStatement)
     case ContinueStatement => List(ContinueStatement)
 
