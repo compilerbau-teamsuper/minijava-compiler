@@ -10,6 +10,32 @@ import miniJavaAnalysis.IR.Comparison.ICmpGt
 import miniJavaAnalysis.IR.Comparison.ICmpLe
 import miniJavaAnalysis.IR.Comparison.ICmpLt
 import miniJavaAnalysis.IR.Comparison.ICmpNe
+import java.io.ObjectOutputStream.PutField
+
+def is_equivalent(a: TypedExpression, b: TypedExpression): Boolean = if (a == b) true else (a, b) match
+    case (IntLikeLiteral(_, a), IntLikeLiteral(_, b)) => a == b
+    case (LongLiteral(a), LongLiteral(b)) => a == b
+    case (StringLiteral(a), StringLiteral(b)) => a == b
+    case (NullLiteral, NullLiteral) => true
+    case (Convert(aty, a), Convert(bty, b)) => aty == bty && is_equivalent(a, b)
+    case (INeg(a), INeg(b)) => is_equivalent(a, b)
+    case (IBinOp(la, opa, ra), IBinOp(lb, opb, rb)) => opa == opb && is_equivalent(la, lb) && is_equivalent(ra, rb)
+    case (LNeg(a), LNeg(b)) => is_equivalent(a, b)
+    case (LBinOp(la, opa, ra), LBinOp(lb, opb, rb)) => opa == opb && is_equivalent(la, lb) && is_equivalent(ra, rb)
+    case (FNeg(a), FNeg(b)) => is_equivalent(a, b)
+    case (FBinOp(la, opa, ra), FBinOp(lb, opb, rb)) => opa == opb && is_equivalent(la, lb) && is_equivalent(ra, rb)
+    case (DNeg(a), DNeg(b)) => is_equivalent(a, b)
+    case (DBinOp(la, opa, ra), DBinOp(lb, opb, rb)) => opa == opb && is_equivalent(la, lb) && is_equivalent(ra, rb)
+    case (LCmp(la, ra), LCmp(lb, rb)) => is_equivalent(la, lb) && is_equivalent(ra, rb)
+    case (FCmp(la, ra), FCmp(lb, rb)) => is_equivalent(la, lb) && is_equivalent(ra, rb)
+    case (DCmp(la, ra), DCmp(lb, rb)) => is_equivalent(la, lb) && is_equivalent(ra, rb)
+    case (LoadLocal(_, a), LoadLocal(_, b)) => a == b // In welformed IR, the types must be equal.
+    case (DupStoreLocal(ia, a), DupStoreLocal(ib, b)) => ia == ib && is_equivalent(a, b)
+    case (GetField(_, na, ta), GetField(_, nb, tb)) => na == nb && is_equivalent(ta, tb) // In welformed IR, the types must be equal.
+    case (DupPutField(na, ta, a), DupPutField(nb, tb, b)) => na == nb && is_equivalent(ta, tb) && is_equivalent(a, b)
+    case (InvokeSpecial(_, na, ta, aa), InvokeSpecial(_, nb, tb, ab)) => false // TODO
+    case (Ternary(_, ca, la, ra, ya, na), Ternary(_, cb, lb, rb, yb, nb)) => false // TODO
+    case (_, _) => false
 
 def is_sideeffect_free(expr: TypedExpression): Boolean = expr match
     case IntLikeLiteral(_, _)
@@ -189,7 +215,12 @@ def simplify_expr(expr: TypedExpression): TypedExpression = expr match
     case Ternary(ty, cmp, left, right, yes, no) => decide_comparison(cmp, simplify_expr(left), simplify_expr(right)) match
         case DefiniteYes => simplify_expr(yes)
         case DefiniteNo => simplify_expr(no)
-        case DoCompare(c, l, r) => Ternary(ty, c, l, r, simplify_expr(yes), simplify_expr(no))
+        case DoCompare(c, l, r) => {
+            val y = simplify_expr(yes)
+            val n = simplify_expr(no)
+            if (is_sideeffect_free(l) && is_sideeffect_free(r) && is_equivalent(yes, no)) yes
+            else Ternary(ty, c, l, r, y, n)
+        }
 
 def simplify_stmt(stmt: TypedStatement): List[TypedStatement] = stmt match
     case ReturnStatement(expression) => List(ReturnStatement(expression.map(simplify_expr)))
