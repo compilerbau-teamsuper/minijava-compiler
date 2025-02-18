@@ -83,10 +83,18 @@ def decide_comparison(cmp: Comparison, left: TypedExpression, right: TypedExpres
         case ICmpLt => if (l < r) DefiniteYes else DefiniteNo
         case ICmpNe => if (l != r) DefiniteYes else DefiniteNo
         case ACmpEq | ACmpNe => ??? // Something has gone horribly wrong...
-    case (Ternary(_, c, l, r, yesval, noval), cmpval) if decide_comparison(cmp, yesval, cmpval) == DefiniteYes && decide_comparison(cmp, noval, cmpval) == DefiniteNo => DoCompare(c, l, r)
-    case (Ternary(_, c, l, r, yesval, noval), cmpval) if decide_comparison(cmp, yesval, cmpval) == DefiniteNo && decide_comparison(cmp, noval, cmpval) == DefiniteYes => DoCompare(invert_comparison(c), l, r)
-    case (cmpval, Ternary(_, c, l, r, yesval, noval)) if decide_comparison(cmp, cmpval, yesval) == DefiniteYes && decide_comparison(cmp, cmpval, noval) == DefiniteNo => DoCompare(c, l, r)
-    case (cmpval, Ternary(_, c, l, r, yesval, noval)) if decide_comparison(cmp, cmpval, yesval) == DefiniteNo && decide_comparison(cmp, cmpval, noval) == DefiniteYes => DoCompare(invert_comparison(c), l, r)
+    case (tern @ Ternary(_, c, l, r, yesval, noval), cmpval) => (decide_comparison(cmp, yesval, cmpval), decide_comparison(cmp, noval, cmpval)) match
+        case (DefiniteYes, DefiniteNo) => DoCompare(c, l, r)
+        case (DefiniteNo, DefiniteYes) => DoCompare(invert_comparison(c), l, r)
+        case (DefiniteYes, DefiniteYes) if is_sideeffect_free(l) && is_sideeffect_free(r) => DefiniteYes
+        case (DefiniteNo, DefiniteNo) if is_sideeffect_free(l) && is_sideeffect_free(r) => DefiniteNo
+        case (_, _) => DoCompare(cmp, tern, cmpval)
+    case (cmpval, tern @ Ternary(_, c, l, r, yesval, noval)) => (decide_comparison(cmp, cmpval, yesval), decide_comparison(cmp, cmpval, noval)) match
+        case (DefiniteYes, DefiniteNo) => DoCompare(c, l, r)
+        case (DefiniteNo, DefiniteYes) => DoCompare(invert_comparison(c), l, r)
+        case (DefiniteYes, DefiniteYes) if is_sideeffect_free(l) && is_sideeffect_free(r) => DefiniteYes
+        case (DefiniteNo, DefiniteNo) if is_sideeffect_free(l) && is_sideeffect_free(r) => DefiniteNo
+        case (_, _) => DoCompare(cmp, cmpval, tern)
     case (l, r) => DoCompare(cmp, l, r)
 
 def simplify_expr(expr: TypedExpression): TypedExpression = expr match
