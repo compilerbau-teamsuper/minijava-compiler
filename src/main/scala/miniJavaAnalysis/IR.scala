@@ -99,7 +99,7 @@ def IntLiteral(value: Int): IntLikeLiteral = IntLikeLiteral(PrimitiveType.Int, v
  * This corresponds to bytecode instructions like `i2l`. The specific instruction
  * can be determined from the type of `value` and `to`.
  */
-case class Convert(val to: PrimitiveType, value: TypedExpression) extends TypedExpression(to)
+case class Convert(val to: NumericType, value: TypedExpression) extends TypedExpression(to)
 
 case class INeg(value: TypedExpression) extends TypedExpression(PrimitiveType.Int)
 case class LNeg(value: TypedExpression) extends TypedExpression(PrimitiveType.Long)
