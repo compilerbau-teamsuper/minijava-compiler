@@ -59,9 +59,9 @@ object ParserTest extends TestSuite {
                   BooleanLiteral(true),
                   BinaryOperator.Equals,
                   BinaryExpression(
-                    IntLiteral(4),
-                    BinaryOperator.Greater,
-                    IntLiteral(5)))),
+                    IntLiteral(5),
+                    BinaryOperator.Less,
+                    IntLiteral(4)))),
               BinaryOperator.Xor,
               BooleanLiteral(true)))),
         VarOrFieldDeclaration(List(),PrimitiveType.Int,"x",
@@ -94,7 +94,7 @@ object ParserTest extends TestSuite {
         MethodDeclaration(List(), VoidType, "forTest", List(), Option(Block(List(
           ForStatement(
             Option(VarOrFieldDeclaration(List(), PrimitiveType.Int, "i", IntLiteral(0))),
-            Option(BinaryExpression(IntLiteral(5), BinaryOperator.Greater, FieldAccess("i", None))),
+            Option(BinaryExpression(FieldAccess("i", None), BinaryOperator.Less, IntLiteral(5))),
             Option(BinaryExpression(FieldAccess("i", None), BinaryOperator.Add, IntLiteral(1))),
             Block(List(
               ExpressionStatement(Assignment(FieldAccess("i", None), BinaryExpression(FieldAccess("i", None), BinaryOperator.Subtract, IntLiteral(1)))),
@@ -117,7 +117,7 @@ object ParserTest extends TestSuite {
       val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public), "statementsTest2", "Object", List(), List(
         MethodDeclaration(List(), VoidType, "ifTest", List(), Option(Block(List(
           IfStatement(
-            BinaryExpression(BinaryExpression(IntLiteral(5), BinaryOperator.Greater, IntLiteral(4)), BinaryOperator.Or, BinaryExpression(IntLiteral(5), BinaryOperator.Equals, IntLiteral(4))),
+            BinaryExpression(IntLiteral(5), BinaryOperator.GreaterOrEqual, IntLiteral(4)),
             Block(List(Block(List()))),
             Option(Block(List(
               IfStatement(BooleanLiteral(true), Block(List(ReturnStatement(None))), None)

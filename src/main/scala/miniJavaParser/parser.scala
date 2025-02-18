@@ -470,7 +470,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
         case b: BooleanFunctionContext => visitBooleanFunction(b)
         case x: (BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext | BooleanFunUndergroundContext) => getBoolFun(x)
       }
-      buildDesugaredBoolFun(left, ctx.getChild(1).getText, right)
+      buildBoolFun(left, ctx.getChild(1).getText, right)
     } else if (ctx.inverse() != null) {
       val expression = visitValueOrPrimary(ctx.inverse().value())
       BinaryExpression(expression, BinaryOperator.Xor, AST.BooleanLiteral(true))
@@ -483,10 +483,10 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   private def getBoolFun(ctx: BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext | BooleanFunUndergroundContext): Expression = {
     if (ctx.getChild(1) != null) {
       ctx.getChild(0) match {
-        case c: CalcFunctionContext =>  buildDesugaredBoolFun(visitCalcFunction(c), ctx.getChild(1).getText, getRightBoolFun(ctx))
-        case v: ValueContext =>  buildDesugaredBoolFun(visitValueOrPrimary(v), ctx.getChild(1).getText, getRightBoolFun(ctx))
+        case c: CalcFunctionContext =>  buildBoolFun(visitCalcFunction(c), ctx.getChild(1).getText, getRightBoolFun(ctx))
+        case v: ValueContext =>  buildBoolFun(visitValueOrPrimary(v), ctx.getChild(1).getText, getRightBoolFun(ctx))
         case x: (BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext) =>
-          buildDesugaredBoolFun(getBoolFun(x), ctx.getChild(1).getText, getRightBoolFun(ctx))
+          buildBoolFun(getBoolFun(x), ctx.getChild(1).getText, getRightBoolFun(ctx))
       }
     } else ctx.getChild(0) match {
       case v: ValueContext => visitValueOrPrimary(v)
@@ -506,12 +506,12 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     }
   }
 
-  private def buildDesugaredBoolFun(l: Expression, op: String, r: Expression) : BinaryExpression = {
+  private def buildBoolFun(l: Expression, op: String, r: Expression) : BinaryExpression = {
     op match {
       case ">" => BinaryExpression(l, BinaryOperator.Greater, r)
-      case "<" => BinaryExpression(r, BinaryOperator.Greater, l)
-      case ">=" => BinaryExpression(BinaryExpression(l, BinaryOperator.Greater, r), BinaryOperator.Or, BinaryExpression(l, BinaryOperator.Equals, r))
-      case "<=" => BinaryExpression(BinaryExpression(r, BinaryOperator.Greater, l), BinaryOperator.Or, BinaryExpression(l, BinaryOperator.Equals, r))
+      case "<" => BinaryExpression(l, BinaryOperator.Less, r)
+      case ">=" => BinaryExpression(l, BinaryOperator.GreaterOrEqual, r)
+      case "<=" => BinaryExpression(l, BinaryOperator.LessOrEqual, r)
       case "==" => BinaryExpression(l, BinaryOperator.Equals, r)
       case "!=" => BinaryExpression(BinaryExpression(l, BinaryOperator.Equals, r), BinaryOperator.Xor, AST.BooleanLiteral(true))
       case "&&" => BinaryExpression(l, BinaryOperator.And, r)

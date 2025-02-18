@@ -107,6 +107,9 @@ object BinaryOperator {
   case object Xor extends BinaryOperator
   case object Equals extends Comparison
   case object Greater extends Comparison
+  case object GreaterOrEqual extends BinaryOperator
+  case object Less extends BinaryOperator
+  case object LessOrEqual extends BinaryOperator
 }
 
 // Typen
