@@ -79,7 +79,12 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     val superclass =  if ctx.superclass() != null then ctx.superclass().qualifiedName().getText else "Object"
     currentSuper = superclass
     val interfaces = if ctx.superinterfaces() != null then ctx.superinterfaces().qualifiedName().asScala.map(_.getText).toList else List.empty
-    val body = getClassBody(ctx.classBody())
+    var body = getClassBody(ctx.classBody())
+    val hasConstructor = body.exists(x => x match {
+      case ConstructorDeclaration(_,_,_,_) => true
+      case _ => false
+    })
+    body = if !hasConstructor then body.::(ConstructorDeclaration(List(Modifier.Public), name, List(), Block(List(ExpressionStatement(MethodCall(superclass, None, List())))))) else body
 
     ClassDeclaration(modifiers, name, superclass, interfaces, body)
   }

@@ -8,13 +8,16 @@ object ParserTest extends TestSuite {
   val tests = Tests {
     test("empty class parsing") {
       val ast = JavaASTBuilder.parseFromText("class HelloWorld { }")
-      val expected = CompilationUnit(None,List(),List(ClassDeclaration(List(),"HelloWorld","Object",List(),List())))
+      val expected = CompilationUnit(None,List(),List(ClassDeclaration(List(),"HelloWorld","Object",List(),List(
+        ConstructorDeclaration(List(Modifier.Public), "HelloWorld", List(), Block(List(ExpressionStatement(MethodCall("Object", None, List())))))
+      ))))
 
       ast ==> expected
     }
-    test("method parsing") {
+    test("method parsing") { // ToDo: Hier evtl. signature Constructor Parsing mittesten
       val ast = JavaASTBuilder.parseFromFile("src/test/java/methodTest.java")
       val expected = CompilationUnit(None,List(), List(ClassDeclaration(List(Modifier.Public),"methodTest","Object",List(),List(
+        ConstructorDeclaration(List(Modifier.Public), "methodTest", List(), Block(List(ExpressionStatement(MethodCall("Object", None, List()))))),
         MethodDeclaration(List(Modifier.Private, Modifier.Static),PrimitiveType.Int,"plusOne",List(Parameter("x",PrimitiveType.Int)),
           Option(Block(List(ReturnStatement(Option(BinaryExpression(FieldAccess("x", None), BinaryOperator.Add, IntLiteral(1)))))))),
         MethodDeclaration(List(Modifier.Public),VoidType,"doNothing",List(),
@@ -32,10 +35,13 @@ object ParserTest extends TestSuite {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/classInterfaceTest.java")
       val expected = CompilationUnit(None,List(),List(
         ClassDeclaration(List(),"classInterfaceTest","Object",List(),List(
+          ConstructorDeclaration(List(Modifier.Public), "classInterfaceTest", List(), Block(List(ExpressionStatement(MethodCall("Object", None, List()))))),
           ClassDeclaration(List(Modifier.Protected),"subClass","Object",List("interfaze"),List(
+            ConstructorDeclaration(List(Modifier.Public), "subClass", List(), Block(List(ExpressionStatement(MethodCall("Object", None, List()))))),
             MethodDeclaration(List(Modifier.Public),VoidType,"nothing",List(),
               Option(Block(List()))))),
           ClassDeclaration(List(),"extendClass","subClass",List(),List(
+            ConstructorDeclaration(List(Modifier.Public), "extendClass", List(), Block(List(ExpressionStatement(MethodCall("subClass", None, List()))))),
             VarOrFieldDeclaration(List(Modifier.Private),PrimitiveType.Boolean,"why", BooleanLiteral(false)))))),
         InterfaceDeclaration(List(), "interfaze", List(), List(
           VarOrFieldDeclaration(List(Modifier.Public),PrimitiveType.Int,"x", IntLiteral(2)),
@@ -46,6 +52,7 @@ object ParserTest extends TestSuite {
     test("calculations parsing") {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/calculationsTest.java")
       val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public),"calculationsTest","Object",List(),List(
+        ConstructorDeclaration(List(Modifier.Public), "calculationsTest", List(), Block(List(ExpressionStatement(MethodCall("Object", None, List()))))),
         VarOrFieldDeclaration(List(),PrimitiveType.Boolean,"f", BinaryExpression(BooleanLiteral(true), BinaryOperator.Or, BooleanLiteral(false))),
         VarOrFieldDeclaration(List(),PrimitiveType.Boolean,"g",
           BinaryExpression(
@@ -91,6 +98,7 @@ object ParserTest extends TestSuite {
     test("statements parsing 1") {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/statementsTest1.java")
       val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public), "statementsTest1", "Object", List(), List(
+        ConstructorDeclaration(List(Modifier.Public), "statementsTest1", List(), Block(List(ExpressionStatement(MethodCall("Object", None, List()))))),
         MethodDeclaration(List(), VoidType, "forTest", List(), Option(Block(List(
           ForStatement(
             Option(VarOrFieldDeclaration(List(), PrimitiveType.Int, "i", IntLiteral(0))),
@@ -115,6 +123,7 @@ object ParserTest extends TestSuite {
     test("statements parsing 2") {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/statementsTest2.java")
       val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public), "statementsTest2", "Object", List(), List(
+        ConstructorDeclaration(List(Modifier.Public), "statementsTest2", List(), Block(List(ExpressionStatement(MethodCall("Object", None, List()))))),
         MethodDeclaration(List(), VoidType, "ifTest", List(), Option(Block(List(
           IfStatement(
             BinaryExpression(IntLiteral(5), BinaryOperator.GreaterOrEqual, IntLiteral(4)),
