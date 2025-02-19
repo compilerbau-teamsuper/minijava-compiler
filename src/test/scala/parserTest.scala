@@ -14,7 +14,7 @@ object ParserTest extends TestSuite {
 
       ast ==> expected
     }
-    test("method parsing") { // ToDo: Hier evtl. signature Constructor Parsing mittesten
+    test("method parsing") { // ToDo: Hier evtl. signature Constructor Parsing mittesten (oder in extra Fields test mit this. Sachen!)
       val ast = JavaASTBuilder.parseFromFile("src/test/java/methodTest.java")
       val expected = CompilationUnit(None,List(), List(ClassDeclaration(List(Modifier.Public),"methodTest","Object",List(),List(
         ConstructorDeclaration(List(Modifier.Public), "methodTest", List(), Block(List(ExpressionStatement(MethodCall("Object", None, List()))))),
