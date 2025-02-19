@@ -10,12 +10,6 @@ import scala.jdk.CollectionConverters.*
 
 object JavaASTBuilder {
 
-  def main(args: Array[String]): Unit = {
-    val filePath = "src/main/java/test.java"
-    val ast = parseFromFile(filePath)
-    println(ast)
-  }
-
   def parseFromText(text: String): CompilationUnit = {
     val input = CharStreams.fromString(text)
     val lexer = new miniJavaLexer(input)
