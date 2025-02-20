@@ -17,7 +17,7 @@ def getClassName(ast: miniJavaParser.AST.CompilationUnit): String = {
 def main(sourcePath: String, compileFolder: String): Unit = {
     val ast = JavaASTBuilder.parseFromFile(sourcePath)
     val typedAst = typecheck(ast)
-    val bytecode = typedAst.codeGen()
+    val (bytecode, _) = typedAst.codeGen()
     val slash = 
         if compileFolder.endsWith("/") || compileFolder.endsWith("\\") then "" 
         else if compileFolder.contains("/") then "/" else "\\"

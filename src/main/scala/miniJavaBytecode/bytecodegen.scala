@@ -1,12 +1,12 @@
 package miniJavaBytecode
 
-import miniJavaAnalysis.IR.*
-import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.{ClassVisitor, ClassWriter, MethodVisitor}
 import org.objectweb.asm.Type.*
 import org.objectweb.asm.util.{CheckClassAdapter, TraceClassVisitor}
 import org.objectweb.asm.Opcodes.*
-import org.objectweb.asm.MethodVisitor
 import java.io.{PrintWriter, File}
+import miniJavaAnalysis.IR.*
+import miniJavaAnalysis.IR.Comparison.*
 
 val JAVA_VERSION = V1_4
 val OBJECT = "java/lang/Object"
@@ -15,8 +15,10 @@ val NO_CONSTANT = null
 val NO_INTERFACES = null
 val NO_EXCEPTIONS = null
 
+//TODO: Modifiers
+
 extension(classfile: ClassFile) {
-    def codeGen(): Array[Byte] = {
+    def codeGen(): (Array[Byte], PrintWriter) = {
         val cw = new ClassWriter(
             ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES
         )
@@ -27,26 +29,28 @@ extension(classfile: ClassFile) {
             JAVA_VERSION, ACC_PUBLIC, classfile.name, 
             NO_GENERICS, OBJECT, NO_INTERFACES
         )
-        
+
         for(field <- classfile.fields) field.codeGen(cv)
 
         for(method <- classfile.methods) method.codeGen(cv)
 
-        return cw.toByteArray()
+        cv.visitEnd()
+
+        return (cw.toByteArray(), pw)
     }
 }
 
 extension(field: Field) {
-    def codeGen(cw: CheckClassAdapter): Unit = {
-        cw.visitField(
+    def codeGen(cv: ClassVisitor): Unit = {
+        cv.visitField(
             ACC_PUBLIC, field.name, field.ty.descriptor(), NO_GENERICS, NO_CONSTANT
         ).visitEnd()
     }
 }
 
 extension(method: Method) {
-    def codeGen(cw: CheckClassAdapter): Unit = {
-        val mv = cw.visitMethod(
+    def codeGen(cv: ClassVisitor): Unit = {
+        val mv = cv.visitMethod(
             ACC_PUBLIC, method.name, method.ty.descriptor(), 
             NO_GENERICS, NO_EXCEPTIONS 
         )
@@ -62,37 +66,32 @@ extension(method: Method) {
 
 extension(statement: TypedStatement) {
     def translate(mv: MethodVisitor): Unit = statement match {
-        case ExpressionStatement(expression) => expression.translate(mv)
+        case ExpressionStatement(expression) => 
+            expression.translate(mv)
+            val popInsn = if expression.ty.isCategoryTwo() then POP2 else POP
+            mv.visitInsn(popInsn)
         case ReturnStatement(expression) => expression match {
             case Some(expression) => 
                 expression.translate(mv)
-                val instruction = expression.ty match {
-                    case PrimitiveType.Int => IRETURN
-                    case _ => ???
-                }
+                val instruction = 
+                    expression.ty.asmType().getOpcode(IRETURN)
                 mv.visitInsn(instruction)
             case None => mv.visitInsn(RETURN)
         }
-        case _ => ???
     }
 }
 
 extension(expression: TypedExpression) {
     def translate(mv: MethodVisitor): Unit = expression match {
         case LoadLocal(local_ty, index) =>
-            val instruction = local_ty match {
-                case PrimitiveType.Int => ILOAD
-                case ObjectType(_) => ALOAD 
-                case _ => ???
-            }
+            val instruction = local_ty.asmType().getOpcode(ILOAD)
             mv.visitVarInsn(instruction, index)
         case DupStoreLocal(index, value) =>
-            value.translate(mv) 
-            val instruction = value.ty match {
-                case PrimitiveType.Int => ISTORE
-                case _ => ??? 
-            }
-            mv.visitVarInsn(instruction, index)
+            value.translate(mv)
+            val dupInsn = if value.ty.isCategoryTwo() then DUP2 else DUP
+            mv.visitInsn(dupInsn)
+            val storeInsn = value.ty.asmType().getOpcode(ISTORE)
+            mv.visitVarInsn(storeInsn, index)
         case GetField(field_ty, name, target) => 
             target.translate(mv)
             mv.visitFieldInsn(
@@ -102,6 +101,8 @@ extension(expression: TypedExpression) {
         case DupPutField(name, target, value) =>
             target.translate(mv)
             value.translate(mv)
+            val dupInsn = if value.ty.isCategoryTwo() then DUP2_X1 else DUP_X1
+            mv.visitInsn(dupInsn) 
             mv.visitFieldInsn(
                 PUTFIELD, target.ty.internalName(),
                 name, value.ty.descriptor()
@@ -128,20 +129,43 @@ extension(expression: TypedExpression) {
                 mv.visitIntInsn(SIPUSH, i)
             case i => mv.visitIntInsn(LDC, i)
         }
-        case _ => ???
+        case LongLiteral(value) => value match {
+            case 0L => mv.visitInsn(LCONST_0)
+            case 1L => mv.visitInsn(LCONST_1)
+            case l => mv.visitLdcInsn(LDC, l) 
+        }
+        case FloatLiteral(value) => value match {
+            case 0.0f => mv.visitInsn(FCONST_0)
+            case 1.0f => mv.visitInsn(FCONST_1)
+            case 2.0f => mv.visitInsn(FCONST_2)
+            case f => mv.visitLdcInsn(LDC, f)
+        }
+        case DoubleLiteral(value) => value match {
+            case 0.0d => mv.visitInsn(DCONST_0)
+            case 1.0d => mv.visitInsn(DCONST_1)
+            case d => mv.visitLdcInsn(LDC, d)
+        }
     }
 }
 
 extension(typ: Type) {
     def descriptor(): String = typ.asmType().getDescriptor()
 
+    def isCategoryTwo(): Boolean = typ match {
+        case PrimitiveType.Long | PrimitiveType.Double => true
+        case _ => false
+    }
+
     def internalName(): String = typ.asmType().getInternalName()
 
     def asmType(): org.objectweb.asm.Type = typ match {
-        case PrimitiveType.Int => INT_TYPE
+        case _: IntLikeType => INT_TYPE
+        case PrimitiveType.Long => LONG_TYPE
+        case PrimitiveType.Float => FLOAT_TYPE
+        case PrimitiveType.Double => DOUBLE_TYPE 
         case VoidType => VOID_TYPE
         case ObjectType(name) => getObjectType(name.replace('.', '/'))
-        case _ => ???
+        case NullType => getType(s"L$OBJECT;")
     }
 }
 
