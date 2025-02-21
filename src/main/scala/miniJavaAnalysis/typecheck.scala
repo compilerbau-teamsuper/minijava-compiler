@@ -1,18 +1,23 @@
 package miniJavaAnalysis
 import miniJavaParser.AST
+import miniJavaAnalysis.IR.ObjectType
 
 sealed trait TypeError extends Throwable
 
-case class TypeMismatch(ty: IR.Type, expected: IR.Type) extends TypeError
-case object LocalVoidVariable extends TypeError
-case class NoSuchField(name: String, ty: Option[IR.Type]) extends TypeError
-case class NoSuchMethod(name: String, ty: Option[IR.Type]) extends TypeError
-case class ParameterCountMismatch(got: Int, expected: Int) extends TypeError
-case object BreakOutsideLoop extends TypeError
-case object ContinueOutsideLoop extends TypeError
-case object NonNumeric extends TypeError
-case object NonIntegral extends TypeError
-case class ModifierContradiction(m1: AST.Modifier, m2: AST.Modifier) extends TypeError
+case class TypeMismatch(ty: IR.Type, expected: IR.Type) extends Throwable("type mismatch: got " + stringify(ty) + ", expected " + stringify(expected)) with TypeError
+case object LocalVoidVariable extends Throwable("local variables may not have type void") with TypeError
+case class NoSuchField(name: String, ty: Option[IR.Type])
+extends Throwable(ty match
+  case Some(t) => "no such field on type " + stringify(t) + ": " + name
+  case None => "no such variable: " + name
+) with TypeError
+case class NoSuchMethod(name: String, ty: IR.Type) extends Throwable("no such method on type " + stringify(ty) + ": " + name) with TypeError
+case class ParameterCountMismatch(got: Int, expected: Int) extends Throwable("parameter count mismatch: got " + got + ", expected " + expected) with TypeError
+case object BreakOutsideLoop extends Throwable("break statement outside loop") with TypeError
+case object ContinueOutsideLoop extends Throwable("continue statement outside loop") with TypeError
+case object NonNumeric extends Throwable("cannot perform numeric operation on non-numeric type") with TypeError
+case object NonIntegral extends Throwable("cannot perform integer operation on non-integer type") with TypeError
+case class ModifierContradiction(m1: AST.Modifier, m2: AST.Modifier) extends Throwable("contradicting modifiers") with TypeError
 
 case class ObjectInfo(
     supertypes: List[IR.ObjectType],
@@ -63,16 +68,17 @@ def resolve(ty: AST.TypeOrVoid)(names: Map[String, IR.ObjectType]): IR.Type = ty
     case AST.VoidType => IR.VoidType
 
 def stringify(ty: IR.Type): String = ty match
-    case ty: IR.PrimitiveType => ty match
-        case IR.PrimitiveType.Int => "int"
-        case IR.PrimitiveType.Boolean => "boolean"
-        case IR.PrimitiveType.Char => "char"
-        case IR.PrimitiveType.Double => "double"
-        case IR.PrimitiveType.Float => "float"
-        case IR.PrimitiveType.Long => "long"
-        case IR.PrimitiveType.Short => "short"
-        case IR.PrimitiveType.Byte => "byte"
-    case _ => ???
+    case IR.PrimitiveType.Int => "int"
+    case IR.PrimitiveType.Boolean => "boolean"
+    case IR.PrimitiveType.Char => "char"
+    case IR.PrimitiveType.Double => "double"
+    case IR.PrimitiveType.Float => "float"
+    case IR.PrimitiveType.Long => "long"
+    case IR.PrimitiveType.Short => "short"
+    case IR.PrimitiveType.Byte => "byte"
+    case ObjectType(name) => name
+    case IR.NullType => "null"
+    case IR.VoidType => "void"
 
 def local_size(ty: IR.Type): Int = ty match
     case IR.PrimitiveType.Long | IR.PrimitiveType.Double => 2
@@ -191,14 +197,14 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
         val t = target match
             case None => ctx.this_type match
                 case Some(this_type) => IR.LoadLocal(this_type, 0)
-                case None => throw new NoSuchMethod(name, None)
+                case None => ???
             case Some(target) => typecheck_expr(target)(ctx)
         
         val method_type = t.ty match
             case object_type @ IR.ObjectType(_) => ctx.types(object_type).methods.get(name) match
                 case Some(method_type) => method_type
-                case None => throw new NoSuchField(name, Some(object_type))
-            case ty => throw new NoSuchField(name, Some(ty))
+                case None => throw new NoSuchMethod(name, object_type)
+            case ty => throw new NoSuchMethod(name, ty)
 
         val args = arguments.map(arg => typecheck_expr(arg)(ctx))
         if (args.length != method_type.params.length) throw new ParameterCountMismatch(args.length, method_type.params.length)
