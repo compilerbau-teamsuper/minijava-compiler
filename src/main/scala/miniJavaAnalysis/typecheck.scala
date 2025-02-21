@@ -1,6 +1,5 @@
 package miniJavaAnalysis
 import miniJavaParser.AST
-import miniJavaAnalysis.IR.ObjectType
 
 sealed trait TypeError extends Throwable
 
@@ -150,6 +149,9 @@ def relational_operation(left: IR.TypedExpression, operator: AST.Comparison, rig
             val op = operator match
                 case AST.BinaryOperator.Equals => IR.Comparison.ICmpEq
                 case AST.BinaryOperator.Greater => IR.Comparison.ICmpGt
+                case AST.BinaryOperator.GreaterOrEqual => IR.Comparison.ICmpGe
+                case AST.BinaryOperator.Less => IR.Comparison.ICmpLt
+                case AST.BinaryOperator.LessOrEqual => IR.Comparison.ICmpLe
             
             IR.Ternary(IR.PrimitiveType.Boolean, op, a, b, IR.BooleanLiteral(true), IR.BooleanLiteral(false))
         }
@@ -180,6 +182,9 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
             case AST.BinaryOperator.Xor => binary_integral_operation(l, IR.BinaryOperator.Xor, r)
             case AST.BinaryOperator.Equals => relational_operation(l, AST.BinaryOperator.Equals, r)
             case AST.BinaryOperator.Greater => relational_operation(l, AST.BinaryOperator.Greater, r)
+            case AST.BinaryOperator.GreaterOrEqual => relational_operation(l, AST.BinaryOperator.GreaterOrEqual, r)
+            case AST.BinaryOperator.Less => relational_operation(l, AST.BinaryOperator.Less, r)
+            case AST.BinaryOperator.LessOrEqual => relational_operation(l, AST.BinaryOperator.LessOrEqual, r)
     }
     case AST.MethodCall(name, target, arguments) => {
         val t = target match
