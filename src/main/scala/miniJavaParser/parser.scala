@@ -287,7 +287,9 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
 
   // Methode: visitArrayInitializer
   override def visitArrayInitializer(ctx: ArrayInitializerContext): ArrayInitializer = {
-    val initializers = ctx.variableInitializer().asScala.map(visitVariableInitializer).toList
+    val initializers =
+      if ctx.`type`() != null then null // ToDo: Wie ist das mit Arrays, ist das n new Object mit Constructor Call oder muss für den Fall AST erweitert werden?
+      else ctx.expression().asScala.map(visitExpression).toList
     ArrayInitializer(initializers)
   }
 

@@ -73,7 +73,7 @@ return : 'return' expression? ';';
 
 formalParameters : type Identifier (',' type Identifier)* ;
 
-fieldDeclaration : fieldModifier? type variableDeclarator (',' variableDeclarator)* ';';
+fieldDeclaration : fieldModifier? type variableDeclarator (',' variableDeclarator)* ';'; // ToDo: reintheoretisch kann man n Array erstellen mit nem nicht array typen... Vermutlich aber nicht so wichtig
 
 variableDeclarator : Identifier ('=' variableInitializer)?;
 
@@ -81,7 +81,9 @@ variableInitializer
     : expression
     | arrayInitializer;
 
-arrayInitializer : '{' (variableInitializer (',' variableInitializer)*)? ','? '}';
+arrayInitializer
+    : '{' (expression (',' expression)*)? ','? '}'
+    | 'new' type '[' expression ']';
 
 
 // Expressions

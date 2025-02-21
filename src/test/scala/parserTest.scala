@@ -9,8 +9,7 @@ object ParserTest extends TestSuite {
     test("empty class parsing") {
       val ast = JavaASTBuilder.parseFromText("class HelloWorld { }")
       val expected = CompilationUnit(None,List(),List(ClassDeclaration(List(),"HelloWorld","Object",List(),List(
-        ConstructorDeclaration(List(Modifier.Public), "HelloWorld", List(), Block(List(ExpressionStatement(MethodCall("Object", None, List())))))
-      ))))
+        ConstructorDeclaration(List(Modifier.Public), "HelloWorld", List(), Block(List(ExpressionStatement(MethodCall("Object", None, List())))))))))
 
       ast ==> expected
     }
@@ -127,9 +126,7 @@ object ParserTest extends TestSuite {
             Block(List(
               ExpressionStatement(MethodCall("forTest", None, List())),
               ExpressionStatement(Assignment(FieldAccess("loopVar", None), BinaryExpression(FieldAccess("loopVar", None), BinaryOperator.And, BooleanLiteral(false)))),
-              ContinueStatement()
-            )))))))
-      ))))
+              ContinueStatement())))))))))))
 
       ast ==> expected
     }
@@ -154,5 +151,12 @@ object ParserTest extends TestSuite {
 
       ast ==> expected
     }
+//    test("array Test"){
+//      val ast = JavaASTBuilder.parseFromFile("src/test/java/arrayTest.java")
+//      val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public), "arrayTest", "Object", List(), List(
+//        ConstructorDeclaration(List(Modifier.Public), "arrayTest", List(), Block(List(ExpressionStatement(MethodCall("Object", None, List()))))),
+//        VarOrFieldDeclaration(List(), ArrayType(PrimitiveType.Int), "numbers", ArrayInitializer(List(IntLiteral(1), IntLiteral(2), IntLiteral(3)))),
+//        VarOrFieldDeclaration(List(), ArrayType(ObjectType.String), "mail", ??? ) 
+//    }
   }
 }
