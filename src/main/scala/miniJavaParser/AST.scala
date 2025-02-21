@@ -11,29 +11,26 @@ case class CompilationUnit(
                           ) extends ASTNode
 
 // Package und Import-Deklarationen
-case class PackageDeclaration(name: QualifiedName) extends ASTNode
-case class ImportDeclaration(name: QualifiedName, isStatic: Boolean, isWildcard: Boolean) extends ASTNode
+case class PackageDeclaration(name: String) extends ASTNode
+case class ImportDeclaration(name: String, isStatic: Boolean, isWildcard: Boolean) extends ASTNode
 
 // Typ-Deklarationen (Klassen und Interfaces)
 sealed trait TypeDeclaration extends ASTNode
 case class ClassDeclaration(
                              modifiers: List[Modifier],
                              name: String,
-                             superclass: QualifiedName,
-                             interfaces: List[QualifiedName],
-                             body: ClassBody
+                             superclass: String,
+                             interfaces: List[String],
+                             body: List[ClassMember]
                            ) extends TypeDeclaration with ClassMember
 case class InterfaceDeclaration(
                                  modifiers: List[Modifier],
                                  name: String,
-                                 superInterfaces: List[QualifiedName],
-                                 body: InterfaceBody
+                                 superInterfaces: List[String],
+                                 body: List[InterfaceMember]
                                ) extends TypeDeclaration with ClassMember
 
 // Klassen- und Interface-Körper
-case class ClassBody(members: List[ClassMember]) extends ASTNode
-case class InterfaceBody(members: List[InterfaceMember]) extends ASTNode
-
 sealed trait ClassMember extends ASTNode
 sealed trait InterfaceMember extends ASTNode
 
@@ -48,7 +45,8 @@ case class MethodDeclaration(
 case class VarOrFieldDeclaration(
                              modifiers: List[Modifier],
                              fieldType: Type,
-                             variables: VariableDeclarator
+                             name: String,
+                             initializer: Expression
                            ) extends ClassMember, InterfaceMember, Statement
 case class ConstructorDeclaration(
                                    modifiers: List[Modifier],
@@ -57,8 +55,7 @@ case class ConstructorDeclaration(
                                    body: Block
                                  ) extends ClassMember
 
-// Variablen und Parameter
-case class VariableDeclarator(name: String, initializer: Expression) extends ASTNode // ToDo: evtl weglassen und in FieldDec integrierern
+// Parameter
 case class Parameter(name: String, paramType: Type) extends ASTNode
 
 // Blöcke und Statements
@@ -72,16 +69,17 @@ case class ForStatement(init: Option[VarOrFieldDeclaration], condition: Option[E
 case class ReturnStatement(expression: Option[Expression]) extends Statement
 case class BreakStatement() extends Statement
 case class ContinueStatement() extends Statement
-case class Assignment(left: Expression, right: Expression) extends Statement
 
 // Expressions
 sealed trait Expression extends ASTNode
 case class BinaryExpression(left: Expression, operator: BinaryOperator, right: Expression) extends Expression
-case class MethodCall(target: Expression, arguments: List[Expression]) extends Expression, Statement
-case class FieldAccess(target: Expression) extends Expression
+case class MethodCall(name: String, target: Option[Expression], arguments: List[Expression]) extends Expression
+case class FieldAccess(name: String, target: Option[Expression]) extends Expression
 case class ArrayInitializer(initializers: List[Expression]) extends Expression
 case class ArrayAccess(target: Expression, index: Expression) extends Expression // ToDo: Mehrdimensionale arrays
-case class NewObject(target: Expression, arguments: List[Expression]) extends Expression
+case class NewObject(constuctorCall: MethodCall) extends Expression
+case class Assignment(left: FieldAccess | ArrayAccess, right: Expression) extends Expression
+
 
 // Literals
 sealed trait Literal extends Expression
@@ -108,6 +106,9 @@ object BinaryOperator {
   case object Xor extends BinaryOperator
   case object Equals extends BinaryOperator
   case object Greater extends BinaryOperator
+  case object GreaterOrEqual extends BinaryOperator
+  case object Less extends BinaryOperator
+  case object LessOrEqual extends BinaryOperator
 }
 
 // Typen
@@ -150,7 +151,4 @@ enum Modifier {
   case Static
   case Final
 }
-
-// Hilfsklassen
-case class QualifiedName(target: List[String], name: String) extends ASTNode, Expression
-
+// ToDo: anstatt Qualified name einfach verschachtelte FieldAccess mit String namen

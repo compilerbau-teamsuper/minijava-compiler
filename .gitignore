@@ -68,3 +68,6 @@ lib/
 
 #Compiled classes
 out/
+
+#Debug File
+debug.txt
