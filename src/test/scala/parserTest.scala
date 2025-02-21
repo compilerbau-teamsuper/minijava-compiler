@@ -49,6 +49,19 @@ object ParserTest extends TestSuite {
 
       ast ==> expected
     }
+    test("fields parsing"){
+      val ast = JavaASTBuilder.parseFromFile("src/test/java/fieldsTest.java")
+      val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public),"fieldsTest","Object",List(),List(
+        VarOrFieldDeclaration(List(Modifier.Private),PrimitiveType.Int,"x", IntLiteral(0)),
+        VarOrFieldDeclaration(List(Modifier.Protected),PrimitiveType.Boolean,"nah", BooleanLiteral(false)),
+        VarOrFieldDeclaration(List(Modifier.Static),ObjectType.String,"s", StringLiteral("s")),
+        ConstructorDeclaration(List(), "fieldsTest", List(Parameter("x", PrimitiveType.Int), Parameter("nah", PrimitiveType.Boolean)), Block(List(
+          ExpressionStatement(MethodCall("Object", None, List())),
+          ExpressionStatement(Assignment(FieldAccess("fieldsTest", Option(FieldAccess("x", None))), FieldAccess("x", None))),
+          ExpressionStatement(Assignment(FieldAccess("fieldsTest", Option(FieldAccess("nah", None))), FieldAccess("nah", None))))))))))
+
+      ast ==> expected
+    }
     test("calculations parsing") {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/calculationsTest.java")
       val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public),"calculationsTest","Object",List(),List(

@@ -438,7 +438,9 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
 
   override def visitLiteral(ctx: LiteralContext): Literal = {
     if ctx.NullLiteral() != null then AST.NullLiteral
-    else if ctx.StringLiteral() != null then AST.StringLiteral(ctx.StringLiteral().toString)
+    else if ctx.StringLiteral() != null then
+      val str = ctx.StringLiteral.toString
+      AST.StringLiteral(str.substring(1, str.length - 1))
     else if ctx.CharacterLiteral() != null then AST.CharacterLiteral(ctx.CharacterLiteral().toString.charAt(0))
     else if ctx.BooleanLiteral() != null then AST.BooleanLiteral(ctx.BooleanLiteral().toString.equals("true"))
     else if ctx.IntegerLiteral() != null then IntLiteral(ctx.IntegerLiteral().toString.toInt)
