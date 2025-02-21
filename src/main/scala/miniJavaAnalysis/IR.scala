@@ -7,12 +7,14 @@ case class ClassFile(
 )
 
 case class Field(
+    mod: Modifiers,
     name: String,
     ty: Type,
     value: TypedExpression,
 )
 
 case class Method(
+    mod: Modifiers,
     name: String,
     ty: MethodType,
     code: Option[Code],
@@ -21,6 +23,15 @@ case class Method(
 case class Code(
     max_locals: Int,
     code: List[TypedStatement],
+)
+
+case class Modifiers(
+  pub: Boolean,
+  priv: Boolean,
+  prot: Boolean,
+  abstr: Boolean,
+  stat: Boolean,
+  fin: Boolean,
 )
 
 case class MethodType(params: List[Type], ret: Type)

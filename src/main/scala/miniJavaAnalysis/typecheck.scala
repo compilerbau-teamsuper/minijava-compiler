@@ -12,6 +12,7 @@ case object BreakOutsideLoop extends TypeError
 case object ContinueOutsideLoop extends TypeError
 case object NonNumeric extends TypeError
 case object NonIntegral extends TypeError
+case class ModifierContradiction(m1: AST.Modifier, m2: AST.Modifier) extends TypeError
 
 case class ObjectInfo(
     supertypes: List[IR.ObjectType],
@@ -315,6 +316,34 @@ def typecheck_stmts(prev: IR.Code, stmts: List[AST.Statement])(ctx: Context): IR
             typecheck_stmts(code, next)(ctx)
         }
 
+def check_modifiers(modifiers: List[AST.Modifier]): IR.Modifiers = {
+    val mod = modifiers.foldLeft(Set.empty[AST.Modifier])((s, m) => {
+        if (s(m)) throw ModifierContradiction(m, m)
+        s + m
+    })
+
+    val pub = mod(AST.Modifier.Public)
+    val priv = mod(AST.Modifier.Private)
+    val prot = mod(AST.Modifier.Protected)
+    val abstr = mod(AST.Modifier.Abstract)
+    val stat = mod(AST.Modifier.Static)
+    val fin = mod(AST.Modifier.Final)
+
+    if (pub && priv) throw ModifierContradiction(AST.Modifier.Public, AST.Modifier.Private)
+    if (pub && prot) throw ModifierContradiction(AST.Modifier.Public, AST.Modifier.Protected)
+    if (priv && prot) throw ModifierContradiction(AST.Modifier.Private, AST.Modifier.Protected)
+    if (abstr) ???
+
+    IR.Modifiers(
+        pub,
+        priv,
+        prot,
+        abstr,
+        stat,
+        fin,
+    )
+}
+
 def typecheck_method(
     modifiers: List[AST.Modifier],
     name: String,
@@ -326,19 +355,19 @@ def typecheck_method(
     names: Map[String, IR.ObjectType],
     types: Map[IR.ObjectType, ObjectInfo],
 ): IR.Method = {
-    assert(modifiers.isEmpty, "modifiers are unsupported")
+    val mod = check_modifiers(modifiers)
 
     val b = body match
         case Some(b) => b
-        case None => return IR.Method(name, ty, None)
+        case None => ???
 
-    val this_param = 1
+    val this_param = if (mod.stat) 0 else 1
     val (max_locals, locals) = parameters.zip(ty.params).foldLeft((this_param, Map.empty[String, Local]))((_, _) match
         case ((idx, locals), (name, ty)) => (idx + local_size(ty), locals + (name -> Local(ty, idx)))
     )
     val ctx = Context(names, types, locals, Some(this_type), ty.ret, false)
     val code = typecheck_stmts(IR.Code(max_locals, List.empty), List(b))(ctx)
-    IR.Method(name, ty, Some(code))
+    IR.Method(mod, name, ty, Some(code))
 }
 
 def typecheck_field(
@@ -351,10 +380,11 @@ def typecheck_field(
     names: Map[String, IR.ObjectType],
     types: Map[IR.ObjectType, ObjectInfo]
 ) = {
+    val mod = check_modifiers(modifiers)
     val ctx = Context(names, types, Map.empty, Some(this_type), IR.VoidType, false)
     val init = typecheck_expr(initializer)(ctx)
     if (!is_subtype(init.ty, ty)(ctx)) throw TypeMismatch(init.ty, ty)
-    IR.Field(name, ty, init)
+    IR.Field(mod, name, ty, init)
 }
 
 def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
