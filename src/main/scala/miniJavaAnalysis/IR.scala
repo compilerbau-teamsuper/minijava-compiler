@@ -1,7 +1,9 @@
 package miniJavaAnalysis.IR
 
+case class ClassName(path: List[String])
+
 case class ClassFile(
-    name: String,
+    name: ClassName,
     fields: List[Field],
     methods: List[Method],
 )
@@ -52,14 +54,14 @@ object PrimitiveType {
     case object Boolean extends PrimitiveType with IntLikeType
 }
 
-case class ObjectType(name: String) extends Type
+case class ObjectType(name: ClassName) extends Type
 case object NullType extends Type
 
 case object VoidType extends Type
 
 object LangTypes {
-    val Object = ObjectType("java.lang.Object")
-    val String = ObjectType("java.lang.String")
+    val Object = ObjectType(ClassName(List("java", "lang", "Object")))
+    val String = ObjectType(ClassName(List("java", "lang", "String")))
 }
 
 sealed trait TypedStatement
@@ -146,7 +148,7 @@ case class DupStoreLocal(index: Int, value: TypedExpression) extends TypedExpres
 case class GetField(field_ty: Type, name: String, target: TypedExpression) extends TypedExpression(field_ty)
 case class DupPutField(name: String, target: TypedExpression, value: TypedExpression) extends TypedExpression(value.ty)
 
-case class InvokeSpecial(return_ty: Type, name: String, target: TypedExpression, args: List[TypedExpression]) extends TypedExpression(return_ty)
+case class InvokeSpecial(of: ClassName, name: String, mty: MethodType, target: TypedExpression, args: List[TypedExpression]) extends TypedExpression(mty.ret)
 
 /** A ternary expression. `result_ty` is only used during type checking. */
 case class Ternary(result_ty: Type, cmp: Comparison, left: TypedExpression, right: TypedExpression, yes: TypedExpression, no: TypedExpression) extends TypedExpression(result_ty)

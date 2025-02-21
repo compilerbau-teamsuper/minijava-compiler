@@ -26,7 +26,7 @@ extension(classfile: ClassFile) {
         val trace = new TraceClassVisitor(cw, pw)
         val cv = new CheckClassAdapter(trace)
         cv.visit(
-            JAVA_VERSION, ACC_PUBLIC, classfile.name, 
+            JAVA_VERSION, ACC_PUBLIC, classfile.name.internalName(), 
             NO_GENERICS, OBJECT, NO_INTERFACES
         )
 
@@ -107,13 +107,12 @@ extension(expression: TypedExpression) {
                 PUTFIELD, target.ty.internalName(),
                 name, value.ty.descriptor()
             )
-        case InvokeSpecial(return_ty, name, target, args) =>
+        case InvokeSpecial(of, name, mty, target, args) =>
             target.translate(mv)
             args.foreach(_.translate(mv))
-            val argTypes = args.map(_.ty)
             mv.visitMethodInsn(
-                INVOKESPECIAL, target.ty.internalName(),
-                name, MethodType(argTypes, return_ty).descriptor()
+                INVOKESPECIAL, of.internalName(),
+                name, mty.descriptor()
             )
         case IntLikeLiteral(_, value) => value match {
             case -1 => mv.visitInsn(ICONST_M1)
@@ -148,6 +147,10 @@ extension(expression: TypedExpression) {
     }
 }
 
+extension(name: ClassName) {
+    def internalName(): String = name.path.mkString("/")
+}
+
 extension(typ: Type) {
     def descriptor(): String = typ.asmType().getDescriptor()
 
@@ -164,7 +167,7 @@ extension(typ: Type) {
         case PrimitiveType.Float => FLOAT_TYPE
         case PrimitiveType.Double => DOUBLE_TYPE 
         case VoidType => VOID_TYPE
-        case ObjectType(name) => getObjectType(name.replace('.', '/'))
+        case ObjectType(name) => getObjectType(name.internalName())
         case NullType => getType(s"L$OBJECT;")
     }
 }

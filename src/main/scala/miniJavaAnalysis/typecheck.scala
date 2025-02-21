@@ -1,6 +1,5 @@
 package miniJavaAnalysis
 import miniJavaParser.AST
-import miniJavaAnalysis.IR.ObjectType
 
 sealed trait TypeError extends Throwable
 
@@ -63,7 +62,7 @@ def resolve(ty: AST.TypeOrVoid)(names: Map[String, IR.ObjectType]): IR.Type = ty
     case AST.PrimitiveType.Float => IR.PrimitiveType.Float
     case AST.PrimitiveType.Long => IR.PrimitiveType.Long
     case AST.PrimitiveType.Short => IR.PrimitiveType.Short
-    case AST.ObjectType.String => IR.ObjectType("java.lang.String")
+    case AST.ObjectType.String => IR.LangTypes.String
     case AST.ObjectType.Short => ???
     case AST.ObjectType.Long => ???
     case AST.ObjectType.Integer => ???
@@ -84,7 +83,7 @@ def stringify(ty: IR.Type): String = ty match
     case IR.PrimitiveType.Long => "long"
     case IR.PrimitiveType.Short => "short"
     case IR.PrimitiveType.Byte => "byte"
-    case ObjectType(name) => name
+    case IR.ObjectType(IR.ClassName(path)) => path.mkString(".")
     case IR.NullType => "null"
     case IR.VoidType => "void"
 
@@ -207,10 +206,10 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
                 case Some(this_type) => IR.LoadLocal(this_type, 0)
                 case None => ???
             case Some(target) => typecheck_expr(target)(ctx)
-        
-        val method = t.ty match
-            case object_type @ IR.ObjectType(_) => ctx.types(object_type).methods.get(name) match
-                case Some(m) => m
+
+        val (of, method) = t.ty match
+            case object_type @ IR.ObjectType(of) => ctx.types(object_type).methods.get(name) match
+                case Some(m) => (of, m)
                 case None => throw new NoSuchMethod(name, object_type)
             case ty => throw new NoSuchMethod(name, ty)
 
@@ -221,7 +220,7 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
             if (!is_subtype(arg.ty, ty)(ctx)) throw new TypeMismatch(arg.ty, ty)
         }
 
-        IR.InvokeSpecial(method.ty.ret, name, t, args)
+        IR.InvokeSpecial(of, name, method.ty, t, args)
     }
     case AST.FieldAccess(name, target) => {
         val t = target match
@@ -415,7 +414,8 @@ def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
         case AST.ClassDeclaration(modifiers, name, superclass, interfaces, body) => name
         case AST.InterfaceDeclaration(modifiers, name, superInterfaces, body) => name
     
-    val this_type = IR.ObjectType(pkg.map(p => p + '.').getOrElse("") + name)
+    val class_name = IR.ClassName(pkg.toList :+ name)
+    val this_type = IR.ObjectType(class_name)
     val names = prelude + (name -> this_type)
 
     val (supertypes, members) = decl match
@@ -460,5 +460,5 @@ def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
 
     val fields = check_fields.map(check => check(types))
     val methods = check_methods.map(check => check(types))
-    IR.ClassFile(name, fields, methods)
+    IR.ClassFile(class_name, fields, methods)
 }

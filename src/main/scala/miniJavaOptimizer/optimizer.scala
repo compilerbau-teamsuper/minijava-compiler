@@ -33,7 +33,7 @@ def is_equivalent(a: TypedExpression, b: TypedExpression): Boolean = if (a == b)
     case (DupStoreLocal(ia, a), DupStoreLocal(ib, b)) => ia == ib && is_equivalent(a, b)
     case (GetField(_, na, ta), GetField(_, nb, tb)) => na == nb && is_equivalent(ta, tb) // In welformed IR, the types must be equal.
     case (DupPutField(na, ta, a), DupPutField(nb, tb, b)) => na == nb && is_equivalent(ta, tb) && is_equivalent(a, b)
-    case (InvokeSpecial(_, na, ta, aa), InvokeSpecial(_, nb, tb, ab)) => false // TODO
+    case (InvokeSpecial(oa, na, ma, ta, aa), InvokeSpecial(ob, nb, mb, tb, ab)) => false // TODO
     case (Ternary(_, ca, la, ra, ya, na), Ternary(_, cb, lb, rb, yb, nb)) => false // TODO
     case (_, _) => false
 
@@ -214,7 +214,7 @@ def simplify_expr(expr: TypedExpression): TypedExpression = expr match
     case DupStoreLocal(index, value) => DupStoreLocal(index, simplify_expr(value))
     case GetField(field_ty, name, target) => GetField(field_ty, name, simplify_expr(target))
     case DupPutField(name, target, value) => DupPutField(name, simplify_expr(target), simplify_expr(value))
-    case InvokeSpecial(return_ty, name, target, args) => InvokeSpecial(return_ty, name, simplify_expr(target), args.map(simplify_expr))
+    case InvokeSpecial(of, name, mty, target, args) => InvokeSpecial(of, name, mty, simplify_expr(target), args.map(simplify_expr))
 
     case Ternary(ty, cmp, left, right, yes, no) => decide_comparison(cmp, simplify_expr(left), simplify_expr(right)) match
         case DefiniteYes => simplify_expr(yes)
