@@ -1,0 +1,289 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam nodesep 70
+skinparam ranksep 50
+
+abstract class ASTNode
+
+' Top level classes
+class CompilationUnit {
+  +packageDeclaration: Option[PackageDeclaration]
+  +importDeclarations: List[ImportDeclaration]
+  +typeDeclarations: List[TypeDeclaration]
+}
+
+class PackageDeclaration {
+  +name: String
+}
+
+class ImportDeclaration {
+  +name: String
+  +isStatic: Boolean
+  +isWildcard: Boolean
+}
+
+' Type Declarations
+abstract class TypeDeclaration
+class ClassDeclaration {
+  +modifiers: List[Modifier]
+  +name: String
+  +superclass: String
+  +interfaces: List[String]
+  +body: List[ClassMember]
+}
+
+class InterfaceDeclaration {
+  +modifiers: List[Modifier]
+  +name: String
+  +superInterfaces: List[String]
+  +body: List[InterfaceMember]
+}
+
+' Members
+abstract class ClassMember
+abstract class InterfaceMember
+
+class MethodDeclaration {
+  +modifiers: List[Modifier]
+  +returnType: TypeOrVoid
+  +name: String
+  +parameters: List[Parameter]
+  +body: Option[Block]
+}
+
+class VarOrFieldDeclaration {
+  +modifiers: List[Modifier]
+  +fieldType: Type
+  +name: String
+  +initializer: Expression
+}
+
+class ConstructorDeclaration {
+  +modifiers: List[Modifier]
+  +name: String
+  +parameters: List[Parameter]
+  +body: Block
+}
+
+class Parameter {
+  +name: String
+  +paramType: Type
+}
+
+' Statements
+abstract class Statement
+class Block {
+  +statements: List[Statement]
+}
+
+class ExpressionStatement {
+  +expression: Expression
+}
+
+class IfStatement {
+  +condition: Expression
+  +thenStmt: Statement
+  +elseStmt: Option[Statement]
+}
+
+class WhileStatement {
+  +condition: Expression
+  +body: Statement
+}
+
+class ForStatement {
+  +init: Option[VarOrFieldDeclaration]
+  +condition: Option[Expression]
+  +update: Option[Expression]
+  +body: Statement
+}
+
+class ReturnStatement {
+  +expression: Option[Expression]
+}
+
+' Expressions
+abstract class Expression
+class BinaryExpression {
+  +left: Expression
+  +operator: BinaryOperator
+  +right: Expression
+}
+
+class MethodCall {
+  +name: String
+  +target: Option[Expression]
+  +arguments: List[Expression]
+}
+
+class FieldAccess {
+  +name: String
+  +target: Option[Expression]
+}
+
+class ArrayAccess {
+  +target: Expression
+  +index: Expression
+}
+
+class NewObject {
+  +constructorCall: MethodCall
+}
+
+class Assignment {
+  +left: FieldAccess|ArrayAccess
+  +right: Expression
+}
+
+' Literals
+abstract class Literal
+class IntLiteral {
+  +value: Int
+}
+class StringLiteral {
+  +value: String
+}
+class BooleanLiteral {
+  +value: Boolean
+}
+class CharacterLiteral {
+  +value: Char
+}
+object NullLiteral
+
+' Types
+abstract class TypeOrVoid
+object VoidType
+abstract class Type
+abstract class PrimitiveType
+abstract class ObjectType
+class ArrayType {
+  +arrayType: Type
+}
+abstract class Int
+abstract class Boolean
+abstract class Char
+abstract class String
+class Custom {
+  +name: String
+}
+
+' Operators
+abstract class BinaryOperator
+abstract class Add 
+abstract class Subtract 
+abstract class Multiply 
+abstract class Divide 
+abstract class Modulo 
+abstract class And 
+abstract class Or 
+abstract class Xor 
+abstract class Equals
+abstract class Greater 
+abstract class GreaterOrEqual 
+abstract class Less 
+abstract class LessOrEqual 
+
+' Modifiers
+abstract class Modifier 
+abstract class Public
+abstract class Private
+abstract class Protected
+abstract class Abstract
+abstract class Static
+abstract class Final
+
+
+' Inheritance relationships
+ASTNode <|-- CompilationUnit
+CompilationUnit -- PackageDeclaration
+CompilationUnit -- ImportDeclaration
+CompilationUnit -- TypeDeclaration
+ASTNode <|-- PackageDeclaration
+ASTNode <|-- ImportDeclaration
+ASTNode <|-- TypeDeclaration
+ASTNode <|-- ClassMember
+ASTNode <|-- InterfaceMember
+MethodDeclaration -- Parameter
+ASTNode <|-- Parameter
+ASTNode <|-- Statement
+ASTNode <|-- Expression
+MethodDeclaration -- TypeOrVoid
+ASTNode <|-- TypeOrVoid
+VarOrFieldDeclaration -- Type
+Parameter -- Type
+
+TypeDeclaration <|-- ClassDeclaration
+TypeDeclaration <|-- InterfaceDeclaration
+
+ClassMember <|-- MethodDeclaration
+ClassMember <|-- VarOrFieldDeclaration
+ClassMember <|-- ConstructorDeclaration
+ClassMember <|-- Block
+ClassMember <|-- ClassDeclaration
+
+InterfaceMember <|-- MethodDeclaration
+InterfaceMember <|-- VarOrFieldDeclaration
+
+Statement <|-- Block
+Statement <|-- ExpressionStatement
+Statement <|-- IfStatement
+Statement <|-- WhileStatement
+Statement <|-- ForStatement
+Statement <|-- ReturnStatement
+Statement <|-- VarOrFieldDeclaration
+
+Expression <|-- BinaryExpression
+Expression <|-- MethodCall
+Expression <|-- FieldAccess
+Expression <|-- ArrayAccess
+Expression <|-- NewObject
+Expression <|-- Assignment
+Expression <|-- Literal
+
+Literal <|-- IntLiteral
+Literal <|-- StringLiteral
+Literal <|-- BooleanLiteral
+Literal <|-- NullLiteral
+Literal <|-- CharacterLiteral
+
+TypeOrVoid <|-- VoidType
+TypeOrVoid <|-- Type
+Type <|-- PrimitiveType
+Type <|-- ObjectType
+Type <|-- ArrayType
+
+PrimitiveType <|-- Int
+PrimitiveType <|-- Boolean
+PrimitiveType <|-- Char
+ObjectType <|-- String
+ObjectType <|-- Custom
+
+BinaryExpression -- BinaryOperator 
+BinaryOperator <|-- Add 
+BinaryOperator <|-- Subtract 
+BinaryOperator <|-- Multiply 
+BinaryOperator <|-- Divide 
+BinaryOperator <|-- Modulo 
+BinaryOperator <|-- And 
+BinaryOperator <|-- Or 
+BinaryOperator <|-- Xor 
+BinaryOperator <|-- Equals
+BinaryOperator <|-- Greater 
+BinaryOperator <|-- GreaterOrEqual 
+BinaryOperator <|-- Less 
+BinaryOperator <|-- LessOrEqual 
+
+MethodDeclaration -- Modifier
+VarOrFieldDeclaration -- Modifier  
+ConstructorDeclaration -- Modifier
+ClassDeclaration -- Modifier  
+InterfaceDeclaration -- Modifier    
+Modifier <|-- Public
+Modifier <|-- Private
+Modifier <|-- Protected
+Modifier <|-- Abstract
+Modifier <|-- Static
+Modifier <|-- Final
+
+@enduml
