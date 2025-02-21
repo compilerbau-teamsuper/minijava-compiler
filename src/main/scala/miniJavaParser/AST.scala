@@ -95,7 +95,6 @@ case object NullLiteral extends Literal
 
 // Operatoren
 sealed trait BinaryOperator
-sealed trait Comparison extends BinaryOperator
 object BinaryOperator {
   case object Add extends BinaryOperator
   case object Subtract extends BinaryOperator
@@ -105,8 +104,8 @@ object BinaryOperator {
   case object And extends BinaryOperator
   case object Or extends BinaryOperator
   case object Xor extends BinaryOperator
-  case object Equals extends Comparison
-  case object Greater extends Comparison
+  case object Equals extends BinaryOperator
+  case object Greater extends BinaryOperator
   case object GreaterOrEqual extends BinaryOperator
   case object Less extends BinaryOperator
   case object LessOrEqual extends BinaryOperator
