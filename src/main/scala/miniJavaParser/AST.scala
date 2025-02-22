@@ -65,7 +65,6 @@ sealed trait Statement extends ASTNode
 case class ExpressionStatement(expression: Expression) extends Statement
 case class IfStatement(condition: Expression, thenStmt: Statement, elseStmt: Option[Statement]) extends Statement
 case class WhileStatement(condition: Expression, body: Statement) extends Statement
-case class ForStatement(init: Option[VarOrFieldDeclaration], condition: Option[Expression], update: Option[Expression], body: Statement) extends Statement
 case class ReturnStatement(expression: Option[Expression]) extends Statement
 case class BreakStatement() extends Statement
 case class ContinueStatement() extends Statement

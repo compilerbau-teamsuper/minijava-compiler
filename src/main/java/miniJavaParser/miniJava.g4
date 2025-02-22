@@ -117,7 +117,6 @@ newObject: 'new' methodCall; // 'new' qualifiedName | methodCall) (classBody)?;
 calcFunction
     : value calcBinOpHigher term
     | term calcBinOpLower (calcFunction | value)
-    | qualifiedName calcUnOp // ToDo: Hier auch expression möglich?
     | negate;
 
 term
@@ -201,6 +200,7 @@ statement
     | break
     | continue
     | assignment
+    | qualifiedName calcUnOp
     | return // ToDo: evtl noch restricten wo das vorkommen darf auf scala Seite? Vermutlich nicht super wichtig tho..
     | tryStatement // ToDo auf scala Seite
     | throwStatement; // ToDo auf scala Seite
@@ -221,7 +221,7 @@ whileStatement : 'while' '(' expression ')' statement;
 
 forStatement : 'for' '(' forControl ')' statement; // ToDo: Foreach wäre noch nice.
 // Generell an Abstrakter Syntax aus Vorlesung orientiern
-forControl : (localVariableDeclaration | ';') booleanFunction? ';' calcFunction?;
+forControl : (localVariableDeclaration | ';') booleanFunction? ';' statement?;
 
 //forControlStatement
 //    : assignment

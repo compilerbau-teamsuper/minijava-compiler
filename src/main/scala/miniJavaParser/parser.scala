@@ -347,18 +347,26 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   // Methode: visitStatement
   override def visitStatement(ctx: StatementContext): Statement = {
     if ctx == null then return null
-    ctx.getChild(0) match {
+    val stmt = ctx.getChild(0) match {
       case b: BlockContext => visitBlock(b)
       case m: MethodCallContext => ExpressionStatement(visitMethodCall(m))
       case a: AssignmentContext => ExpressionStatement(visitAssignment(a))
       case i: (IfThenContext | IfThenElseContext) => visitIfThenElse(i)
-      // case s: SwitchContext => visitSwitch(s) // ToDo: Überhaupt notwendig?
+      case q: QualifiedNameContext =>
+        ctx.calcUnOp().getText match {
+          case "++" => ExpressionStatement(Assignment(fieldAccessFromQualifiedName(ctx.qualifiedName()), BinaryExpression(fieldAccessFromQualifiedName(ctx.qualifiedName()), Add, IntLiteral(1))))
+          case "--" => ExpressionStatement(Assignment(fieldAccessFromQualifiedName(ctx.qualifiedName()), BinaryExpression(fieldAccessFromQualifiedName(ctx.qualifiedName()), Subtract, IntLiteral(1))))
+        }
       case w: WhileStatementContext => visitWhileStatement(w)
       case r: ReturnContext => ReturnStatement(Option(visitExpression(r.expression())))
       case b: BreakContext => BreakStatement()
       case c: ContinueContext => ContinueStatement()
       case f: ForStatementContext => visitForStatement(f)
       case _ => throw new IllegalArgumentException("Unknown statement")
+    }
+    stmt match {
+      case l: List[Statement] => Block(l)
+      case s: Statement => s
     }
   }
 
@@ -410,12 +418,19 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     WhileStatement(visitExpression(ctx.expression()), visitStatement(ctx.statement()))
   }
 
-  override def visitForStatement(ctx: ForStatementContext): ForStatement = {
+  override def visitForStatement(ctx: ForStatementContext): List[Statement] = {
     val forControl = ctx.forControl()
-    val init = if forControl.localVariableDeclaration() != null then Option(visitLocalVariableDec(forControl.localVariableDeclaration()).head) else None
-    val condition = if forControl.booleanFunction() != null then Option(visitBooleanFunction(forControl.booleanFunction())) else None
-    val update = if forControl.calcFunction() != null then Option(visitCalcFunction(forControl.calcFunction())) else None
-    ForStatement(init, condition, update, visitStatement(ctx.statement()))
+    val stmts: ListBuffer[Statement] = ListBuffer()
+    if forControl.localVariableDeclaration() != null then stmts.addOne(visitLocalVariableDec(forControl.localVariableDeclaration()).head)
+    val condition = if forControl.booleanFunction() != null then visitBooleanFunction(forControl.booleanFunction()) else AST.BooleanLiteral(true)
+    if forControl.statement() != null then
+      visitStatement(ctx.statement()) match {
+        case Block(b) => stmts.addOne(WhileStatement(condition, Block(b ::: List(visitStatement(forControl.statement()))))) // ToDo: Überlegen wo man das Update einfügt, aufpassen mit continue und so...
+        case s => stmts.addOne(WhileStatement(condition, Block(List(s, visitStatement(forControl.statement())))))
+      }
+    else
+      stmts.addOne(WhileStatement(condition, visitStatement(ctx.statement())))
+    stmts.toList
   }
 
   override def visitExpression(ctx: ExpressionContext): Expression = {
@@ -539,12 +554,6 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       val right = if ctx.value != null then visitValueOrPrimary(ctx.value()) else visitCalcFunction(ctx.calcFunction())// Right-hand side expression
       val operator = getCalcOperator(ctx.getChild(1).getText)
       BinaryExpression(left, operator, right)
-    } else if (ctx.calcUnOp() != null) {
-      // Case 2: Unary operation
-      ctx.getChild(1).getText match {
-        case "++" => BinaryExpression(fieldAccessFromQualifiedName(ctx.qualifiedName()), Add, IntLiteral(1))
-        case "--" => BinaryExpression(fieldAccessFromQualifiedName(ctx.qualifiedName()), Subtract, IntLiteral(1))
-      }
     } else if ctx.negate() != null then BinaryExpression(IntLiteral(0), Subtract, visitExpression(ctx.negate().expression()))
     else {
       throw new IllegalArgumentException("Invalid CalcFunction structure")

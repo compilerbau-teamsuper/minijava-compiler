@@ -111,11 +111,10 @@ object ParserTest extends TestSuite {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/statementsTest1.java")
       val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public), "statementsTest1", "Object", List(), List(
         ConstructorDeclaration(List(Modifier.Public), "statementsTest1", List(), Block(List(ExpressionStatement(MethodCall("Object", None, List()))))),
-        MethodDeclaration(List(), VoidType, "forTest", List(), Option(Block(List(
-          ForStatement(
-            Option(VarOrFieldDeclaration(List(), PrimitiveType.Int, "i", IntLiteral(0))),
-            Option(BinaryExpression(FieldAccess("i", None), BinaryOperator.Less, IntLiteral(5))),
-            Option(BinaryExpression(FieldAccess("i", None), BinaryOperator.Add, IntLiteral(1))),
+        MethodDeclaration(List(), VoidType, "forTest", List(), Option(Block(List(Block(List(
+          VarOrFieldDeclaration(List(), PrimitiveType.Int, "i", IntLiteral(0)),
+          WhileStatement(
+            BinaryExpression(FieldAccess("i", None), BinaryOperator.Less, IntLiteral(5)),
             Block(List(
               ExpressionStatement(Assignment(FieldAccess("i", None), BinaryExpression(FieldAccess("i", None), BinaryOperator.Subtract, IntLiteral(1)))),
               BreakStatement()))))))),
