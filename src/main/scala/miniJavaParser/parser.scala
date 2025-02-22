@@ -84,7 +84,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       case ConstructorDeclaration(_,_,_,_) => true
       case _ => false
     })
-    body = if !hasConstructor then body.::(ConstructorDeclaration(List(Modifier.Public), name, List(), Block(List(ExpressionStatement(MethodCall(superclass, None, List())))))) else body
+    body = if !hasConstructor then body.::(ConstructorDeclaration(List(Modifier.Public), name, List(), Block(List()))) else body
 
     ClassDeclaration(modifiers, name, superclass, interfaces, body)
   }
@@ -260,12 +260,6 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     val name = ctx.Identifier().getText
     val parameters = getFormalParameters(ctx.formalParameters())
     var body = visitBlock(ctx.block())
-    val hasSuperCall = body.statements.exists(x => x match {
-      case ExpressionStatement(MethodCall(name, _, _)) if name==currentSuper => true
-      case _ => false
-    })
-    body = if !hasSuperCall then Block(body.statements.::(ExpressionStatement(MethodCall(currentSuper, None, List())))) else body
-
     ConstructorDeclaration(modifiers, name, parameters, body)
   }
 
