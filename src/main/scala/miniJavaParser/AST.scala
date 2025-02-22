@@ -75,6 +75,7 @@ case class BinaryExpression(left: Expression, operator: BinaryOperator, right: E
 case class MethodCall(name: String, target: Option[Expression], arguments: List[Expression]) extends Expression
 case class FieldAccess(name: String, target: Option[Expression]) extends Expression
 case class ArrayInitializer(initializers: List[Expression]) extends Expression
+case class NewArray(arrayType: Type, size: Expression) extends Expression
 case class ArrayAccess(target: Expression, index: Expression) extends Expression // ToDo: Mehrdimensionale arrays
 case class NewObject(constructorCall: MethodCall) extends Expression
 case class Assignment(left: FieldAccess | ArrayAccess, right: Expression) extends Expression

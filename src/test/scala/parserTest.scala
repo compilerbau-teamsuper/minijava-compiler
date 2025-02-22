@@ -127,8 +127,8 @@ object ParserTest extends TestSuite {
                 IfStatement(
                   BinaryExpression(FieldAccess("i", None), BinaryOperator.Equals , IntLiteral(2)),
                   Block(List(
-                    ExpressionStatement(Assignment(FieldAccess("i", None), BinaryExpression(FieldAccess("i", None), BinaryOperator.Add, IntLiteral(1)))), 
-                    ContinueStatement())),  
+                    ExpressionStatement(Assignment(FieldAccess("i", None), BinaryExpression(FieldAccess("i", None), BinaryOperator.Add, IntLiteral(1)))),
+                    ContinueStatement())),
                   None),
                 ExpressionStatement(Assignment(FieldAccess("i", None), BinaryExpression(FieldAccess("i", None), BinaryOperator.Add, IntLiteral(1))))))))))))),
         MethodDeclaration(List(), VoidType, "whileTest", List(), Option(Block(List(
@@ -163,12 +163,20 @@ object ParserTest extends TestSuite {
 
       ast ==> expected
     }
-//    test("array Test"){
-//      val ast = JavaASTBuilder.parseFromFile("src/test/java/arrayTest.java")
-//      val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public), "arrayTest", "Object", List(), List(
-//        ConstructorDeclaration(List(Modifier.Public), "arrayTest", List(), Block(List(ExpressionStatement(MethodCall("Object", None, List()))))),
-//        VarOrFieldDeclaration(List(), ArrayType(PrimitiveType.Int), "numbers", ArrayInitializer(List(IntLiteral(1), IntLiteral(2), IntLiteral(3)))),
-//        VarOrFieldDeclaration(List(), ArrayType(ObjectType.String), "mail", ??? ) 
-//    }
+    test("array Test") {
+      val ast = JavaASTBuilder.parseFromFile("src/test/java/arrayTest.java")
+      val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public), "arrayTest", "Object", List(), List(
+        ConstructorDeclaration(List(Modifier.Public), "arrayTest", List(), Block(List(ExpressionStatement(MethodCall("Object", None, List()))))),
+        VarOrFieldDeclaration(List(), ArrayType(PrimitiveType.Int), "numbers", ArrayInitializer(List(IntLiteral(1), IntLiteral(2), IntLiteral(3)))),
+        VarOrFieldDeclaration(List(), ArrayType(ObjectType.String), "mail", NewArray(ObjectType.String, IntLiteral(3))),
+        MethodDeclaration(List(), ArrayType(ObjectType.String), "makeMail", List(), Option(Block(List(
+          VarOrFieldDeclaration(List(), ArrayType(ObjectType.String), "mailref", FieldAccess("mail", None)),
+          ExpressionStatement(Assignment(ArrayAccess(FieldAccess("mailref", None), IntLiteral(0)), StringLiteral("Servus"))),
+          ExpressionStatement(Assignment(ArrayAccess(FieldAccess("mailref", None), IntLiteral(1)), StringLiteral("nix"))),
+          ExpressionStatement(Assignment(ArrayAccess(FieldAccess("mailref", None), IntLiteral(2)), ArrayAccess(FieldAccess("mailref", None), IntLiteral(0)))),
+          ReturnStatement(Option(FieldAccess("mailref", None)))))))))))
+
+      ast ==> expected
+    }
   }
 }
