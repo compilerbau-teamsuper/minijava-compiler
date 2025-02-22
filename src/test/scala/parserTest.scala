@@ -111,13 +111,26 @@ object ParserTest extends TestSuite {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/statementsTest1.java")
       val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public), "statementsTest1", "Object", List(), List(
         ConstructorDeclaration(List(Modifier.Public), "statementsTest1", List(), Block(List(ExpressionStatement(MethodCall("Object", None, List()))))),
-        MethodDeclaration(List(), VoidType, "forTest", List(), Option(Block(List(Block(List(
-          VarOrFieldDeclaration(List(), PrimitiveType.Int, "i", IntLiteral(0)),
-          WhileStatement(
-            BinaryExpression(FieldAccess("i", None), BinaryOperator.Less, IntLiteral(5)),
-            Block(List(
-              ExpressionStatement(Assignment(FieldAccess("i", None), BinaryExpression(FieldAccess("i", None), BinaryOperator.Subtract, IntLiteral(1)))),
-              BreakStatement()))))))),
+        MethodDeclaration(List(), VoidType, "forTest", List(), Option(Block(List(
+          Block(List(
+            VarOrFieldDeclaration(List(), PrimitiveType.Int, "i", IntLiteral(0)),
+            WhileStatement(
+              BinaryExpression(FieldAccess("i", None), BinaryOperator.Less, IntLiteral(5)),
+              Block(List(
+                ExpressionStatement(Assignment(FieldAccess("i", None), BinaryExpression(FieldAccess("i", None), BinaryOperator.Subtract, IntLiteral(1)))),
+                BreakStatement()))))),
+          Block(List(
+            VarOrFieldDeclaration(List(), PrimitiveType.Int, "i", IntLiteral(0)),
+            WhileStatement(
+              BinaryExpression(FieldAccess("i", None), BinaryOperator.Less, IntLiteral(5)),
+              Block(List(
+                IfStatement(
+                  BinaryExpression(FieldAccess("i", None), BinaryOperator.Equals , IntLiteral(2)),
+                  Block(List(
+                    ExpressionStatement(Assignment(FieldAccess("i", None), BinaryExpression(FieldAccess("i", None), BinaryOperator.Add, IntLiteral(1)))), 
+                    ContinueStatement())),  
+                  None),
+                ExpressionStatement(Assignment(FieldAccess("i", None), BinaryExpression(FieldAccess("i", None), BinaryOperator.Add, IntLiteral(1))))))))))))),
         MethodDeclaration(List(), VoidType, "whileTest", List(), Option(Block(List(
           VarOrFieldDeclaration(List(), PrimitiveType.Boolean, "loopVar", BooleanLiteral(true)),
           WhileStatement(

@@ -306,19 +306,41 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   // Methode: visitBlock
   override def visitBlock(ctx: BlockContext): Block = {
     val statements: ListBuffer[Statement] = ListBuffer()
-    ctx.blockStatement().asScala.foreach(s => visitBlockStmt(s) match {
+    ctx.blockStatement().asScala.foreach(s => visitBlockStmt(s, None) match {
       case sm: Statement => statements.addOne(sm)
       case sms: List[Statement] => statements.addAll(sms)
     })
     Block(statements.toList)
   }
 
-  private def visitBlockStmt(ctx: BlockStatementContext): Statement | List[Statement] = {
+  private def maybeInsertUpdateStmt(stmt: Statement, update_stmt: Statement): Statement = {
+    stmt match {
+      case IfStatement(c, t, e) => e match {
+        case Some(el) => IfStatement(c, maybeInsertUpdateStmt(t, update_stmt), Option(maybeInsertUpdateStmt(el, update_stmt)))
+        case None => IfStatement(c, maybeInsertUpdateStmt(t, update_stmt), None)
+      }
+      case Block(stmts) =>
+        Block(stmts.flatMap(s => s match {
+          case ContinueStatement() => List(update_stmt, ContinueStatement())
+          case st => List(st)
+        }))
+      case ContinueStatement() => Block(List(update_stmt, ContinueStatement()))
+      case s => s
+    }
+  }
+
+  private def visitBlockStmt(ctx: BlockStatementContext, update_stmt: Option[Statement]): Statement | List[Statement] = {
     if (ctx.localVariableDeclaration() != null) {
       val f = visitLocalVariableDec(ctx.localVariableDeclaration())
       if f.sizeIs == 1 then f.head else f
     }
-    else if (ctx.statement() != null) { visitStatement(ctx.statement())}
+    else if (ctx.statement() != null) {
+      val stmt = visitStatement(ctx.statement())
+      update_stmt match {
+        case Some(up) => maybeInsertUpdateStmt(stmt, up)
+        case None => stmt
+      }
+    }
     else {throw new IllegalArgumentException("Unknown block statement")}
   }
 
@@ -347,7 +369,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   // Methode: visitStatement
   override def visitStatement(ctx: StatementContext): Statement = {
     if ctx == null then return null
-    val stmt = ctx.getChild(0) match {
+    ctx.getChild(0) match {
       case b: BlockContext => visitBlock(b)
       case m: MethodCallContext => ExpressionStatement(visitMethodCall(m))
       case a: AssignmentContext => ExpressionStatement(visitAssignment(a))
@@ -363,10 +385,6 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       case c: ContinueContext => ContinueStatement()
       case f: ForStatementContext => visitForStatement(f)
       case _ => throw new IllegalArgumentException("Unknown statement")
-    }
-    stmt match {
-      case l: List[Statement] => Block(l)
-      case s: Statement => s
     }
   }
 
@@ -418,19 +436,31 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     WhileStatement(visitExpression(ctx.expression()), visitStatement(ctx.statement()))
   }
 
-  override def visitForStatement(ctx: ForStatementContext): List[Statement] = {
+  override def visitForStatement(ctx: ForStatementContext): Statement = {
     val forControl = ctx.forControl()
     val stmts: ListBuffer[Statement] = ListBuffer()
     if forControl.localVariableDeclaration() != null then stmts.addOne(visitLocalVariableDec(forControl.localVariableDeclaration()).head)
     val condition = if forControl.booleanFunction() != null then visitBooleanFunction(forControl.booleanFunction()) else AST.BooleanLiteral(true)
     if forControl.statement() != null then
-      visitStatement(ctx.statement()) match {
-        case Block(b) => stmts.addOne(WhileStatement(condition, Block(b ::: List(visitStatement(forControl.statement()))))) // ToDo: Überlegen wo man das Update einfügt, aufpassen mit continue und so...
-        case s => stmts.addOne(WhileStatement(condition, Block(List(s, visitStatement(forControl.statement())))))
-      }
+      stmts.addOne(WhileStatement(condition, visitForBodyStatement(ctx.statement(), visitStatement(forControl.statement()))))
     else
       stmts.addOne(WhileStatement(condition, visitStatement(ctx.statement())))
-    stmts.toList
+    if stmts.sizeIs == 1 then stmts.head else Block(stmts.toList)
+  }
+
+  private def visitForBodyStatement(ctx: StatementContext, update_stmt: Statement): Statement = {
+    ctx.getChild(0) match {
+      case b: BlockContext =>
+        val statements: ListBuffer[Statement] = ListBuffer()
+        b.blockStatement().asScala.foreach(s => visitBlockStmt(s, Option(update_stmt)) match {
+          case sm: Statement => statements.addOne(sm)
+          case sms: List[Statement] => statements.addAll(sms)
+        })
+        if !statements.contains(update_stmt) && !statements.contains(BreakStatement()) then statements.addOne(update_stmt)
+        Block(statements.toList)
+      case c: ContinueContext => update_stmt
+      case _ => visitStatement(ctx)
+    }
   }
 
   override def visitExpression(ctx: ExpressionContext): Expression = {

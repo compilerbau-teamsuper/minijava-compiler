@@ -316,7 +316,6 @@ def typecheck_stmts(prev: IR.Code, stmts: List[AST.Statement])(ctx: Context): IR
             val code = IR.Code(cbody.max_locals, prev.code :+ IR.WhileStatement(IR.Comparison.ICmpNe, cond, IR.BooleanLiteral(false), cbody.code))
             typecheck_stmts(code, next)(ctx)
         }
-        case AST.ForStatement(init, condition, update, body) => ???
         case AST.ReturnStatement(expression) => {
             val expr = expression.map(e => typecheck_expr(e)(ctx))
             val ty = expr.map(e => e.ty).getOrElse(IR.VoidType)
