@@ -7,15 +7,16 @@ import org.objectweb.asm.Opcodes.*
 import java.io.{PrintWriter, File}
 import miniJavaAnalysis.IR.*
 import miniJavaAnalysis.IR.Comparison.*
+import miniJavaAnalysis.IR.BinaryOperator.*
+import org.objectweb.asm.Label
 
 val JAVA_VERSION = V1_4
 val OBJECT = "java/lang/Object"
+val STRING = "java/lang/String"
 val NO_GENERICS = null
 val NO_CONSTANT = null
 val NO_INTERFACES = null
 val NO_EXCEPTIONS = null
-
-//TODO: Modifiers
 
 extension(classfile: ClassFile) {
     def codeGen(): (Array[Byte], PrintWriter) = {
@@ -26,7 +27,7 @@ extension(classfile: ClassFile) {
         val trace = new TraceClassVisitor(cw, pw)
         val cv = new CheckClassAdapter(trace)
         cv.visit(
-            JAVA_VERSION, ACC_PUBLIC, classfile.name, 
+            JAVA_VERSION, ACC_PUBLIC, classfile.name.internalName(), 
             NO_GENERICS, OBJECT, NO_INTERFACES
         )
 
@@ -55,8 +56,8 @@ extension(method: Method) {
             NO_GENERICS, NO_EXCEPTIONS 
         )
         mv.visitCode()
-        for(instruction <- method.code.get.code) {
-            instruction.translate(mv)
+        for(statement <- method.code.map(_.code).getOrElse(Nil)) {
+            statement.translate(mv, None, None)
         }
         //We set the flag COMPUTE_MAXS, so the arguments here are ignored
         mv.visitMaxs(0, 0)
@@ -65,7 +66,11 @@ extension(method: Method) {
 }
 
 extension(statement: TypedStatement) {
-    def translate(mv: MethodVisitor): Unit = statement match {
+    def translate(
+        mv: MethodVisitor,
+        continueLabel: Option[Label], 
+        breakLabel: Option[Label]
+    ): Unit = statement match {
         case ExpressionStatement(expression) => 
             expression.translate(mv)
             val popInsn = if expression.ty.isCategoryTwo() then POP2 else POP
@@ -78,6 +83,40 @@ extension(statement: TypedStatement) {
                 mv.visitInsn(instruction)
             case None => mv.visitInsn(RETURN)
         }
+        case IfStatement(cmp, left, right, thenStmt, elseStmt) =>
+            val thenLabel = new Label()
+            val endLabel = new Label()
+            left.translate(mv)
+            right.translate(mv)
+            val cmpInsn = cmp.instruction()
+            //Branch
+            mv.visitJumpInsn(cmpInsn, thenLabel)
+            //Else
+            elseStmt.foreach(_.translate(mv, continueLabel, breakLabel))
+            mv.visitJumpInsn(GOTO, endLabel)
+            //Then
+            mv.visitLabel(thenLabel)
+            thenStmt.foreach(_.translate(mv, continueLabel, breakLabel))
+            //End
+            mv.visitLabel(endLabel)
+        case BreakStatement =>
+            mv.visitJumpInsn(GOTO, breakLabel.get)
+        case ContinueStatement =>
+            mv.visitJumpInsn(GOTO, continueLabel.get)
+        case WhileStatement(cmp, left, right, body) =>
+            val startLabel = new Label()
+            val bodyLabel = new Label()
+            val endLabel = new Label()
+            left.translate(mv)
+            right.translate(mv)
+            val cmpInsn = cmp.instruction()
+            mv.visitLabel(startLabel)
+            mv.visitJumpInsn(cmpInsn, bodyLabel)
+            mv.visitJumpInsn(GOTO, endLabel)
+            mv.visitLabel(bodyLabel)
+            body.foreach(_.translate(mv, Some(startLabel), Some(endLabel)))
+            mv.visitJumpInsn(GOTO, startLabel)
+            mv.visitLabel(endLabel)
     }
 }
 
@@ -107,13 +146,12 @@ extension(expression: TypedExpression) {
                 PUTFIELD, target.ty.internalName(),
                 name, value.ty.descriptor()
             )
-        case InvokeSpecial(return_ty, name, target, args) =>
+        case InvokeSpecial(of, name, mty, target, args) =>
             target.translate(mv)
             args.foreach(_.translate(mv))
-            val argTypes = args.map(_.ty)
             mv.visitMethodInsn(
-                INVOKESPECIAL, target.ty.internalName(),
-                name, MethodType(argTypes, return_ty).descriptor()
+                INVOKESPECIAL, of.internalName(),
+                name, mty.descriptor()
             )
         case IntLikeLiteral(_, value) => value match {
             case -1 => mv.visitInsn(ICONST_M1)
@@ -127,25 +165,139 @@ extension(expression: TypedExpression) {
                 mv.visitIntInsn(BIPUSH, i)
             case i if i >= -32768 && i <= 32767 =>
                 mv.visitIntInsn(SIPUSH, i)
-            case i => mv.visitIntInsn(LDC, i)
+            case i => mv.visitLdcInsn(i)
         }
         case LongLiteral(value) => value match {
             case 0L => mv.visitInsn(LCONST_0)
             case 1L => mv.visitInsn(LCONST_1)
-            case l => mv.visitLdcInsn(LDC, l) 
+            case l => mv.visitLdcInsn(l) 
         }
         case FloatLiteral(value) => value match {
             case 0.0f => mv.visitInsn(FCONST_0)
             case 1.0f => mv.visitInsn(FCONST_1)
             case 2.0f => mv.visitInsn(FCONST_2)
-            case f => mv.visitLdcInsn(LDC, f)
+            case f => mv.visitLdcInsn(f)
         }
         case DoubleLiteral(value) => value match {
             case 0.0d => mv.visitInsn(DCONST_0)
             case 1.0d => mv.visitInsn(DCONST_1)
-            case d => mv.visitLdcInsn(LDC, d)
+            case d => mv.visitLdcInsn(d)
         }
+        case StringLiteral(value) =>
+            mv.visitLdcInsn(value)
+        case NullLiteral =>
+            mv.visitInsn(ACONST_NULL)
+        case Convert(to, value) =>
+            def conversionError(): Nothing = {
+                throw IllegalArgumentException(
+                    s"Illegal conversion from ${value.ty} to $to"
+                )
+            }
+            value.translate(mv)
+            def intConversionInsn() = to match {
+                case PrimitiveType.Byte => I2B
+                case PrimitiveType.Char => I2C
+                case PrimitiveType.Double => I2D
+                case PrimitiveType.Float => I2F
+                case PrimitiveType.Long => I2L
+                case PrimitiveType.Short => I2S
+                case PrimitiveType.Int => conversionError()
+            }
+            val instructions = value.ty match {
+                case _: IntLikeType => List(intConversionInsn())
+                case PrimitiveType.Long => to match {
+                    case _: IntLikeType =>
+                        List(L2I, intConversionInsn())
+                    case PrimitiveType.Double => List(L2D)
+                    case PrimitiveType.Float => List(L2F)
+                    case PrimitiveType.Long => conversionError()
+                }
+                case PrimitiveType.Float => to match {
+                    case _: IntLikeType =>
+                        List(F2I, intConversionInsn())
+                    case PrimitiveType.Double => List(F2D)
+                    case PrimitiveType.Long => List(F2L)
+                    case PrimitiveType.Float => conversionError()
+                }
+                case PrimitiveType.Double => to match {
+                    case _: IntLikeType =>
+                        List(D2I, intConversionInsn())
+                    case PrimitiveType.Long => List(D2L)
+                    case PrimitiveType.Float => List(D2F)
+                    case PrimitiveType.Double => conversionError()
+                }
+                case ObjectType(name) => conversionError()
+                case NullType => conversionError()
+                case VoidType => conversionError()
+            }
+            instructions.foreach(insn => mv.visitInsn(insn))
+        //TODO: Change to Neg only
+        case INeg(value) => 
+            value.translate(mv)
+            val instruction = value.ty.asmType().getOpcode(INEG)
+            mv.visitInsn(instruction)
+        //TODO: Change to BinOp only
+        case IBinOp(left, op, right) =>
+            left.translate(mv)
+            right.translate(mv)
+            val intInsn = op match {
+                case Add => IADD
+                case Sub => ISUB
+                case Mul => IMUL
+                case Div => IDIV
+                case And => IAND
+                case Or => IOR
+                case Xor => IXOR
+                case Mod => IREM
+            }
+            val instruction = left.ty.asmType().getOpcode(intInsn)
+            mv.visitInsn(instruction)
+        case LCmp(left, right) => 
+            left.translate(mv)
+            right.translate(mv)
+            mv.visitInsn(LCMP)
+        case DCmp(left, right) => 
+            left.translate(mv)
+            right.translate(mv)
+            mv.visitInsn(DCMPG)
+        case FCmp(left, right) =>
+            left.translate(mv)
+            right.translate(mv)
+            mv.visitInsn(FCMPG)
+        case Ternary(_, cmp, left, right, yes, no) =>
+            val yesLabel = new Label()
+            val endLabel = new Label()
+            left.translate(mv)
+            right.translate(mv)
+            val cmpInsn = cmp.instruction()
+            //Branch
+            mv.visitJumpInsn(cmpInsn, yesLabel)
+            //no case
+            no.translate(mv)
+            mv.visitJumpInsn(GOTO, endLabel)
+            //yes case
+            mv.visitLabel(yesLabel)
+            yes.translate(mv)
+            //end
+            mv.visitLabel(endLabel)
     }
+}
+
+extension(cmp: Comparison) {
+    def instruction(): Int = cmp match {
+        case ACmpEq => IF_ACMPEQ
+        case ACmpNe => IF_ACMPNE
+        case ICmpEq => IF_ICMPEQ
+        case ICmpGe => IF_ICMPGE
+        case ICmpGt => IF_ICMPGT
+        case ICmpLe => IF_ICMPLE
+        case ICmpLt => IF_ICMPLT
+        case ICmpNe => IF_ICMPNE
+    }
+}
+
+extension(name: ClassName) {
+    def internalName(): String = name.path.mkString("/")
 }
 
 extension(typ: Type) {
@@ -164,7 +316,7 @@ extension(typ: Type) {
         case PrimitiveType.Float => FLOAT_TYPE
         case PrimitiveType.Double => DOUBLE_TYPE 
         case VoidType => VOID_TYPE
-        case ObjectType(name) => getObjectType(name.replace('.', '/'))
+        case ObjectType(name) => getObjectType(name.internalName())
         case NullType => getType(s"L$OBJECT;")
     }
 }
