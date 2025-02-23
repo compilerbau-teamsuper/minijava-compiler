@@ -190,7 +190,7 @@ class Custom {
 }
 
 ' Operators
-object BinaryOperator
+abstract class BinaryOperator
 object Add
 object Subtract
 object Multiply
