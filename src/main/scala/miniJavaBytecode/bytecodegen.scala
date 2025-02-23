@@ -256,11 +256,19 @@ extension(expression: TypedExpression) {
             left.translate(mv)
             right.translate(mv)
             mv.visitInsn(LCMP)
-        case DCmp(left, right) => 
+        case DCmpL(left, right) => 
+            left.translate(mv)
+            right.translate(mv)
+            mv.visitInsn(DCMPL)
+        case DCmpG(left, right) => 
             left.translate(mv)
             right.translate(mv)
             mv.visitInsn(DCMPG)
-        case FCmp(left, right) =>
+        case FCmpL(left, right) => 
+            left.translate(mv)
+            right.translate(mv)
+            mv.visitInsn(FCMPL)
+        case FCmpG(left, right) => 
             left.translate(mv)
             right.translate(mv)
             mv.visitInsn(FCMPG)

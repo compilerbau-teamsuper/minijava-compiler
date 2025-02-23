@@ -27,8 +27,10 @@ def is_equivalent(a: TypedExpression, b: TypedExpression): Boolean = if (a == b)
     case (DNeg(a), DNeg(b)) => is_equivalent(a, b)
     case (DBinOp(la, opa, ra), DBinOp(lb, opb, rb)) => opa == opb && is_equivalent(la, lb) && is_equivalent(ra, rb)
     case (LCmp(la, ra), LCmp(lb, rb)) => is_equivalent(la, lb) && is_equivalent(ra, rb)
-    case (FCmp(la, ra), FCmp(lb, rb)) => is_equivalent(la, lb) && is_equivalent(ra, rb)
-    case (DCmp(la, ra), DCmp(lb, rb)) => is_equivalent(la, lb) && is_equivalent(ra, rb)
+    case (FCmpL(la, ra), FCmpL(lb, rb)) => is_equivalent(la, lb) && is_equivalent(ra, rb)
+    case (FCmpG(la, ra), FCmpG(lb, rb)) => is_equivalent(la, lb) && is_equivalent(ra, rb)
+    case (DCmpL(la, ra), DCmpL(lb, rb)) => is_equivalent(la, lb) && is_equivalent(ra, rb)
+    case (DCmpG(la, ra), DCmpG(lb, rb)) => is_equivalent(la, lb) && is_equivalent(ra, rb)
     case (LoadLocal(_, a), LoadLocal(_, b)) => a == b // In welformed IR, the types must be equal.
     case (DupStoreLocal(ia, a), DupStoreLocal(ib, b)) => ia == ib && is_equivalent(a, b)
     case (GetField(_, na, ta), GetField(_, nb, tb)) => na == nb && is_equivalent(ta, tb) // In welformed IR, the types must be equal.
@@ -201,14 +203,28 @@ def simplify_expr(expr: TypedExpression): TypedExpression = expr match
         case (op, l, r) => DBinOp(l, op, r)
 
     case LCmp(left, right) => (simplify_expr(left), simplify_expr(right)) match
-        case (LongLiteral(l), LongLiteral(r)) => IntLikeLiteral(PrimitiveType.Int, l.compare(r))
+        case (LongLiteral(l), LongLiteral(r)) => IntLiteral(l.compare(r))
         case (l, r) => LCmp(l, r)
-    case FCmp(left, right) => (simplify_expr(left), simplify_expr(right)) match
-        case (FloatLiteral(l), FloatLiteral(r)) => IntLikeLiteral(PrimitiveType.Int, l.compare(r))
-        case (l, r) => FCmp(l, r)
-    case DCmp(left, right) => (simplify_expr(left), simplify_expr(right)) match
-        case (DoubleLiteral(l), DoubleLiteral(r)) => IntLikeLiteral(PrimitiveType.Int, l.compare(r))
-        case (l, r) => FCmp(l, r)
+    case FCmpL(left, right) => (simplify_expr(left), simplify_expr(right)) match
+        case (FloatLiteral(l), r) if l.isNaN && is_sideeffect_free(r) => IntLiteral(-1)
+        case (l, FloatLiteral(r)) if r.isNaN && is_sideeffect_free(l) => IntLiteral(-1)
+        case (FloatLiteral(l), FloatLiteral(r)) => IntLiteral(l.compare(r))
+        case (l, r) => FCmpL(l, r)
+    case FCmpG(left, right) => (simplify_expr(left), simplify_expr(right)) match
+        case (FloatLiteral(l), r) if l.isNaN && is_sideeffect_free(r) => IntLiteral(1)
+        case (l, FloatLiteral(r)) if r.isNaN && is_sideeffect_free(l) => IntLiteral(1)
+        case (FloatLiteral(l), FloatLiteral(r)) => IntLiteral(l.compare(r))
+        case (l, r) => FCmpG(l, r)
+    case DCmpL(left, right) => (simplify_expr(left), simplify_expr(right)) match
+        case (DoubleLiteral(l), r) if l.isNaN && is_sideeffect_free(r) => IntLiteral(-1)
+        case (l, DoubleLiteral(r)) if r.isNaN && is_sideeffect_free(l) => IntLiteral(-1)
+        case (DoubleLiteral(l), DoubleLiteral(r)) => IntLiteral(l.compare(r))
+        case (l, r) => DCmpL(l, r)
+    case DCmpG(left, right) => (simplify_expr(left), simplify_expr(right)) match
+        case (DoubleLiteral(l), r) if l.isNaN && is_sideeffect_free(r) => IntLiteral(1)
+        case (l, DoubleLiteral(r)) if r.isNaN && is_sideeffect_free(l) => IntLiteral(1)
+        case (DoubleLiteral(l), DoubleLiteral(r)) => IntLiteral(l.compare(r))
+        case (l, r) => DCmpG(l, r)
 
     case LoadLocal(_, _) => expr
     case DupStoreLocal(index, value) => DupStoreLocal(index, simplify_expr(value))

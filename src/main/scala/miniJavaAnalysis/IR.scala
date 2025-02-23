@@ -140,8 +140,10 @@ case class FBinOp(left: TypedExpression, op: BinaryOperator, right: TypedExpress
 case class DBinOp(left: TypedExpression, op: BinaryOperator, right: TypedExpression) extends TypedExpression(PrimitiveType.Double)
 
 case class LCmp(left: TypedExpression, right: TypedExpression) extends TypedExpression(PrimitiveType.Int)
-case class FCmp(left: TypedExpression, right: TypedExpression) extends TypedExpression(PrimitiveType.Int)
-case class DCmp(left: TypedExpression, right: TypedExpression) extends TypedExpression(PrimitiveType.Int)
+case class FCmpL(left: TypedExpression, right: TypedExpression) extends TypedExpression(PrimitiveType.Int)
+case class FCmpG(left: TypedExpression, right: TypedExpression) extends TypedExpression(PrimitiveType.Int)
+case class DCmpL(left: TypedExpression, right: TypedExpression) extends TypedExpression(PrimitiveType.Int)
+case class DCmpG(left: TypedExpression, right: TypedExpression) extends TypedExpression(PrimitiveType.Int)
 
 case class LoadLocal(local_ty: Type, index: Int) extends TypedExpression(local_ty)
 case class DupStoreLocal(index: Int, value: TypedExpression) extends TypedExpression(value.ty)

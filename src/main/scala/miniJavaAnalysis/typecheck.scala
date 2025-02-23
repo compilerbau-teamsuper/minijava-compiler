@@ -156,8 +156,18 @@ def relational_operation(left: IR.TypedExpression, operator: AST.Comparison, rig
                 binary_numeric_promotion(l, r) match
                     case (IR.PrimitiveType.Int, a, b) => (a, b)
                     case (IR.PrimitiveType.Long, a, b) => (IR.LCmp(a, b), IR.IntLiteral(0))
-                    case (IR.PrimitiveType.Float, a, b) => (IR.FCmp(a, b), IR.IntLiteral(0))
-                    case (IR.PrimitiveType.Double, a, b) => (IR.DCmp(a, b), IR.IntLiteral(0))
+                    case (IR.PrimitiveType.Float, a, b) => operator match
+                        case AST.BinaryOperator.Equals
+                        | AST.BinaryOperator.Greater
+                        | AST.BinaryOperator.GreaterOrEqual => (IR.FCmpL(a, b), IR.IntLiteral(0))
+                        case AST.BinaryOperator.Less
+                        | AST.BinaryOperator.LessOrEqual => (IR.FCmpG(a, b), IR.IntLiteral(0))
+                    case (IR.PrimitiveType.Double, a, b) => operator match
+                        case AST.BinaryOperator.Equals
+                        | AST.BinaryOperator.Greater
+                        | AST.BinaryOperator.GreaterOrEqual => (IR.DCmpL(a, b), IR.IntLiteral(0))
+                        case AST.BinaryOperator.Less
+                        | AST.BinaryOperator.LessOrEqual => (IR.DCmpG(a, b), IR.IntLiteral(0))
             }
 
             val op = operator match
