@@ -4,7 +4,7 @@ import org.objectweb.asm.{ClassVisitor, ClassWriter, MethodVisitor}
 import org.objectweb.asm.Type.*
 import org.objectweb.asm.util.{CheckClassAdapter, TraceClassVisitor}
 import org.objectweb.asm.Opcodes.*
-import java.io.{PrintWriter, File}
+import java.io.{PrintWriter, StringWriter, File}
 import miniJavaAnalysis.IR.*
 import miniJavaAnalysis.IR.Comparison.*
 import miniJavaAnalysis.IR.BinaryOperator.*
@@ -19,11 +19,12 @@ val NO_INTERFACES = null
 val NO_EXCEPTIONS = null
 
 extension(classfile: ClassFile) {
-    def codeGen(): (Array[Byte], PrintWriter) = {
+    def codeGen(): (Array[Byte], StringWriter) = {
         val cw = new ClassWriter(
             ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES
         )
-        val pw = new PrintWriter(new File("debug.txt"))
+        val sw = new StringWriter()
+        val pw = new PrintWriter(sw)
         val trace = new TraceClassVisitor(cw, pw)
         val cv = new CheckClassAdapter(trace)
         cv.visit(
@@ -37,7 +38,7 @@ extension(classfile: ClassFile) {
 
         cv.visitEnd()
 
-        return (cw.toByteArray(), pw)
+        return (cw.toByteArray(), sw)
     }
 }
 
