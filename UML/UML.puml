@@ -17,7 +17,7 @@ class PackageDeclaration {
 }
 
 class ImportDeclaration {
-  +name: String
+  +name: AmbiguousName
   +isStatic: Boolean
   +isWildcard: Boolean
 }
@@ -27,7 +27,7 @@ abstract class TypeDeclaration
 class ClassDeclaration {
   +modifiers: List[Modifier]
   +name: String
-  +superclass: String
+  +superclass: AmbiguousName
   +interfaces: List[String]
   +body: List[ClassMember]
 }
@@ -35,7 +35,7 @@ class ClassDeclaration {
 class InterfaceDeclaration {
   +modifiers: List[Modifier]
   +name: String
-  +superInterfaces: List[String]
+  +superInterfaces: List[AmbiguousName]
   +body: List[InterfaceMember]
 }
 
@@ -111,14 +111,14 @@ class BinaryExpression {
 }
 
 class MethodCall {
+  +target: Option[Expression | AmbiguousName]
   +name: String
-  +target: Option[Expression]
   +arguments: List[Expression]
 }
 
-class FieldAccess {
-  +name: String
+class VarOrFieldAccess {
   +target: Option[Expression]
+  +name: String
 }
 
 class ArrayAccess {
@@ -131,9 +131,14 @@ class NewObject {
 }
 
 class Assignment {
-  +left: FieldAccess|ArrayAccess
+  +left: VarOrFieldAccess|ArrayAccess
   +right: Expression
 }
+
+class ExpressionName {
+  +name: AmbiguousName
+}
+
 
 ' Literals
 abstract class Literal
@@ -194,6 +199,11 @@ abstract class Static
 abstract class Final
 
 
+class AmbiguousName{
+    +components: List[String]
+}
+
+
 ' Inheritance relationships
 ASTNode <|-- CompilationUnit
 CompilationUnit -- PackageDeclaration
@@ -235,10 +245,11 @@ Statement <|-- VarOrFieldDeclaration
 
 Expression <|-- BinaryExpression
 Expression <|-- MethodCall
-Expression <|-- FieldAccess
+Expression <|-- VarOrFieldAccess
 Expression <|-- ArrayAccess
 Expression <|-- NewObject
 Expression <|-- Assignment
+Expression <|-- ExpressionName
 Expression <|-- Literal
 
 Literal <|-- IntLiteral
