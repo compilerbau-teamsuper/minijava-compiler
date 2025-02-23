@@ -178,6 +178,10 @@ class ArrayType {
   +arrayType: Type
 }
 object Int
+object Long
+object Short
+object Float
+object Double
 object Boolean
 object Char
 object String
@@ -283,6 +287,10 @@ Type <|-- ArrayType
 PrimitiveType <|-- Int
 PrimitiveType <|-- Boolean
 PrimitiveType <|-- Char
+PrimitiveType <|-- Short
+PrimitiveType <|-- Long
+PrimitiveType <|-- Float
+PrimitiveType <|-- Double
 ObjectType <|-- String
 ObjectType <|-- Custom
 
