@@ -30,5 +30,6 @@ Using the generated ANTLR Recognizer, he wrote the [parser](https://github.com/c
 - Converted multiple variable declaration in one line like "int x, y, z" to a list of variable declarations 
 - Adding Object as superclass when not defined
 - Adding Constructor when not defined
+- Resolving this and super depending on context
 
 He also wrote [tests](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/parserAST/src/test/scala/parserTest.scala) for the parser using the test [java files](https://github.com/compilerbau-teamsuper/minijava-compiler/tree/parserAST/src/test/java) he created.
