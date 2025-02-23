@@ -12,23 +12,23 @@ case class CompilationUnit(
 
 // Package und Import-Deklarationen
 case class PackageDeclaration(name: String) extends ASTNode
-case class ImportDeclaration(name: String, isStatic: Boolean, isWildcard: Boolean) extends ASTNode
+case class ImportDeclaration(name: AmbiguousName, isStatic: Boolean, isWildcard: Boolean) extends ASTNode
 
 // Typ-Deklarationen (Klassen und Interfaces)
 sealed trait TypeDeclaration extends ASTNode
-case class ClassDeclaration(
+case class ClassDeclaration( // ToDo: In UML eintragen
                              modifiers: List[Modifier],
                              name: String,
-                             superclass: String,
+                             superclass: AmbiguousName,
                              interfaces: List[String],
                              body: List[ClassMember]
                            ) extends TypeDeclaration with ClassMember
-case class InterfaceDeclaration(
+case class InterfaceDeclaration( // ToDo: In UML eintragen
                                  modifiers: List[Modifier],
                                  name: String,
-                                 superInterfaces: List[String],
+                                 superInterfaces: List[AmbiguousName],
                                  body: List[InterfaceMember]
-                               ) extends TypeDeclaration with ClassMember
+                               ) extends TypeDeclaration with ClassMember 
 
 // Klassen- und Interface-Körper
 sealed trait ClassMember extends ASTNode
@@ -69,16 +69,18 @@ case class ReturnStatement(expression: Option[Expression]) extends Statement
 case class BreakStatement() extends Statement
 case class ContinueStatement() extends Statement
 
+
 // Expressions
 sealed trait Expression extends ASTNode
 case class BinaryExpression(left: Expression, operator: BinaryOperator, right: Expression) extends Expression
-case class MethodCall(name: String, target: Option[Expression], arguments: List[Expression]) extends Expression
-case class FieldAccess(name: String, target: Option[Expression]) extends Expression
+case class MethodCall(target: Option[Expression | AmbiguousName], name: String, args: List[Expression]) extends Expression  // ToDo: In UML eintragen
+case class VarOrFieldAccess(target: Option[Expression], name: String) extends Expression // ToDo: In UML eintragen
 case class ArrayInitializer(initializers: List[Expression]) extends Expression
 case class NewArray(arrayType: Type, size: Expression) extends Expression
 case class ArrayAccess(target: Expression, index: Expression) extends Expression // ToDo: Mehrdimensionale arrays
 case class NewObject(constructorCall: MethodCall) extends Expression
-case class Assignment(left: FieldAccess | ArrayAccess, right: Expression) extends Expression
+case class Assignment(left: VarOrFieldAccess | ArrayAccess, right: Expression) extends Expression
+case class ExpressionName(name: AmbiguousName) extends Expression // ToDo: In UML eintragen
 
 
 // Literals
@@ -152,4 +154,5 @@ enum Modifier {
   case Static
   case Final
 }
-// ToDo: anstatt Qualified name einfach verschachtelte FieldAccess mit String namen
+
+case class AmbiguousName(components: List[String]) // ToDo: In UML eintragen

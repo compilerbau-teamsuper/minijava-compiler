@@ -107,7 +107,7 @@ primary
 
 expressionList : expression (',' expression)*;
 
-methodCall : qualifiedName '(' expressionList? ')'; // ToDo: Methode kann auch auf andere Sachen aufgerufen werden, relevant tho?
+methodCall : ('(' expression ').' qualifiedName | qualifiedName) '(' expressionList? ')'; // ToDo: Methode kann auch auf andere Sachen aufgerufen werden, relevant tho?
 
 arrayAccess : primary '[' expression ']' ;
 
