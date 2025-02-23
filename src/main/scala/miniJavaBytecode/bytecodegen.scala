@@ -45,7 +45,8 @@ extension(classfile: ClassFile) {
 extension(field: Field) {
     def codeGen(cv: ClassVisitor): Unit = {
         cv.visitField(
-            ACC_PUBLIC, field.name, field.ty.descriptor(), NO_GENERICS, NO_CONSTANT
+            field.mod.translate(), field.name, field.ty.descriptor(), 
+            NO_GENERICS, NO_CONSTANT
         ).visitEnd()
     }
 }
@@ -53,7 +54,7 @@ extension(field: Field) {
 extension(method: Method) {
     def codeGen(cv: ClassVisitor): Unit = {
         val mv = cv.visitMethod(
-            ACC_PUBLIC, method.name, method.ty.descriptor(), 
+            method.mod.translate(), method.name, method.ty.descriptor(), 
             NO_GENERICS, NO_EXCEPTIONS 
         )
         mv.visitCode()
@@ -336,4 +337,21 @@ extension(methodType: MethodType) {
             methodType.ret.asmType(), 
             methodType.params.map(_.asmType()): _*
         )
+}
+
+extension(mods: Modifiers) {
+    def translate(): Int = {
+        val modifiers = List(
+            mods.pub, mods.priv, mods.prot,
+            mods.abstr, mods.stat, mods.fin
+        )
+        val asmModifiers = List(
+            ACC_PUBLIC, ACC_PRIVATE, ACC_PROTECTED, 
+            ACC_ABSTRACT, ACC_STATIC, ACC_FINAL
+        )
+        modifiers.zip(asmModifiers).foldRight(0){
+            case ((modFlag, asmFlag), z) =>
+                z | (if modFlag then asmFlag else 0)
+        }
+    }
 }
