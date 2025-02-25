@@ -43,7 +43,7 @@ object JavaASTBuilder {
 class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse private machen? Nicht so wichtig tho
 
   private var currentThis: String = ""
-  private var currentSuper: AmbiguousName = AmbiguousName(List())
+  private var currentSuper: AmbiguousName = AmbiguousName(List("Object"))
   private var currentFields: Map[String, ListBuffer[ExpressionStatement]] = Map.empty[String, ListBuffer[ExpressionStatement]]
 
   override def visitCompilationUnit(ctx: CompilationUnitContext): CompilationUnit = {
@@ -266,10 +266,11 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   }
 
   private def buildStandardConstructor(modifiers: List[Modifier], name: String): ConstructorDeclaration = {
-    val body = currentFields.get(name) match {
-      case Some(l) => Block(l.toList ::: List(ReturnStatement(None)))
-      case None =>  Block(List(ReturnStatement(None)))
-    }
+    val body = Block(
+      ExpressionStatement(MethodCall(Some(currentSuper), "<init>", List())) :: (currentFields.get(name) match {
+      case Some(l) => l.toList ::: List(ReturnStatement(None))
+      case None =>  List(ReturnStatement(None))
+    }))
     ConstructorDeclaration(modifiers, name, List(), body)
   }
 

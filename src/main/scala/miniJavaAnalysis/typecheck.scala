@@ -19,7 +19,14 @@ val prelude = Map(
 )
 
 val langtypes = Map(
-    IR.LangTypes.Object -> ObjectInfo(List.empty, Map.empty, Map.empty, None),
+    IR.LangTypes.Object -> ObjectInfo(
+        List.empty, Map(
+            "<init>" -> MethodInfo(
+            check_modifiers(List(AST.Modifier.Public)), 
+            IR.MethodType(List(), IR.VoidType))
+        ), 
+        Map.empty, None
+    ),
     IR.LangTypes.String -> ObjectInfo(List(IR.LangTypes.Object), Map.empty, Map.empty, None)
 )
 
@@ -259,8 +266,12 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
                         case _ => throw NoSuchMethod(name, e.ty)
                     case c: IR.ObjectType => ctx.types(c).methods.get(name) match
                         case Some(MethodInfo(mod, ty)) => {
-                            if (!mod.stat) throw NonStaticMember(c.name, name)
-                            (c.name, ty, None)
+                            if name == "<init>" then {
+                                (c.name, ty, Some(IR.LoadLocal(ctx.this_type, 0)))
+                            } else {
+                                if (!mod.stat) throw NonStaticMember(c.name, name)
+                                (c.name, ty, None)
+                            }
                         }
                         case None => throw NoSuchMethod(name, c)
             }

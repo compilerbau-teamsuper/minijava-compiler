@@ -17,17 +17,20 @@ object Loader extends ClassLoader {
 def endToEndFixture(className: String, methodsToTest: List[(String, Any)]): Unit = {
     val srcPath = s"src/test/java/$className.java"
     val ast = JavaASTBuilder.parseFromFile(srcPath)
-    val (bytecode, debug) = typecheck(ast).codeGen()
+    val typed = typecheck(ast)
+    val (bytecode, debug) = typed.codeGen()
     try {
         val clss = Loader.defineClass(className, bytecode)
         methodsToTest.foreach((name, expected) =>
             val method = clss.getMethod(name)
             val result = method.invoke(clss.getConstructor().newInstance())
-            result == expected ==> s"$result != $expected, generated class:\n$debug"
+            result ==> expected
         )
     } catch {
         case e =>
             println(s"Generated Class:\n$debug")
+            println(s"AST:\n$ast")
+            println(s"Typed AST:\n$typed")
             throw e
     }
 }
