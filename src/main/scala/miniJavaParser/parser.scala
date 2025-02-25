@@ -60,7 +60,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
 
   override def visitImportDeclaration(ctx: ImportDeclarationContext): ImportDeclaration = {
     ImportDeclaration(
-      buildAmbiguousName(ctx.qualifiedName().Identifier().asScala.map(_.getText).toList),
+      buildAmbiguousName(ctx.qualifiedName()),
       ctx.Static() != null,
       ctx.Wildcard() != null
     )
@@ -76,9 +76,9 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     val modifiers = getModifiers(ctx)
     val name = ctx.Identifier().getText
     currentThis = name
-    val superclass =  if ctx.superclass() != null then buildAmbiguousName(ctx.superclass().qualifiedName().Identifier().asScala.map(_.getText).toList) else AmbiguousName(List("Object"))
+    val superclass =  if ctx.superclass() != null then buildAmbiguousName(ctx.superclass().qualifiedName()) else AmbiguousName(List("Object"))
     currentSuper = superclass
-    val interfaces = if ctx.superinterfaces() != null then ctx.superinterfaces().qualifiedName().asScala.map(_.getText).toList else List.empty
+    val interfaces = if ctx.superinterfaces() != null then ctx.superinterfaces().qualifiedName().asScala.map(buildAmbiguousName(_)).toList else List.empty
     var body = getClassBody(ctx.classBody())
     val hasConstructor = body.exists(x => x match {
       case ConstructorDeclaration(_,_,_,_) => true
@@ -93,7 +93,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   override def visitInterfaceDeclaration(ctx: InterfaceDeclarationContext): InterfaceDeclaration = {
     val modifiers: List[Modifier] = if ctx.Public() != null then List(Modifier.Public) else List.empty
     val name = ctx.Identifier().getText
-    val superInterfaces = if ctx.extendsInterfaces() != null then ctx.extendsInterfaces().qualifiedName().asScala.map(x => buildAmbiguousName(x.Identifier().asScala.map(_.getText).toList)).toList else List.empty
+    val superInterfaces = if ctx.extendsInterfaces() != null then ctx.extendsInterfaces().qualifiedName().asScala.map(x => buildAmbiguousName(x)).toList else List.empty
     val body = getInterfaceBody(ctx.interfaceBody())
 
     InterfaceDeclaration(modifiers, name, superInterfaces, body)
@@ -123,32 +123,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     else List.empty
   }
 
-  private def fieldAccessFromQualifiedName(ctx: QualifiedNameContext): VarOrFieldAccess = {
-    val parts = ctx.Identifier().asScala.map(p => p.getText).toList
-    buildFieldAccess(parts)
-  }
-
-  private def buildFieldAccess(parts: List[String]): VarOrFieldAccess = {
-    parts.tail match {
-      case Nil => VarOrFieldAccess(None, parts.head)
-      case xs =>
-        val last = parts.last
-        VarOrFieldAccess(Option(ExpressionName(buildAmbiguousName(parts.slice(0, parts.length - 1)))), last)
-    }
-  }
-
-  private def buildAmbiguousName(parts: List[String]): AmbiguousName = {
-    def replaceThisSuper(parts: List[String]): List[String] = {
-      parts match {
-        case x :: xs => x match {
-          case "this" => currentThis :: replaceThisSuper(xs)
-          case "super" => currentSuper.components ::: replaceThisSuper(xs)
-          case _ => x :: replaceThisSuper(xs)
-        }
-        case Nil => Nil
-      }
-    }
-    AmbiguousName(replaceThisSuper(parts))
+  private def buildAmbiguousName(ctx: QualifiedNameContext): AmbiguousName = {
+    AmbiguousName(ctx.Identifier().asScala.map(p => p.getText).toList)
   }
 
   private def getModifiers(ctx: ParserRuleContext): List[Modifier] = {
@@ -386,8 +362,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       case i: (IfThenContext | IfThenElseContext) => visitIfThenElse(i)
       case q: QualifiedNameContext =>
         ctx.calcUnOp().getText match {
-          case "++" => ExpressionStatement(Assignment(fieldAccessFromQualifiedName(ctx.qualifiedName()), BinaryExpression(fieldAccessFromQualifiedName(ctx.qualifiedName()), Add, IntLiteral(1))))
-          case "--" => ExpressionStatement(Assignment(fieldAccessFromQualifiedName(ctx.qualifiedName()), BinaryExpression(fieldAccessFromQualifiedName(ctx.qualifiedName()), Subtract, IntLiteral(1))))
+          case "++" => ExpressionStatement(Assignment(ExpressionName(buildAmbiguousName(ctx.qualifiedName())), BinaryExpression(ExpressionName(buildAmbiguousName(ctx.qualifiedName())), Add, IntLiteral(1))))
+          case "--" => ExpressionStatement(Assignment(ExpressionName(buildAmbiguousName(ctx.qualifiedName())), BinaryExpression(ExpressionName(buildAmbiguousName(ctx.qualifiedName())), Subtract, IntLiteral(1))))
         }
       case w: WhileStatementContext => visitWhileStatement(w)
       case r: ReturnContext => ReturnStatement(Option(visitExpression(r.expression())))
@@ -399,8 +375,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   }
 
   override def visitAssignment(ctx: AssignmentContext): Assignment = {
-    val left: VarOrFieldAccess | ArrayAccess = ctx.getChild(0) match {
-      case v: QualifiedNameContext => fieldAccessFromQualifiedName(v)
+    val left: ExpressionName | FieldAccess | ArrayAccess = ctx.getChild(0) match {
+      case v: QualifiedNameContext => ExpressionName(buildAmbiguousName(v))
       case a: ArrayAccessContext => visitArrayAccess(a)
     }
     val pre_right = visitExpression(ctx.expression())
@@ -424,7 +400,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       if ctx.expression() != null then
         Option(visitExpression(ctx.expression()))
       else
-        if parts.sizeIs == 1 then None else Option(buildAmbiguousName(parts.slice(0, parts.length - 1)))
+        if parts.sizeIs == 1 then None else Option(AmbiguousName(parts.slice(0, parts.length - 1)))
 
     if ctx.expressionList() != null then
       MethodCall(target, parts.last, ctx.expressionList().expression().asScala.map(visitExpression).toList)
@@ -484,7 +460,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     ctx.getChild(0) match {
       case c: TerminalNodeImpl if c.toString == "(" => visitExpression(ctx.getChild(1) match {case e: ExpressionContext => e})
       case l: LiteralContext => visitLiteral(l)
-      case q: QualifiedNameContext => fieldAccessFromQualifiedName(q)
+      case q: QualifiedNameContext => ExpressionName(buildAmbiguousName(q))
       case m: MethodCallContext => visitMethodCall(m)
       case a: ArrayAccessContext => visitArrayAccess(a)
     }

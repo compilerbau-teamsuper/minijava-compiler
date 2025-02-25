@@ -35,6 +35,9 @@ case class Modifiers(
   stat: Boolean,
   fin: Boolean,
 )
+object Modifiers {
+    val empty = Modifiers(false, false, false, false, false, false)
+}
 
 case class MethodType(params: List[Type], ret: Type)
 
@@ -147,9 +150,12 @@ case class DCmpG(left: TypedExpression, right: TypedExpression) extends TypedExp
 
 case class LoadLocal(local_ty: Type, index: Int) extends TypedExpression(local_ty)
 case class DupStoreLocal(index: Int, value: TypedExpression) extends TypedExpression(value.ty)
-case class GetField(field_ty: Type, name: String, target: TypedExpression) extends TypedExpression(field_ty)
-case class DupPutField(name: String, target: TypedExpression, value: TypedExpression) extends TypedExpression(value.ty)
+case class GetField(field_ty: Type, of: ClassName, name: String, target: TypedExpression) extends TypedExpression(field_ty)
+case class DupPutField(of: ClassName, name: String, target: TypedExpression, value: TypedExpression) extends TypedExpression(value.ty)
+case class GetStatic(field_ty: Type, of: ClassName, name: String) extends TypedExpression(field_ty)
+case class DupPutStatic(of: ClassName, name: String, value: TypedExpression) extends TypedExpression(value.ty)
 
+case class InvokeStatic(of: ClassName, name: String, mty: MethodType, args: List[TypedExpression]) extends TypedExpression(mty.ret)
 case class InvokeSpecial(of: ClassName, name: String, mty: MethodType, target: TypedExpression, args: List[TypedExpression]) extends TypedExpression(mty.ret)
 
 /** A ternary expression. `result_ty` is only used during type checking. */
