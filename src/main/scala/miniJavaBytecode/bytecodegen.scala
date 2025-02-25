@@ -142,20 +142,40 @@ extension(expression: TypedExpression) {
             mv.visitInsn(dupInsn)
             val storeInsn = value.ty.asmType().getOpcode(ISTORE)
             mv.visitVarInsn(storeInsn, index)
-        case GetField(field_ty, name, target) => 
+        case GetField(field_ty, of, name, target) => 
             target.translate(mv)
             mv.visitFieldInsn(
-                GETFIELD, target.ty.internalName(),
+                GETFIELD, of.internalName(),
                 name, field_ty.descriptor()
             )
-        case DupPutField(name, target, value) =>
+        case DupPutField(of, name, target, value) =>
             target.translate(mv)
             value.translate(mv)
             val dupInsn = if value.ty.isCategoryTwo() then DUP2_X1 else DUP_X1
             mv.visitInsn(dupInsn) 
             mv.visitFieldInsn(
-                PUTFIELD, target.ty.internalName(),
+                PUTFIELD, of.internalName(),
                 name, value.ty.descriptor()
+            )
+        case GetStatic(field_ty, of, name) =>
+            mv.visitFieldInsn(
+                GETSTATIC, of.internalName(),
+                name, field_ty.descriptor()
+            )
+        case DupPutStatic(of, name, value) =>
+            value.translate(mv)
+            val dupInsn = if value.ty.isCategoryTwo() then DUP2 else DUP
+            mv.visitInsn(dupInsn)
+            mv.visitFieldInsn(
+                PUTSTATIC, of.internalName(),
+                name, value.ty.descriptor()
+            )
+
+        case InvokeStatic(of, name, mty, args) =>
+            args.foreach(_.translate(mv))
+            mv.visitMethodInsn(
+                INVOKESTATIC, of.internalName(),
+                name, mty.descriptor()
             )
         case InvokeSpecial(of, name, mty, target, args) =>
             target.translate(mv)

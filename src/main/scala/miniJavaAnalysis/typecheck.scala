@@ -1,27 +1,7 @@
 package miniJavaAnalysis
 import miniJavaParser.AST
-
-sealed trait TypeError extends Throwable
-
-case class TypeMismatch(ty: IR.Type, expected: IR.Type) extends Throwable("type mismatch: got " + stringify(ty) + ", expected " + stringify(expected)) with TypeError
-case object LocalVoidVariable extends Throwable("local variables may not have type void") with TypeError
-case class NoSuchField(name: String, ty: Option[IR.Type])
-extends Throwable(ty match
-  case Some(t) => "no such field on type " + stringify(t) + ": " + name
-  case None => "no such variable: " + name
-) with TypeError
-case class NoSuchMethod(name: String, ty: IR.Type) extends Throwable("no such method on type " + stringify(ty) + ": " + name) with TypeError
-case class ParameterCountMismatch(got: Int, expected: Int) extends Throwable("parameter count mismatch: got " + got + ", expected " + expected) with TypeError
-case object BreakOutsideLoop extends Throwable("break statement outside loop") with TypeError
-case object ContinueOutsideLoop extends Throwable("continue statement outside loop") with TypeError
-case object NonNumeric extends Throwable("cannot perform numeric operation on non-numeric type") with TypeError
-case object NonIntegral extends Throwable("cannot perform integer operation on non-integer type") with TypeError
-case class ModifierContradiction(m1: AST.Modifier, m2: AST.Modifier) extends Throwable("contradicting modifiers") with TypeError
-case object InvalidVariableModifier extends Throwable("variables do not support modifiers other than final") with TypeError
-case class ModifyFinal(name: String, ty: Option[IR.Type]) extends Throwable(ty match
-    case None => "cannot modify final variable " + name
-    case Some(t) => "cannot modify final field " + name + " of type " + stringify(t)
-) with TypeError
+import miniJavaAnalysis.error.*
+import miniJavaAnalysis.resolve.{PackageName, Root, Resolver}
 
 case class ObjectInfo(
     supertypes: List[IR.ObjectType],
@@ -46,15 +26,16 @@ val langtypes = Map(
 case class Local(fin: Boolean, ty: IR.Type, idx: Int)
 
 case class Context(
-    names: Map[String, IR.ObjectType],
+    resolver: Resolver,
     types: Map[IR.ObjectType, ObjectInfo],
     locals: Map[String, Local],
-    this_type: Option[IR.ObjectType],
+    this_type: IR.ObjectType,
     return_type: IR.Type,
+    is_static: Boolean,
     inside_loop: Boolean,
 )
 
-def resolve(ty: AST.TypeOrVoid)(names: Map[String, IR.ObjectType]): IR.Type = ty match
+def resolve_ty(ty: AST.TypeOrVoid)(resolver: Resolver): IR.Type = ty match
     case AST.PrimitiveType.Int => IR.PrimitiveType.Int
     case AST.PrimitiveType.Boolean => IR.PrimitiveType.Boolean
     case AST.PrimitiveType.Char => IR.PrimitiveType.Char
@@ -70,22 +51,10 @@ def resolve(ty: AST.TypeOrVoid)(names: Map[String, IR.ObjectType]): IR.Type = ty
     case AST.ObjectType.Double => ???
     case AST.ObjectType.Boolean => ???
     case AST.ObjectType.Character => ???
-    case AST.ObjectType.Custom(name) => names(name)
+    case AST.ObjectType.Custom(name) => IR.ObjectType(resolver.resolve(AST.AmbiguousName(List(name))))
+    
     case AST.ArrayType(arrayType) => ???
     case AST.VoidType => IR.VoidType
-
-def stringify(ty: IR.Type): String = ty match
-    case IR.PrimitiveType.Int => "int"
-    case IR.PrimitiveType.Boolean => "boolean"
-    case IR.PrimitiveType.Char => "char"
-    case IR.PrimitiveType.Double => "double"
-    case IR.PrimitiveType.Float => "float"
-    case IR.PrimitiveType.Long => "long"
-    case IR.PrimitiveType.Short => "short"
-    case IR.PrimitiveType.Byte => "byte"
-    case IR.ObjectType(IR.ClassName(path)) => path.mkString(".")
-    case IR.NullType => "null"
-    case IR.VoidType => "void"
 
 def local_size(ty: IR.Type): Int = ty match
     case IR.PrimitiveType.Long | IR.PrimitiveType.Double => 2
@@ -98,6 +67,10 @@ def is_subtype(ty: IR.Type, of: IR.Type)(ctx: Context): Boolean = (ty, of) match
     case (IR.NullType, _ @ IR.ObjectType(_)) => true
     case (sub @ IR.ObjectType(_), _ @ IR.ObjectType(_)) => ctx.types(sub).supertypes.exists(sup => is_subtype(sup, of)(ctx))
     case _ => false
+
+def assign(ty: IR.Type, expr: IR.TypedExpression): IR.TypedExpression = expr.ty match
+    case t if t == ty => expr
+    case _ => ???
 
 def unbox(expr: IR.TypedExpression): IR.TypedExpression = expr.ty match
     case ty: IR.PrimitiveType => expr
@@ -181,7 +154,57 @@ def relational_operation(left: IR.TypedExpression, operator: AST.Comparison, rig
         }
 }
 
-def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = expr match 
+def get_field(target: IR.TypedExpression, name: String)(ctx: Context): IR.GetField = {
+    target.ty match
+        case c: IR.ObjectType => ctx.types(c).fields.get(name) match
+            case Some(FieldInfo(mod, ty)) => {
+                if (mod.stat) throw new StaticMember(c.name, name)
+                IR.GetField(ty, c.name, name, target)
+            }
+            case None => throw NoSuchField(name, Some(target.ty))
+        case _ => throw NoSuchField(name, Some(target.ty))
+}
+
+def put_field(target: IR.TypedExpression, name: String, value: IR.TypedExpression)(ctx: Context): IR.DupPutField = {
+    target.ty match
+        case c: IR.ObjectType => ctx.types(c).fields.get(name) match
+            case Some(FieldInfo(mod, ty)) => {
+                if (mod.stat) throw StaticMember(c.name, name)
+                if (mod.fin) throw ModifyFinal(name, Some(c))
+                IR.DupPutField(c.name, name, target, assign(ty, value))
+            }
+            case None => throw NoSuchField(name, Some(c))
+        case _ => throw NoSuchField(name, Some(target.ty))
+}
+
+type AccessType = IR.GetField | IR.GetStatic | IR.LoadLocal
+def resolve_name(name: AST.AmbiguousName)(ctx: Context): IR.ObjectType | IR.GetField | IR.GetStatic | IR.LoadLocal = {
+    ctx.locals.get(name.components.head) match
+        case Some(Local(_, ty, idx)) => name.components.tail.foldLeft(IR.LoadLocal(ty, idx) : AccessType)(get_field(_, _)(ctx))
+        case None => ctx.types(ctx.this_type).fields.get(name.components.head) match
+            case Some(FieldInfo(mod, ty)) => if (mod.stat) {
+                name.components.tail.foldLeft(
+                    IR.GetStatic(ty, ctx.this_type.name, name.components.head): AccessType
+                )(get_field(_, _)(ctx))
+            } else {
+                if (ctx.is_static) throw new NonStaticMember(ctx.this_type.name, name.components.head)
+                name.components.tail.foldLeft(
+                    IR.GetField(ty, ctx.this_type.name, name.components.head, IR.LoadLocal(ctx.this_type, 0)): AccessType
+                )(get_field(_, _)(ctx))
+            }
+            case None => ctx.resolver.resolve_split(name) match
+                case (c: IR.ClassName, AST.AmbiguousName(Nil)) => IR.ObjectType(c)
+                case (c: IR.ClassName, AST.AmbiguousName(n :: rest)) => ctx.types(IR.ObjectType(c)).fields.get(n) match
+                    case Some(FieldInfo(mod, ty)) => {
+                        if (!mod.stat) throw NonStaticMember(c, n)
+                        name.components.tail.foldLeft(
+                            IR.GetStatic(ty, c, n) : AccessType
+                        )(get_field(_, _)(ctx))
+                    }
+                    case None => throw NoSuchField(n, Some(IR.ObjectType(c)))
+}
+
+def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = expr match
     case AST.BooleanLiteral(value) => IR.BooleanLiteral(value)
     case AST.IntLiteral(value) => IR.IntLiteral(value)
     case AST.ShortLiteral(value) => IR.ShortLiteral(value)
@@ -210,77 +233,87 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
             case AST.BinaryOperator.Less => relational_operation(l, AST.BinaryOperator.Less, r)
             case AST.BinaryOperator.LessOrEqual => relational_operation(l, AST.BinaryOperator.LessOrEqual, r)
     }
-    case AST.MethodCall(target, name, arguments) => {
-        val t = target match
-            case None => ctx.this_type match
-                case Some(this_type) => IR.LoadLocal(this_type, 0)
-                case None => ???
-            case Some(expr: AST.Expression) => typecheck_expr(expr)(ctx)
-            case Some(AST.AmbiguousName(components)) => ???
+    case AST.ExpressionName(name) => resolve_name(name)(ctx) match
+        case t: IR.TypedExpression => t
+        case c: IR.ObjectType => throw NotAField(c)
+    case AST.FieldAccess(target, name) => get_field(typecheck_expr(target)(ctx), name)(ctx)
+    case AST.MethodCall(target, name, args) => {
+        var a = args.map(typecheck_expr(_)(ctx))
+        val (c, ty, t) = target match
+            case None => ctx.types(ctx.this_type).methods.get(name) match
+                case Some(MethodInfo(mod, ty)) => {
+                    if (ctx.is_static && !mod.stat) throw NonStaticMember(ctx.this_type.name, name)
+                    (ctx.this_type.name, ty, if (mod.stat) None else Some(IR.LoadLocal(ctx.this_type, 0)))
+                }
+                case None => throw NoSuchMethod(name, ctx.this_type)
+            case Some(target) => {
+                (target match
+                    case e: AST.Expression => typecheck_expr(e)(ctx)
+                    case n: AST.AmbiguousName => resolve_name(n)(ctx) match
+                        case t: IR.TypedExpression => t
+                        case c: IR.ObjectType => c
+                ) match
+                    case e: IR.TypedExpression => e.ty match
+                        case c: IR.ObjectType => ctx.types(c).methods.get(name) match
+                            case Some(MethodInfo(mod, ty)) => {
+                                if (mod.stat) throw StaticMember(c.name, name)
+                                (c.name, ty, Some(e))
+                            }
+                            case None => throw NoSuchMethod(name, c)
+                        case _ => throw NoSuchMethod(name, e.ty)
+                    case c: IR.ObjectType => ctx.types(c).methods.get(name) match
+                        case Some(MethodInfo(mod, ty)) => {
+                            if (!mod.stat) throw NonStaticMember(c.name, name)
+                            (c.name, ty, None)
+                        }
+                        case None => throw NoSuchMethod(name, c)
+            }
+            
+        if (a.length != ty.params.length) throw new ParameterCountMismatch(a.length, ty.params.length)
+        a = ty.params.zip(a).map(assign)
 
-        val (of, method) = t.ty match
-            case object_type @ IR.ObjectType(of) => ctx.types(object_type).methods.get(name) match
-                case Some(m) => (of, m)
-                case None => throw new NoSuchMethod(name, object_type)
-            case ty => throw new NoSuchMethod(name, ty)
-
-        val args = arguments.map(arg => typecheck_expr(arg)(ctx))
-        if (args.length != method.ty.params.length) throw new ParameterCountMismatch(args.length, method.ty.params.length)
-
-        for ((arg, ty) <- args.zip(method.ty.params)) {
-            if (!is_subtype(arg.ty, ty)(ctx)) throw new TypeMismatch(arg.ty, ty)
-        }
-
-        IR.InvokeSpecial(of, name, method.ty, t, args)
+        t match
+            case Some(t) => IR.InvokeSpecial(c, name, ty, t, a)
+            case None => IR.InvokeStatic(c, name, ty, a)
     }
-    case AST.VarOrFieldAccess(target, name) => {
-        val t = target match
-            case None => ctx.locals.get(name) match
-                case Some(Local(_, ty, idx)) => return IR.LoadLocal(ty, idx)
-                case None => ctx.this_type match
-                    case Some(this_type) => IR.LoadLocal(this_type, 0)
-                    case None => throw new NoSuchField(name, None)
-            case Some(target) => typecheck_expr(target)(ctx)
+    case AST.Assignment(left, right) => {
+        val r = typecheck_expr(right)(ctx)
+        left match
+            case AST.ExpressionName(name) => name.components match
+                case name :: Nil => ctx.locals.get(name) match
+                    case Some(Local(fin, ty, idx)) => {
+                        if (fin) throw ModifyFinal(name, None)
+                        IR.DupStoreLocal(idx, assign(ty, r))
+                    }
+                    case None => ctx.types(ctx.this_type).fields.get(name) match
+                        case Some(FieldInfo(mod, ty)) => {
+                            if (mod.fin) throw ModifyFinal(name, Some(ctx.this_type))
+                            if (mod.stat) IR.DupPutStatic(ctx.this_type.name, name, assign(ty, r))
+                            else {
+                                if (ctx.is_static) throw NonStaticMember(ctx.this_type.name, name)
+                                IR.DupPutField(ctx.this_type.name, name, IR.LoadLocal(ctx.this_type, 0), assign(ty, r))
+                            }
+                        }
+                        case None => throw NoSuchField(name, Some(ctx.this_type))
+                    
+                case ambiguous :+ name => resolve_name(AST.AmbiguousName(ambiguous)) match
+                    case e: IR.TypedExpression => put_field(e, name, r)(ctx)
+                    case c: IR.ObjectType => ctx.types(c).fields.get(name) match
+                        case Some(FieldInfo(mod, ty)) => {
+                            if (!mod.stat) throw NonStaticMember(c.name, name)
+                            if (mod.fin) throw ModifyFinal(name, Some(c))
+                            IR.DupPutStatic(c.name, name, assign(ty, r))
+                        }
+                        case None => throw NoSuchField(name, Some(c))
+                case _ => ???
 
-        val field = t.ty match
-            case object_type @ IR.ObjectType(_) => ctx.types(object_type).fields.get(name) match
-                case Some(f) => f
-                case None => throw new NoSuchField(name, Some(object_type))
-            case ty => throw new NoSuchField(name, Some(ty))
-        
-        IR.GetField(field.ty, name, t)
+            case AST.FieldAccess(target, name) => put_field(typecheck_expr(target)(ctx), name, r)(ctx)
+            case AST.ArrayAccess(target, index) => ???
     }
     case AST.ArrayInitializer(initializers) => ???
     case AST.ArrayAccess(_, _) => ???
     case AST.NewObject(_) => ???
-    case AST.Assignment(left, right) => {
-        val r = typecheck_expr(right)(ctx)
-        left match
-            case AST.VarOrFieldAccess(target, name) => {
-                val t = target match
-                    case None => ctx.locals.get(name) match
-                        case Some(Local(fin, ty, idx)) => {
-                            if (fin) throw ModifyFinal(name, None)
-                            if (!is_subtype(r.ty, ty)(ctx)) throw new TypeMismatch(r.ty, ty)
-                            return IR.DupStoreLocal(idx, r)
-                        }
-                        case None => ctx.this_type match
-                            case Some(this_type) => IR.LoadLocal(this_type, 0)
-                            case None => throw new NoSuchField(name, None)
-                    case Some(target) => typecheck_expr(target)(ctx)
-
-                val field = t.ty match
-                    case object_type @ IR.ObjectType(_) => ctx.types(object_type).fields.get(name) match
-                        case Some(f) => f
-                        case None => throw new NoSuchField(name, Some(object_type))
-                    case ty => throw new NoSuchField(name, Some(ty))
-
-                if (field.mod.fin) throw new ModifyFinal(name, Some(t.ty))
-                if (!is_subtype(r.ty, field.ty)(ctx)) throw new TypeMismatch(r.ty, field.ty)
-                IR.DupPutField(name, t, r)
-            }
-            case AST.ArrayAccess(target, index) => ???
-    }
+    case AST.NewArray(_, _) => ???
 
 def typecheck_stmts(prev: IR.Code, stmts: List[AST.Statement])(ctx: Context): IR.Code = stmts match
     case Nil => prev
@@ -291,7 +324,7 @@ def typecheck_stmts(prev: IR.Code, stmts: List[AST.Statement])(ctx: Context): IR
                 case AST.Modifier.Final :: Nil => true
                 case _ => throw InvalidVariableModifier
 
-            val ty = resolve(fieldType)(ctx.names)
+            val ty = resolve_ty(fieldType)(ctx.resolver)
 
             val init = typecheck_expr(initializer)(ctx)
             if (!is_subtype(init.ty, ty)(ctx)) throw new TypeMismatch(init.ty, ty)
@@ -381,19 +414,18 @@ def typecheck_method(
     this_type: IR.ObjectType,
     body: Option[AST.Block],
 )(
-    names: Map[String, IR.ObjectType],
+    resolver: Resolver,
     types: Map[IR.ObjectType, ObjectInfo],
 ): IR.Method = {
     val b = body match
         case Some(b) => b
         case None => ???
 
-    if (modifiers.stat) ???
-    val this_param = 1
+    val this_param = if (modifiers.stat) 0 else 1
     val (max_locals, locals) = parameters.zip(ty.params).foldLeft((this_param, Map.empty[String, Local]))((_, _) match
         case ((idx, locals), (name, ty)) => (idx + local_size(ty), locals + (name -> Local(false, ty, idx)))
     )
-    val ctx = Context(names, types, locals, Some(this_type), ty.ret, false)
+    val ctx = Context(resolver, types, locals, this_type, ty.ret, modifiers.stat, false)
     val code = typecheck_stmts(IR.Code(max_locals, List.empty), List(b))(ctx)
     IR.Method(modifiers, name, ty, Some(code))
 }
@@ -405,32 +437,38 @@ def typecheck_field(
     this_type: IR.ObjectType,
     initializer: AST.Expression,
 )(
-    names: Map[String, IR.ObjectType],
+    resolver: Resolver,
     types: Map[IR.ObjectType, ObjectInfo]
 ) = {
-    if (modifiers.stat) ???
-
-    val ctx = Context(names, types, Map.empty, Some(this_type), IR.VoidType, false)
+    val ctx = Context(resolver, types, Map.empty, this_type, IR.VoidType, modifiers.stat, false)
     val init = typecheck_expr(initializer)(ctx)
     if (!is_subtype(init.ty, ty)(ctx)) throw TypeMismatch(init.ty, ty)
     IR.Field(modifiers, name, ty, init)
 }
 
 def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
-    val pkg = ast.packageDeclaration.map(p => p.name)
+    var root = Root()
+        .define(PackageName(List("java", "lang")), "Object")
+        .define(PackageName(List("java", "lang")), "String")
+        .define(PackageName(List("java", "io")), "System")
+
+    val pkg = PackageName(ast.packageDeclaration.map(p => p.name).toList)
     val List(decl) = ast.typeDeclarations
 
     val name = decl match
         case AST.ClassDeclaration(modifiers, name, superclass, interfaces, body) => name
         case AST.InterfaceDeclaration(modifiers, name, superInterfaces, body) => name
     
-    val class_name = IR.ClassName(pkg.toList :+ name)
+    val class_name = IR.ClassName(pkg.path :+ name)
+    root = root.define(pkg, name)
+    var resolver = Resolver(root, pkg)
+
     val this_type = IR.ObjectType(class_name)
     val names = prelude + (name -> this_type)
 
     val (supertypes, members) = decl match
-        case AST.ClassDeclaration(modifiers, name, superclass, interfaces, body) => (names(superclass.components.mkString(".")) :: interfaces.map(i => names(i)), body)
-        case AST.InterfaceDeclaration(modifiers, name, superInterfaces, body) => (superInterfaces.map(i => names(i.components.mkString("."))), body)
+        case AST.ClassDeclaration(modifiers, name, superclass, interfaces, body) => (IR.ObjectType(resolver.resolve(superclass)) :: interfaces.map(i => IR.ObjectType(resolver.resolve(i))), body)
+        case AST.InterfaceDeclaration(modifiers, name, superInterfaces, body) => (superInterfaces.map(i => IR.ObjectType(resolver.resolve(i))), body)
 
     var info = ObjectInfo(
         supertypes,
@@ -445,24 +483,24 @@ def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
         case AST.InterfaceDeclaration(modifiers, name, superInterfaces, body) => ???
         case AST.MethodDeclaration(modifiers, returnType, name, parameters, body) => {
             val mod = check_modifiers(modifiers)
-            val ty = IR.MethodType(parameters.map(p => resolve(p.paramType)(names)), resolve(returnType)(names))
+            val ty = IR.MethodType(parameters.map(p => resolve_ty(p.paramType)(resolver)), resolve_ty(returnType)(resolver))
             val params = parameters.map(p => p.name)
             info = info.copy(methods = info.methods + (name -> MethodInfo(mod, ty)))
-            check_methods = check_methods :+ (types => typecheck_method(mod, name, params, ty, this_type, body)(names, types))
+            check_methods = check_methods :+ (types => typecheck_method(mod, name, params, ty, this_type, body)(resolver, types))
         }
         case AST.VarOrFieldDeclaration(modifiers, fieldType, name, initializer) => {
             val mod = check_modifiers(modifiers)
-            val ty = resolve(fieldType)(names)
+            val ty = resolve_ty(fieldType)(resolver)
             info = info.copy(fields = info.fields + (name -> FieldInfo(mod, ty)))
-            check_fields = check_fields :+ (types => typecheck_field(mod, name, ty, this_type, initializer)(names, types))
+            check_fields = check_fields :+ (types => typecheck_field(mod, name, ty, this_type, initializer)(resolver, types))
         }
         case AST.ConstructorDeclaration(modifiers, name, parameters, body) => {
             assert(info.constructor.isEmpty, "classes may only have one constructor")
             val mod = check_modifiers(modifiers)
-            val ty = IR.MethodType(parameters.map(p => resolve(p.paramType)(names)), IR.VoidType)
+            val ty = IR.MethodType(parameters.map(p => resolve_ty(p.paramType)(resolver)), IR.VoidType)
             val params = parameters.map(p => p.name)
             info = info.copy(constructor = Some(MethodInfo(mod, ty)))
-            check_methods = check_methods :+ (types => typecheck_method(mod, "<init>", params, ty, this_type, Some(body))(names, types))
+            check_methods = check_methods :+ (types => typecheck_method(mod, "<init>", params, ty, this_type, Some(body))(resolver, types))
         }
         case AST.Block(statements) => ???
 

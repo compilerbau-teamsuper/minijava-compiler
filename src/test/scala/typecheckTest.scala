@@ -5,8 +5,6 @@ import miniJavaAnalysis.typecheck
 import miniJavaAnalysis.IR.*
 import utest.*
 
-val NO_MODIFIERS = Modifiers(false, false, false, false, false, false)
-
 object TypecheckTest extends TestSuite {
     val tests = Tests {
         test("typecheck_smoke") {
@@ -23,50 +21,21 @@ object TypecheckTest extends TestSuite {
             val expected = ClassFile(
                 ClassName(List("simpleTypeTest")),
                 List(
-                    Field(NO_MODIFIERS, "field", PrimitiveType.Int, IntLiteral(0))
+                    Field(Modifiers.empty,"field",PrimitiveType.Int,IntLikeLiteral(PrimitiveType.Int,0))
                 ),
                 List(
-                    Method(NO_MODIFIERS, "<init>",
-                        MethodType(List(), VoidType),
-                        Some(Code(1, List()))
-                    ),
-                    Method(NO_MODIFIERS, "noopTest",
-                        MethodType(List(),VoidType),
-                        Some(Code(1,List(
-                            ReturnStatement(None)
-                        )))
-                    ),
-                    Method(NO_MODIFIERS, "assignmentTest",
-                        MethodType(List(),PrimitiveType.Int),
-                        Some(Code(2,List(
-                            ExpressionStatement(DupStoreLocal(1,IntLiteral(0))),
-                            ExpressionStatement(DupStoreLocal(1,IntLiteral(1))),
-                            ReturnStatement(Some(LoadLocal(PrimitiveType.Int,1)))
-                        )))
-                    ),
-                    Method(NO_MODIFIERS, "getField",
-                        MethodType(List(),PrimitiveType.Int),
-                        Some(Code(1,List(
-                            ReturnStatement(Some(GetField(PrimitiveType.Int,"field", LoadLocal(ObjectType(ClassName(List("simpleTypeTest"))), 0))))
-                        )))
-                    ),
-                    Method(NO_MODIFIERS, "invokeGetField",
-                        MethodType(List(),PrimitiveType.Int),
-                        Some(Code(1,List(
-                            ReturnStatement(Some(
-                                InvokeSpecial(
-                                    ClassName(List("simpleTypeTest")), "getField", MethodType(List(), PrimitiveType.Int),
-                                    LoadLocal(
-                                        ObjectType(ClassName(List("simpleTypeTest"))),
-                                        0
-                                    ), 
-                                    List()
-                                )
-                            ))
-                        )))
-                    )
-                )
-            )
+                    Method(Modifiers.empty,"<init>",MethodType(List(),VoidType),Some(Code(1,List(
+                        ReturnStatement(None))))),
+                    Method(Modifiers.empty,"noopTest",MethodType(List(),VoidType),Some(Code(1,List(
+                        ReturnStatement(None))))),
+                    Method(Modifiers.empty,"assignmentTest",MethodType(List(),PrimitiveType.Int),Some(Code(2,List(
+                        ExpressionStatement(DupStoreLocal(1,IntLikeLiteral(PrimitiveType.Int,0))),
+                        ExpressionStatement(DupStoreLocal(1,IntLikeLiteral(PrimitiveType.Int,1))),
+                        ReturnStatement(Some(LoadLocal(PrimitiveType.Int,1))))))),
+                    Method(Modifiers.empty,"getField",MethodType(List(),PrimitiveType.Int),Some(Code(1,List(
+                        ReturnStatement(Some(GetField(PrimitiveType.Int,ClassName(List("simpleTypeTest")),"field",LoadLocal(ObjectType(ClassName(List("simpleTypeTest"))),0)))))))),
+                    Method(Modifiers.empty,"invokeGetField",MethodType(List(),PrimitiveType.Int),Some(Code(1,List(
+                        ReturnStatement(Some(InvokeSpecial(ClassName(List("simpleTypeTest")),"getField",MethodType(List(),PrimitiveType.Int),LoadLocal(ObjectType(ClassName(List("simpleTypeTest"))),0),List())))))))))
 
             ir ==> expected
         }
