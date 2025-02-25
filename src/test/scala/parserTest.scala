@@ -59,7 +59,7 @@ object ParserTest extends TestSuite {
         VarOrFieldDeclaration(List(Modifier.Static),ObjectType.String,"s",StringLiteral("s")),
         ConstructorDeclaration(List(),"fieldsTest",List(Parameter("x",PrimitiveType.Int), Parameter("nah",PrimitiveType.Boolean)),Block(List(
           ExpressionStatement(MethodCall(None,"super",List())),
-          ExpressionStatement(Assignment(VarOrFieldAccess(Option(ExpressionName(AmbiguousName(List("this")))), "nah"), BooleanLiteral(true))),
+          ExpressionStatement(Assignment(FieldAccess(ExpressionName(AmbiguousName(List("fieldsTest"))), "nah"), BooleanLiteral(true))),
           ExpressionStatement(Assignment(ExpressionName(AmbiguousName(List("this", "x"))),ExpressionName(AmbiguousName(List("x"))))),
           ExpressionStatement(Assignment(ExpressionName(AmbiguousName(List("this", "nah"))),ExpressionName(AmbiguousName(List("nah"))))),
           ReturnStatement(None))))))))
@@ -68,47 +68,51 @@ object ParserTest extends TestSuite {
     }
     test("calculations parsing") {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/calculationsTest.java")
-      val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public),"calculationsTest", AmbiguousName(List("Object")), List(),List(
-        ConstructorDeclaration(List(Modifier.Public), "calculationsTest", List(), Block(List(ReturnStatement(None)))),
-        VarOrFieldDeclaration(List(),PrimitiveType.Boolean,"f", BinaryExpression(BooleanLiteral(true), BinaryOperator.Or, BooleanLiteral(false))),
-        VarOrFieldDeclaration(List(),PrimitiveType.Boolean,"g",
-          BinaryExpression(
-            BinaryExpression(ExpressionName(AmbiguousName(List("f"))), BinaryOperator.Xor, BooleanLiteral(true)),
-          BinaryOperator.Xor,
-          BinaryExpression(
+      val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public), "calculationsTest", AmbiguousName(List("Object")), List(), List(
+        ConstructorDeclaration(List(Modifier.Public), "calculationsTest", List(), Block(List(
+          ExpressionStatement(Assignment(FieldAccess(ExpressionName(AmbiguousName(List("calculationsTest"))), "f"), BinaryExpression(BooleanLiteral(true), BinaryOperator.Or, BooleanLiteral(false)))),
+          ExpressionStatement(Assignment(FieldAccess(ExpressionName(AmbiguousName(List("calculationsTest"))), "g"),
             BinaryExpression(
-              MethodCall(None, "alwaysTrue", List()),
-            BinaryOperator.Equals,
-            BinaryExpression(
-              BooleanLiteral(true),
-              BinaryOperator.Equals,
+              BinaryExpression(ExpressionName(AmbiguousName(List("f"))), BinaryOperator.Xor, BooleanLiteral(true)),
+              BinaryOperator.Xor,
               BinaryExpression(
-                IntLiteral(5),
-                BinaryOperator.Less,
-                IntLiteral(4)))),
-          BinaryOperator.Xor,
-          BooleanLiteral(true)))),
-        VarOrFieldDeclaration(List(),PrimitiveType.Int,"x",
-          BinaryExpression(
-            IntLiteral(0),
-            BinaryOperator.Subtract,
-            BinaryExpression(
-              MethodCall(None, "alwaysOne", List()),
-            BinaryOperator.Subtract,
-            BinaryExpression(
-              BinaryExpression(
-                IntLiteral(5),
-                BinaryOperator.Multiply,
                 BinaryExpression(
-                  IntLiteral(2),
-                  BinaryOperator.Divide,
-                  IntLiteral(4))),
-              BinaryOperator.Add,
-              IntLiteral(3))))),
-      MethodDeclaration(List(),PrimitiveType.Boolean,"alwaysTrue",List(),
-        Option(Block(List(ReturnStatement(Option(BinaryExpression(BooleanLiteral(true), BinaryOperator.And, BooleanLiteral(true)))))))),
-      MethodDeclaration(List(),PrimitiveType.Int,"alwaysOne",List(),
-        Option(Block(List(ReturnStatement(Option(IntLiteral(1)))))))))))
+                  MethodCall(None, "alwaysTrue", List()),
+                  BinaryOperator.Equals,
+                  BinaryExpression(
+                    BooleanLiteral(true),
+                    BinaryOperator.Equals,
+                    BinaryExpression(
+                      IntLiteral(5),
+                      BinaryOperator.Less,
+                      IntLiteral(4)))),
+                BinaryOperator.Xor,
+                BooleanLiteral(true))))),
+          ExpressionStatement(Assignment(FieldAccess(ExpressionName(AmbiguousName(List("calculationsTest"))), "x"),
+            BinaryExpression(
+              IntLiteral(0),
+              BinaryOperator.Subtract,
+              BinaryExpression(
+                MethodCall(None, "alwaysOne", List()),
+                BinaryOperator.Subtract,
+                BinaryExpression(
+                  BinaryExpression(
+                    IntLiteral(5),
+                    BinaryOperator.Multiply,
+                    BinaryExpression(
+                      IntLiteral(2),
+                      BinaryOperator.Divide,
+                      IntLiteral(4))),
+                  BinaryOperator.Add,
+                  IntLiteral(3)))))),
+          ReturnStatement(None)))),
+        VarOrFieldDeclaration(List(), PrimitiveType.Boolean, "f", BooleanLiteral(false)),
+        VarOrFieldDeclaration(List(), PrimitiveType.Boolean, "g", BooleanLiteral(false)),
+        VarOrFieldDeclaration(List(), PrimitiveType.Int, "x", IntLiteral(0)),
+        MethodDeclaration(List(), PrimitiveType.Boolean, "alwaysTrue", List(),
+          Option(Block(List(ReturnStatement(Option(BinaryExpression(BooleanLiteral(true), BinaryOperator.And, BooleanLiteral(true)))))))),
+        MethodDeclaration(List(), PrimitiveType.Int, "alwaysOne", List(),
+          Option(Block(List(ReturnStatement(Option(IntLiteral(1)))))))))))
 
       ast ==> expected
     }
@@ -172,8 +176,8 @@ object ParserTest extends TestSuite {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/arrayTest.java")
       val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public), "arrayTest", AmbiguousName(List("Object")), List(), List(
         ConstructorDeclaration(List(Modifier.Public), "arrayTest", List(), Block(List(
-          ExpressionStatement(Assignment(VarOrFieldAccess(Option(ExpressionName(AmbiguousName(List("arrayTest")))), "numbers"), ArrayInitializer(List(IntLiteral(1), IntLiteral(2), IntLiteral(3))))),
-          ExpressionStatement(Assignment(VarOrFieldAccess(Option(ExpressionName(AmbiguousName(List("arrayTest")))), "mail"), NewArray(ObjectType.String, IntLiteral(3)))),
+          ExpressionStatement(Assignment(FieldAccess(ExpressionName(AmbiguousName(List("arrayTest"))), "numbers"), ArrayInitializer(List(IntLiteral(1), IntLiteral(2), IntLiteral(3))))),
+          ExpressionStatement(Assignment(FieldAccess(ExpressionName(AmbiguousName(List("arrayTest"))), "mail"), NewArray(ObjectType.String, IntLiteral(3)))),
           ReturnStatement(None)))),
         VarOrFieldDeclaration(List(), ArrayType(PrimitiveType.Int), "numbers", NullLiteral),
         VarOrFieldDeclaration(List(), ArrayType(ObjectType.String), "mail", NullLiteral),

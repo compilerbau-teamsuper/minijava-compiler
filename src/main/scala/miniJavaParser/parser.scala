@@ -236,8 +236,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     variables.foreach(v =>
       v(1) match {
         case Some(x) => if !modifiers.contains(Modifier.Static) then currentFields.get(currentThis) match {
-          case Some(l) => currentFields = currentFields + (currentThis -> l.addOne(ExpressionStatement(Assignment(VarOrFieldAccess(Option(ExpressionName(AmbiguousName(List(currentThis)))), v._1), x))))
-          case None => currentFields = currentFields + (currentThis -> ListBuffer(ExpressionStatement(Assignment(VarOrFieldAccess(Option(ExpressionName(AmbiguousName(List(currentThis)))), v._1), x))))
+          case Some(l) => currentFields = currentFields + (currentThis -> l.addOne(ExpressionStatement(Assignment(FieldAccess(ExpressionName(AmbiguousName(List(currentThis))), v._1), x))))
+          case None => currentFields = currentFields + (currentThis -> ListBuffer(ExpressionStatement(Assignment(FieldAccess(ExpressionName(AmbiguousName(List(currentThis))), v._1), x))))
         }
         case None =>
       }
