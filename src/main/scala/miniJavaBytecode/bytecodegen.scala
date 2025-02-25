@@ -19,14 +19,15 @@ val NO_EXCEPTIONS = null
 val NO_MODIFIERS = 0
 
 extension(classfile: ClassFile) {
-    def codeGen(): (Array[Byte], StringWriter) = {
+    def codeGen(): (Array[Byte], String) = {
         val cw = new ClassWriter(
             ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES
         )
         val sw = new StringWriter()
         val pw = new PrintWriter(sw)
-        val trace = new TraceClassVisitor(cw, pw)
-        val cv = new CheckClassAdapter(trace)
+        val cv = new TraceClassVisitor(cw, pw)
+        //val cv = new CheckClassAdapter(trace)
+
         cv.visit(
             JAVA_VERSION, NO_MODIFIERS, classfile.name.internalName(), 
             NO_GENERICS, OBJECT, NO_INTERFACES
@@ -37,8 +38,9 @@ extension(classfile: ClassFile) {
         for(method <- classfile.methods) method.codeGen(cv)
 
         cv.visitEnd()
+        pw.flush()
 
-        return (cw.toByteArray(), sw)
+        return (cw.toByteArray(), sw.toString())
     }
 }
 
@@ -58,7 +60,7 @@ extension(method: Method) {
             NO_GENERICS, NO_EXCEPTIONS 
         )
         mv.visitCode()
-        for(statement <- method.code.map(_.code).getOrElse(Nil)) {
+        for(statement <- method.code.map(_.code).get) {
             statement.translate(mv, None, None)
         }
         //We have set the flag COMPUTE_MAXS, so the arguments here are ignored

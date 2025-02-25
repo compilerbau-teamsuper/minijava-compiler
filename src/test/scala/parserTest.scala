@@ -9,14 +9,14 @@ object ParserTest extends TestSuite {
     test("empty class parsing") {
       val ast = JavaASTBuilder.parseFromText("class HelloWorld { }")
       val expected = CompilationUnit(None,List(),List(ClassDeclaration(List(),"HelloWorld", AmbiguousName(List("Object")), List(),List(
-        ConstructorDeclaration(List(), "HelloWorld", List(), Block(List()))))))
+        ConstructorDeclaration(List(), "HelloWorld", List(), Block(List(ReturnStatement(None))))))))
 
       ast ==> expected
     }
     test("method parsing") { // ToDo: Hier evtl. signature Constructor Parsing mittesten (oder in extra Fields test mit this. Sachen!)
       val ast = JavaASTBuilder.parseFromFile("src/test/java/methodTest.java")
       val expected = CompilationUnit(None,List(), List(ClassDeclaration(List(Modifier.Public),"methodTest", AmbiguousName(List("Object")), List(),List(
-        ConstructorDeclaration(List(Modifier.Public), "methodTest", List(), Block(List())),
+        ConstructorDeclaration(List(Modifier.Public), "methodTest", List(), Block(List(ReturnStatement(None)))),
         MethodDeclaration(List(Modifier.Private, Modifier.Static),PrimitiveType.Int,"plusOne",List(Parameter("x",PrimitiveType.Int)),
           Option(Block(List(ReturnStatement(Option(BinaryExpression(VarOrFieldAccess(None, "x"), BinaryOperator.Add, IntLiteral(1)))))))),
         MethodDeclaration(List(Modifier.Public),VoidType,"doNothing",List(),
@@ -34,13 +34,13 @@ object ParserTest extends TestSuite {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/classInterfaceTest.java")
       val expected = CompilationUnit(None,List(),List(
         ClassDeclaration(List(),"classInterfaceTest", AmbiguousName(List("Object")), List(),List(
-          ConstructorDeclaration(List(), "classInterfaceTest", List(), Block(List())),
+          ConstructorDeclaration(List(), "classInterfaceTest", List(), Block(List(ReturnStatement(None)))),
           ClassDeclaration(List(Modifier.Protected),"subClass", AmbiguousName(List("Object")), List("interfaze"),List(
-            ConstructorDeclaration(List(Modifier.Protected), "subClass", List(), Block(List())),
+            ConstructorDeclaration(List(Modifier.Protected), "subClass", List(), Block(List(ReturnStatement(None)))),
             MethodDeclaration(List(Modifier.Public),VoidType,"nothing",List(),
               Option(Block(List()))))),
         ClassDeclaration(List(),"extendClass",AmbiguousName(List("subClass")),List(),List(
-          ConstructorDeclaration(List(), "extendClass", List(), Block(List())),
+          ConstructorDeclaration(List(), "extendClass", List(), Block(List(ReturnStatement(None)))),
           VarOrFieldDeclaration(List(Modifier.Private),PrimitiveType.Boolean,"why", BooleanLiteral(false)))))),
       InterfaceDeclaration(List(), "interfaze", List(), List(
         VarOrFieldDeclaration(List(Modifier.Public),PrimitiveType.Int,"x", IntLiteral(2)),
@@ -57,14 +57,15 @@ object ParserTest extends TestSuite {
         ConstructorDeclaration(List(), "fieldsTest", List(Parameter("x", PrimitiveType.Int), Parameter("nah", PrimitiveType.Boolean)), Block(List(
           ExpressionStatement(MethodCall(None,"super",List())),
           ExpressionStatement(Assignment(VarOrFieldAccess(Option(ExpressionName(AmbiguousName(List("fieldsTest")))), "x"), VarOrFieldAccess(None, "x"))),
-          ExpressionStatement(Assignment(VarOrFieldAccess(Option(ExpressionName(AmbiguousName(List("fieldsTest")))), "nah"), VarOrFieldAccess(None, "nah"))))))))))
+          ExpressionStatement(Assignment(VarOrFieldAccess(Option(ExpressionName(AmbiguousName(List("fieldsTest")))), "nah"), VarOrFieldAccess(None, "nah"))),
+          ReturnStatement(None))))))))
 
       ast ==> expected
     }
     test("calculations parsing") {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/calculationsTest.java")
       val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public),"calculationsTest", AmbiguousName(List("Object")), List(),List(
-        ConstructorDeclaration(List(Modifier.Public), "calculationsTest", List(), Block(List())),
+        ConstructorDeclaration(List(Modifier.Public), "calculationsTest", List(), Block(List(ReturnStatement(None)))),
         VarOrFieldDeclaration(List(),PrimitiveType.Boolean,"f", BinaryExpression(BooleanLiteral(true), BinaryOperator.Or, BooleanLiteral(false))),
         VarOrFieldDeclaration(List(),PrimitiveType.Boolean,"g",
           BinaryExpression(
@@ -110,7 +111,7 @@ object ParserTest extends TestSuite {
     test("statements parsing 1") {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/statementsTest1.java")
       val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public), "statementsTest1", AmbiguousName(List("Object")), List(), List(
-        ConstructorDeclaration(List(Modifier.Public), "statementsTest1", List(), Block(List())),
+        ConstructorDeclaration(List(Modifier.Public), "statementsTest1", List(), Block(List(ReturnStatement(None)))),
         MethodDeclaration(List(), VoidType, "forTest", List(), Option(Block(List(
           Block(List(
             VarOrFieldDeclaration(List(), PrimitiveType.Int, "i", IntLiteral(0)),
@@ -145,7 +146,7 @@ object ParserTest extends TestSuite {
     test("statements parsing 2") {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/statementsTest2.java")
       val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public), "statementsTest2", AmbiguousName(List("Object")), List(), List(
-        ConstructorDeclaration(List(Modifier.Public), "statementsTest2", List(), Block(List())),
+        ConstructorDeclaration(List(Modifier.Public), "statementsTest2", List(), Block(List(ReturnStatement(None)))),
         MethodDeclaration(List(), VoidType, "ifTest", List(), Option(Block(List(
           IfStatement(
             BinaryExpression(IntLiteral(5), BinaryOperator.GreaterOrEqual, IntLiteral(4)),
@@ -166,7 +167,7 @@ object ParserTest extends TestSuite {
     test("array Test") {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/arrayTest.java")
       val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public), "arrayTest", AmbiguousName(List("Object")), List(), List(
-        ConstructorDeclaration(List(Modifier.Public), "arrayTest", List(), Block(List())),
+        ConstructorDeclaration(List(Modifier.Public), "arrayTest", List(), Block(List(ReturnStatement(None)))),
         VarOrFieldDeclaration(List(), ArrayType(PrimitiveType.Int), "numbers", ArrayInitializer(List(IntLiteral(1), IntLiteral(2), IntLiteral(3)))),
         VarOrFieldDeclaration(List(), ArrayType(ObjectType.String), "mail", NewArray(ObjectType.String, IntLiteral(3))),
         MethodDeclaration(List(), ArrayType(ObjectType.String), "makeMail", List(), Option(Block(List(
