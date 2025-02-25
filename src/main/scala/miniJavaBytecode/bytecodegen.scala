@@ -25,8 +25,8 @@ extension(classfile: ClassFile) {
         )
         val sw = new StringWriter()
         val pw = new PrintWriter(sw)
-        val cv = new TraceClassVisitor(cw, pw)
-        //val cv = new CheckClassAdapter(trace)
+        val trace = new TraceClassVisitor(cw, pw)
+        val cv = new CheckClassAdapter(trace)
 
         cv.visit(
             JAVA_VERSION, NO_MODIFIERS, classfile.name.internalName(), 
@@ -64,7 +64,7 @@ extension(method: Method) {
             statement.translate(mv, None, None)
         }
         //We have set the flag COMPUTE_MAXS, so the arguments here are ignored
-        mv.visitMaxs(0, 0)
+        mv.visitMaxs(4, 2)
         mv.visitEnd()
     }
 }
@@ -121,6 +121,13 @@ extension(statement: TypedStatement) {
             body.foreach(_.translate(mv, Some(startLabel), Some(endLabel)))
             mv.visitJumpInsn(GOTO, startLabel)
             mv.visitLabel(endLabel)
+        case InfiniteWhileStatement(body) => 
+            val infiniteLabel = new Label()
+            val breakOutLabel = new Label()
+            mv.visitLabel(infiniteLabel)
+            body.foreach(_.translate(mv, Some(infiniteLabel), Some(breakOutLabel)))
+            mv.visitJumpInsn(GOTO, infiniteLabel)
+            mv.visitLabel(breakOutLabel)
     }
 }
 
@@ -235,27 +242,14 @@ extension(expression: TypedExpression) {
                 case VoidType => conversionError()
             }
             instructions.foreach(insn => mv.visitInsn(insn))
-        //TODO: Change to Neg only
-        case INeg(value) => 
-            value.translate(mv)
-            val instruction = value.ty.asmType().getOpcode(INEG)
-            mv.visitInsn(instruction)
-        //TODO: Change to BinOp only
-        case IBinOp(left, op, right) =>
-            left.translate(mv)
-            right.translate(mv)
-            val intInsn = op match {
-                case Add => IADD
-                case Sub => ISUB
-                case Mul => IMUL
-                case Div => IDIV
-                case And => IAND
-                case Or => IOR
-                case Xor => IXOR
-                case Mod => IREM
-            }
-            val instruction = left.ty.asmType().getOpcode(intInsn)
-            mv.visitInsn(instruction)
+        case INeg(value) => translateNeg(mv, value)
+        case LNeg(value) => translateNeg(mv, value)
+        case DNeg(value) => translateNeg(mv, value)
+        case FNeg(value) => translateNeg(mv, value)
+        case IBinOp(left, op, right) => translateBinOp(mv, left, op, right)
+        case LBinOp(left, op, right) => translateBinOp(mv, left, op, right)
+        case DBinOp(left, op, right) => translateBinOp(mv, left, op, right)
+        case FBinOp(left, op, right) => translateBinOp(mv, left, op, right)
         case LCmp(left, right) => 
             left.translate(mv)
             right.translate(mv)
@@ -293,6 +287,34 @@ extension(expression: TypedExpression) {
             //end
             mv.visitLabel(endLabel)
     }
+}
+
+def translateNeg(mv: MethodVisitor, value: TypedExpression): Unit = {
+    value.translate(mv)
+    val instruction = value.ty.asmType().getOpcode(INEG)
+    mv.visitInsn(instruction)
+}
+
+def translateBinOp(
+    mv: MethodVisitor,
+    left: TypedExpression, 
+    op: BinaryOperator, 
+    right: TypedExpression
+): Unit = {
+    left.translate(mv)
+    right.translate(mv)
+    val intInsn = op match {
+        case Add => IADD
+        case Sub => ISUB
+        case Mul => IMUL
+        case Div => IDIV
+        case And => IAND
+        case Or => IOR
+        case Xor => IXOR
+        case Mod => IREM
+    }
+    val instruction = left.ty.asmType().getOpcode(intInsn)
+    mv.visitInsn(instruction)
 }
 
 extension(cmp: Comparison) {
