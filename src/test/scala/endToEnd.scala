@@ -14,18 +14,29 @@ object Loader extends ClassLoader {
     }
 }
 
-def endToEndFixture(className: String, methodsToTest: List[(String, Any)]): Unit = {
-    val srcPath = s"src/test/java/$className.java"
+case class MethodTest(
+    methodsToCall: List[String],
+    expectedResult: Object
+)
+
+def endToEndFixture(className: String, methodTests: List[MethodTest]): Unit = {
+    val srcPath = s"src/test/java/${className}.java"
     val ast = JavaASTBuilder.parseFromFile(srcPath)
     val typed = typecheck(ast)
     val (bytecode, debug) = typed.codeGen()
     try {
         val clss = Loader.defineClass(className, bytecode)
-        methodsToTest.foreach((name, expected) =>
-            val method = clss.getMethod(name)
-            val result = method.invoke(clss.getConstructor().newInstance())
+        val constructor = clss.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        methodTests.foreach{ case MethodTest(toCall, expected) =>
+            val instance = constructor.newInstance();
+            val result = toCall.foldLeft(new Object())((z, methodName) =>
+                val method = clss.getDeclaredMethod(methodName)
+                method.setAccessible(true)
+                method.invoke(instance)
+            )
             result ==> expected
-        )
+        }
     } catch {
         case e =>
             println(s"Generated Class:\n$debug")
@@ -37,7 +48,12 @@ def endToEndFixture(className: String, methodsToTest: List[(String, Any)]): Unit
 
 object endToEnd extends TestSuite {
     val tests = Tests {
-        test("simpleTypeTest") 
-        - endToEndFixture("simpleTypeTest", List(("noopTest", null)))
+        test("simpleTypeTest") - endToEndFixture("simpleTypeTest", 
+            List(
+                MethodTest(List("noopTest"), null),
+                MethodTest(List("assignmentTest"), Integer(1)),
+                MethodTest(List("invokeGetField"), Integer(0))
+            )
+        )
     }
 }

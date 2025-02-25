@@ -177,6 +177,7 @@ extension(expression: TypedExpression) {
                 INVOKESTATIC, of.internalName(),
                 name, mty.descriptor()
             )
+            if (mty.ret == VoidType) then mv.visitInsn(ICONST_0)
         case InvokeSpecial(of, name, mty, target, args) =>
             target.translate(mv)
             args.foreach(_.translate(mv))
@@ -184,6 +185,7 @@ extension(expression: TypedExpression) {
                 INVOKESPECIAL, of.internalName(),
                 name, mty.descriptor()
             )
+            if (mty.ret == VoidType) then mv.visitInsn(ICONST_0)
         case IntLikeLiteral(_, value) => value match {
             case -1 => mv.visitInsn(ICONST_M1)
             case 0 => mv.visitInsn(ICONST_0)
