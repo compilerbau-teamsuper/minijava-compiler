@@ -222,7 +222,12 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     val name = ctx.Identifier().getText
     val returnType = visitTypeOrVoid(ctx.typeOrVoid())
     val parameters = getFormalParameters(ctx.formalParameters())
-    val body = if modifiers.contains(Modifier.Abstract) then None else Option(visitMethodBody(ctx.methodBody()))
+    val body =
+      if modifiers.contains(Modifier.Abstract) then None
+      else
+        var body = visitMethodBody(ctx.methodBody())
+        if returnType == AST.VoidType then if !body.statements.contains(ReturnStatement(None)) then body = Block(body.statements ::: List(ReturnStatement(None)))
+        Option(body)
 
     MethodDeclaration(modifiers, returnType, name, parameters, body)
   }
@@ -271,7 +276,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       .toList
     val name = ctx.Identifier().getText
     val parameters = getFormalParameters(ctx.formalParameters())
-    val body = visitBlock(ctx.block())
+    var body = visitBlock(ctx.block())
+    if !body.statements.contains(ReturnStatement(None)) then body = Block(body.statements ::: List(ReturnStatement(None)))
     ConstructorDeclaration(modifiers, name, parameters, body)
   }
 
