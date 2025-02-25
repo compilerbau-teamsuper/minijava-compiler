@@ -33,3 +33,11 @@ Using the generated ANTLR Recognizer, he wrote the [parser](https://github.com/c
 - Resolving this and super depending on context
 
 He also wrote [tests](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/parserAST/src/test/scala/parserTest.scala) for the parser using the test [java files](https://github.com/compilerbau-teamsuper/minijava-compiler/tree/parserAST/src/test/java) he created, and he made the UML with plantuml.
+
+
+###### OriginalCpp (Martin Ilgner):
+- [miniJavaBytecode](https://github.com/compilerbau-teamsuper/minijava-compiler/tree/parserAST/src/main/scala/miniJavaBytecode) package
+- whole [CLI](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/parserAST/src/main/scala/main.scala)
+- [user documentation](#Usage)
+- [continuous integration](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/parserAST/.github/workflows/scala.yaml) setup
+- [end-to-end tests](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/parserAST/src/test/scala/endToEnd.scala)
