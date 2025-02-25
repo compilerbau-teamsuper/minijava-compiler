@@ -1,6 +1,6 @@
 public class fieldsTest {
     private int x;
-    protected boolean nah;
+    protected boolean nah = true;
     static String s = "s";
 
     fieldsTest(int x, boolean nah){
