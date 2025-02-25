@@ -4,6 +4,8 @@ case class ClassName(path: List[String])
 
 case class ClassFile(
     name: ClassName,
+    superclass: ClassName,
+    interfaces: List[ClassName],
     fields: List[Field],
     methods: List[Method],
 )

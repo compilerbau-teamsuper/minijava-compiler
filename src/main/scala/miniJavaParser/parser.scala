@@ -236,8 +236,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     variables.foreach(v =>
       v(1) match {
         case Some(x) => if !modifiers.contains(Modifier.Static) then currentFields.get(currentThis) match {
-          case Some(l) => currentFields = currentFields + (currentThis -> l.addOne(ExpressionStatement(Assignment(FieldAccess(ExpressionName(AmbiguousName(List(currentThis))), v._1), x))))
-          case None => currentFields = currentFields + (currentThis -> ListBuffer(ExpressionStatement(Assignment(FieldAccess(ExpressionName(AmbiguousName(List(currentThis))), v._1), x))))
+          case Some(l) => currentFields = currentFields + (currentThis -> l.addOne(ExpressionStatement(Assignment(FieldAccess(ExpressionName(AmbiguousName(List("this"))), v._1), x))))
+          case None => currentFields = currentFields + (currentThis -> ListBuffer(ExpressionStatement(Assignment(FieldAccess(ExpressionName(AmbiguousName(List("this"))), v._1), x))))
         }
         case None =>
       }
@@ -253,16 +253,15 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
 
   private def standardInitializer(t: Type) : Expression = {
     t match {
-      case PrimitiveType.Int | ObjectType.Integer => AST.IntLiteral(0)
-      case PrimitiveType.Boolean | ObjectType.Boolean => AST.BooleanLiteral(false)
-      case PrimitiveType.Char | ObjectType.Character => AST.CharacterLiteral('0')
-      case PrimitiveType.Short | ObjectType.Short => AST.ShortLiteral(0)
-      case PrimitiveType.Long | ObjectType.Long => AST.LongLiteral(0)
-      case PrimitiveType.Float | ObjectType.Float => AST.FloatLiteral(0)
-      case PrimitiveType.Double | ObjectType.Double => AST.DoubleLiteral(0)
-      case ObjectType.String => AST.StringLiteral("")
+      case PrimitiveType.Int => AST.IntLiteral(0)
+      case PrimitiveType.Boolean => AST.BooleanLiteral(false)
+      case PrimitiveType.Char => AST.CharacterLiteral('0')
+      case PrimitiveType.Short => AST.ShortLiteral(0)
+      case PrimitiveType.Long => AST.LongLiteral(0)
+      case PrimitiveType.Float => AST.FloatLiteral(0)
+      case PrimitiveType.Double => AST.DoubleLiteral(0)
       case ArrayType(_) => AST.NullLiteral
-      case _ => throw new IllegalArgumentException("Custom Types must be initialized?!")
+      case ObjectType(_) => AST.NullLiteral
     }
   }
 
@@ -656,19 +655,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     case "float" => PrimitiveType.Float
     case "double" => PrimitiveType.Double
 
-    // Objekt-Typen
-    case "String" => ObjectType.String
-    case "Short" => ObjectType.Short
-    case "Long" => ObjectType.Long
-    case "Integer" => ObjectType.Integer
-    case "Float" => ObjectType.Float
-    case "Double" => ObjectType.Double
-    case "Boolean" => ObjectType.Boolean
-    case "Character" => ObjectType.Character
-
-    // Benutzerdefinierter Objekttyp
-    case customType if customType.matches("[A-Za-z_][A-Za-z0-9_]*") =>
-      ObjectType.Custom(customType)
+    // Objekttyp
+    case ty if ty.matches("[A-Za-z_][A-Za-z0-9_]*") => ObjectType(AmbiguousName(List(ty)))
 
     // Unbekannter Typ
     case _ => throw new IllegalArgumentException(s"Unknown type: $typeName")

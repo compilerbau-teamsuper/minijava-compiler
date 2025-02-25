@@ -130,18 +130,7 @@ object PrimitiveType {
   case object Short extends PrimitiveType
 }
 
-sealed trait ObjectType extends Type
-object ObjectType {
-  case object String extends ObjectType
-  case object Short extends ObjectType
-  case object Long extends PrimitiveType
-  case object Integer extends ObjectType
-  case object Float extends ObjectType
-  case object Double extends ObjectType
-  case object Boolean extends ObjectType
-  case object Character extends ObjectType
-  case class Custom(name: String) extends ObjectType // Für benutzerdefinierte Typen
-}
+sealed case class ObjectType(name: AmbiguousName) extends Type
 
 case class ArrayType(arrayType: Type) extends Type
 

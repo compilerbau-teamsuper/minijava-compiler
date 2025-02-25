@@ -29,7 +29,7 @@ class Root(private[resolve] val root: Package = Package()) {
             case head :: rest => p.contents.get(head) match
                 case None => p.copy(contents = p.contents + (head -> create(PackageName(p.name.path :+ head), rest)))
                 case Some(n @ ClassName(_)) => throw DuplicateDefinition(n.path)
-                case Some(p @ Package(_, _)) => add(p, rest)
+                case Some(subp @ Package(_, _)) => p.copy(contents = p.contents + (head -> add(subp, rest)))
         
         Root(add(root, pkg.path))
     }

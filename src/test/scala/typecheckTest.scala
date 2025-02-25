@@ -10,7 +10,7 @@ object TypecheckTest extends TestSuite {
         test("typecheck_smoke") {
             val input = AST.CompilationUnit(None, List.empty, List(AST.ClassDeclaration(List.empty, "HelloWorld", AST.AmbiguousName(List("Object")), List.empty, List.empty)))
             val output = typecheck(input)
-            val expected = ClassFile(ClassName(List("HelloWorld")), List.empty, List.empty)
+            val expected = ClassFile(ClassName(List("HelloWorld")), ClassName(List("java", "lang", "Object")), List.empty, List.empty, List.empty)
       
             output ==> expected
         }
@@ -20,11 +20,13 @@ object TypecheckTest extends TestSuite {
             val ir = typecheck(ast)
             val expected = ClassFile(
                 ClassName(List("simpleTypeTest")),
+                ClassName(List("java", "lang", "Object")),
+                List(),
                 List(
-                    Field(Modifiers.empty,"field",PrimitiveType.Int,IntLikeLiteral(PrimitiveType.Int,0))
-                ),
+                    Field(Modifiers.empty,"field",PrimitiveType.Int,IntLikeLiteral(PrimitiveType.Int,0))),
                 List(
                     Method(Modifiers.empty,"<init>",MethodType(List(),VoidType),Some(Code(1,List(
+                        ExpressionStatement(DupPutField(ClassName(List("simpleTypeTest")),"field",LoadLocal(ObjectType(ClassName(List("simpleTypeTest"))),0),IntLikeLiteral(PrimitiveType.Int,0))),
                         ReturnStatement(None))))),
                     Method(Modifiers.empty,"noopTest",MethodType(List(),VoidType),Some(Code(1,List(
                         ReturnStatement(None))))),

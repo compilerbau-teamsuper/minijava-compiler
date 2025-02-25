@@ -43,16 +43,7 @@ def resolve_ty(ty: AST.TypeOrVoid)(resolver: Resolver): IR.Type = ty match
     case AST.PrimitiveType.Float => IR.PrimitiveType.Float
     case AST.PrimitiveType.Long => IR.PrimitiveType.Long
     case AST.PrimitiveType.Short => IR.PrimitiveType.Short
-    case AST.ObjectType.String => IR.LangTypes.String
-    case AST.ObjectType.Short => ???
-    case AST.ObjectType.Long => ???
-    case AST.ObjectType.Integer => ???
-    case AST.ObjectType.Float => ???
-    case AST.ObjectType.Double => ???
-    case AST.ObjectType.Boolean => ???
-    case AST.ObjectType.Character => ???
-    case AST.ObjectType.Custom(name) => IR.ObjectType(resolver.resolve(AST.AmbiguousName(List(name))))
-    
+    case AST.ObjectType(name) => IR.ObjectType(resolver.resolve(name))
     case AST.ArrayType(arrayType) => ???
     case AST.VoidType => IR.VoidType
 
@@ -179,7 +170,12 @@ def put_field(target: IR.TypedExpression, name: String, value: IR.TypedExpressio
 
 type AccessType = IR.GetField | IR.GetStatic | IR.LoadLocal
 def resolve_name(name: AST.AmbiguousName)(ctx: Context): IR.ObjectType | IR.GetField | IR.GetStatic | IR.LoadLocal = {
-    ctx.locals.get(name.components.head) match
+    if name.components.head == "this"
+    then {
+        if (ctx.is_static) throw NonStaticMember(ctx.this_type.name, "this")
+        name.components.tail.foldLeft(IR.LoadLocal(ctx.this_type, 0) : AccessType)(get_field(_, _)(ctx))
+    }
+    else ctx.locals.get(name.components.head) match
         case Some(Local(_, ty, idx)) => name.components.tail.foldLeft(IR.LoadLocal(ty, idx) : AccessType)(get_field(_, _)(ctx))
         case None => ctx.types(ctx.this_type).fields.get(name.components.head) match
             case Some(FieldInfo(mod, ty)) => if (mod.stat) {
@@ -326,8 +322,7 @@ def typecheck_stmts(prev: IR.Code, stmts: List[AST.Statement])(ctx: Context): IR
 
             val ty = resolve_ty(fieldType)(ctx.resolver)
 
-            val init = typecheck_expr(initializer)(ctx)
-            if (!is_subtype(init.ty, ty)(ctx)) throw new TypeMismatch(init.ty, ty)
+            val init = assign(ty, typecheck_expr(initializer)(ctx))
 
             val idx = prev.max_locals
             val local = Local(fin, ty, idx)
@@ -441,8 +436,7 @@ def typecheck_field(
     types: Map[IR.ObjectType, ObjectInfo]
 ) = {
     val ctx = Context(resolver, types, Map.empty, this_type, IR.VoidType, modifiers.stat, false)
-    val init = typecheck_expr(initializer)(ctx)
-    if (!is_subtype(init.ty, ty)(ctx)) throw TypeMismatch(init.ty, ty)
+    val init = assign(ty, typecheck_expr(initializer)(ctx))
     IR.Field(modifiers, name, ty, init)
 }
 
@@ -461,17 +455,18 @@ def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
     
     val class_name = IR.ClassName(pkg.path :+ name)
     root = root.define(pkg, name)
-    var resolver = Resolver(root, pkg)
+    val resolver = Resolver(root, pkg)
+        .imp(AST.AmbiguousName(List("java", "lang")), true)
+        .imp(AST.AmbiguousName(List("java", "io", "System")), false)
 
     val this_type = IR.ObjectType(class_name)
-    val names = prelude + (name -> this_type)
 
-    val (supertypes, members) = decl match
-        case AST.ClassDeclaration(modifiers, name, superclass, interfaces, body) => (IR.ObjectType(resolver.resolve(superclass)) :: interfaces.map(i => IR.ObjectType(resolver.resolve(i))), body)
-        case AST.InterfaceDeclaration(modifiers, name, superInterfaces, body) => (superInterfaces.map(i => IR.ObjectType(resolver.resolve(i))), body)
+    val (superclass, interfaces, members) = decl match
+        case AST.ClassDeclaration(modifiers, name, superclass, interfaces, body) => (Some(resolver.resolve(superclass)), interfaces.map(i => resolver.resolve(i)), body)
+        case AST.InterfaceDeclaration(modifiers, name, superInterfaces, body) => (None, superInterfaces.map(i => resolver.resolve(i)), body)
 
     var info = ObjectInfo(
-        supertypes,
+        (superclass.toList ++ interfaces).map(IR.ObjectType(_)),
         Map.empty,
         Map.empty,
         None
@@ -508,5 +503,5 @@ def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
 
     val fields = check_fields.map(check => check(types))
     val methods = check_methods.map(check => check(types))
-    IR.ClassFile(class_name, fields, methods)
+    IR.ClassFile(class_name, superclass.get, interfaces, fields, methods)
 }
