@@ -4,7 +4,7 @@ import org.objectweb.asm.{ClassVisitor, ClassWriter, MethodVisitor}
 import org.objectweb.asm.Type.*
 import org.objectweb.asm.util.{CheckClassAdapter, TraceClassVisitor}
 import org.objectweb.asm.Opcodes.*
-import java.io.{PrintWriter, StringWriter, File}
+import java.io.{PrintWriter, File, StringWriter}
 import miniJavaAnalysis.IR.*
 import miniJavaAnalysis.IR.Comparison.*
 import miniJavaAnalysis.IR.BinaryOperator.*
@@ -12,11 +12,11 @@ import org.objectweb.asm.Label
 
 val JAVA_VERSION = V1_4
 val OBJECT = "java/lang/Object"
-val STRING = "java/lang/String"
 val NO_GENERICS = null
 val NO_CONSTANT = null
 val NO_INTERFACES = null
 val NO_EXCEPTIONS = null
+val NO_MODIFIERS = 0
 
 extension(classfile: ClassFile) {
     def codeGen(): (Array[Byte], StringWriter) = {
@@ -28,7 +28,7 @@ extension(classfile: ClassFile) {
         val trace = new TraceClassVisitor(cw, pw)
         val cv = new CheckClassAdapter(trace)
         cv.visit(
-            JAVA_VERSION, ACC_PUBLIC, classfile.name.internalName(), 
+            JAVA_VERSION, NO_MODIFIERS, classfile.name.internalName(), 
             NO_GENERICS, OBJECT, NO_INTERFACES
         )
 
@@ -61,7 +61,7 @@ extension(method: Method) {
         for(statement <- method.code.map(_.code).getOrElse(Nil)) {
             statement.translate(mv, None, None)
         }
-        //We set the flag COMPUTE_MAXS, so the arguments here are ignored
+        //We have set the flag COMPUTE_MAXS, so the arguments here are ignored
         mv.visitMaxs(0, 0)
         mv.visitEnd()
     }

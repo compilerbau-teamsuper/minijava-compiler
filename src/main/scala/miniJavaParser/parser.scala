@@ -84,7 +84,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       case ConstructorDeclaration(_,_,_,_) => true
       case _ => false
     })
-    body = if !hasConstructor then body.::(ConstructorDeclaration(List(Modifier.Public), name, List(), Block(List()))) else body
+    val constructorModifiers = modifiers.intersect(List(Modifier.Public, Modifier.Protected, Modifier.Private))
+    body = if !hasConstructor then body.::(ConstructorDeclaration(constructorModifiers, name, List(), Block(List()))) else body
 
     ClassDeclaration(modifiers, name, superclass, interfaces, body)
   }

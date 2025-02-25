@@ -9,7 +9,7 @@ object ParserTest extends TestSuite {
     test("empty class parsing") {
       val ast = JavaASTBuilder.parseFromText("class HelloWorld { }")
       val expected = CompilationUnit(None,List(),List(ClassDeclaration(List(),"HelloWorld", AmbiguousName(List("Object")), List(),List(
-        ConstructorDeclaration(List(Modifier.Public), "HelloWorld", List(), Block(List()))))))
+        ConstructorDeclaration(List(), "HelloWorld", List(), Block(List()))))))
 
       ast ==> expected
     }
@@ -34,13 +34,13 @@ object ParserTest extends TestSuite {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/classInterfaceTest.java")
       val expected = CompilationUnit(None,List(),List(
         ClassDeclaration(List(),"classInterfaceTest", AmbiguousName(List("Object")), List(),List(
-          ConstructorDeclaration(List(Modifier.Public), "classInterfaceTest", List(), Block(List())),
+          ConstructorDeclaration(List(), "classInterfaceTest", List(), Block(List())),
           ClassDeclaration(List(Modifier.Protected),"subClass", AmbiguousName(List("Object")), List("interfaze"),List(
-            ConstructorDeclaration(List(Modifier.Public), "subClass", List(), Block(List())),
+            ConstructorDeclaration(List(Modifier.Protected), "subClass", List(), Block(List())),
             MethodDeclaration(List(Modifier.Public),VoidType,"nothing",List(),
               Option(Block(List()))))),
         ClassDeclaration(List(),"extendClass",AmbiguousName(List("subClass")),List(),List(
-          ConstructorDeclaration(List(Modifier.Public), "extendClass", List(), Block(List())),
+          ConstructorDeclaration(List(), "extendClass", List(), Block(List())),
           VarOrFieldDeclaration(List(Modifier.Private),PrimitiveType.Boolean,"why", BooleanLiteral(false)))))),
       InterfaceDeclaration(List(), "interfaze", List(), List(
         VarOrFieldDeclaration(List(Modifier.Public),PrimitiveType.Int,"x", IntLiteral(2)),

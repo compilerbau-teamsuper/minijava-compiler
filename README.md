@@ -41,3 +41,4 @@ He also wrote [tests](https://github.com/compilerbau-teamsuper/minijava-compiler
 - [user documentation](#Usage)
 - [continuous integration](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/parserAST/.github/workflows/scala.yaml) setup
 - [end-to-end tests](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/parserAST/src/test/scala/endToEnd.scala)
+- several fixes in the other packages (please see the commit history for this)

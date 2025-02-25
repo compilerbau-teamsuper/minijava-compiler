@@ -181,7 +181,7 @@ def relational_operation(left: IR.TypedExpression, operator: AST.Comparison, rig
         }
 }
 
-def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = expr match
+def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = expr match 
     case AST.BooleanLiteral(value) => IR.BooleanLiteral(value)
     case AST.IntLiteral(value) => IR.IntLiteral(value)
     case AST.ShortLiteral(value) => IR.ShortLiteral(value)
@@ -210,12 +210,13 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
             case AST.BinaryOperator.Less => relational_operation(l, AST.BinaryOperator.Less, r)
             case AST.BinaryOperator.LessOrEqual => relational_operation(l, AST.BinaryOperator.LessOrEqual, r)
     }
-    case AST.MethodCall(name, target, arguments) => {
+    case AST.MethodCall(target, name, arguments) => {
         val t = target match
             case None => ctx.this_type match
                 case Some(this_type) => IR.LoadLocal(this_type, 0)
                 case None => ???
-            case Some(target) => typecheck_expr(target)(ctx)
+            case Some(expr: AST.Expression) => typecheck_expr(expr)(ctx)
+            case Some(AST.AmbiguousName(components)) => ???
 
         val (of, method) = t.ty match
             case object_type @ IR.ObjectType(of) => ctx.types(object_type).methods.get(name) match
@@ -232,7 +233,7 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
 
         IR.InvokeSpecial(of, name, method.ty, t, args)
     }
-    case AST.FieldAccess(name, target) => {
+    case AST.VarOrFieldAccess(target, name) => {
         val t = target match
             case None => ctx.locals.get(name) match
                 case Some(Local(_, ty, idx)) => return IR.LoadLocal(ty, idx)
@@ -255,7 +256,7 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
     case AST.Assignment(left, right) => {
         val r = typecheck_expr(right)(ctx)
         left match
-            case AST.FieldAccess(name, target) => {
+            case AST.VarOrFieldAccess(target, name) => {
                 val t = target match
                     case None => ctx.locals.get(name) match
                         case Some(Local(fin, ty, idx)) => {
@@ -428,8 +429,8 @@ def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
     val names = prelude + (name -> this_type)
 
     val (supertypes, members) = decl match
-        case AST.ClassDeclaration(modifiers, name, superclass, interfaces, body) => (names(superclass) :: interfaces.map(i => names(i)), body)
-        case AST.InterfaceDeclaration(modifiers, name, superInterfaces, body) => (superInterfaces.map(i => names(i)), body)
+        case AST.ClassDeclaration(modifiers, name, superclass, interfaces, body) => (names(superclass.components.mkString(".")) :: interfaces.map(i => names(i)), body)
+        case AST.InterfaceDeclaration(modifiers, name, superInterfaces, body) => (superInterfaces.map(i => names(i.components.mkString("."))), body)
 
     var info = ObjectInfo(
         supertypes,
