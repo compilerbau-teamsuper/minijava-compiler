@@ -15,12 +15,17 @@ def binary_numeric_operation(left: IR.TypedExpression, operator: IR.BinaryNumeri
 }
 
 def binary_integral_operation(left: IR.TypedExpression, operator: IR.BinaryIntegralOperator, right: IR.TypedExpression): IR.TypedExpression = {
-    val (ty, l, r) = binary_numeric_promotion(unbox(left), unbox(right))
-    ty match
-        case IR.PrimitiveType.Int => IR.IBinOp(l, operator, r)
-        case IR.PrimitiveType.Long => IR.LBinOp(l, operator, r)
-        case IR.PrimitiveType.Float => throw NonIntegral
-        case IR.PrimitiveType.Double => throw NonIntegral
+    val l = unbox(left)
+    val r = unbox(right)
+    if l.ty == IR.PrimitiveType.Boolean && r.ty == IR.PrimitiveType.Boolean
+    then 
+        IR.BBinOp(l, operator, r)
+    else
+        binary_numeric_promotion(unbox(left), unbox(right)) match
+            case (IR.PrimitiveType.Int, a, b) => IR.IBinOp(a, operator, b)
+            case (IR.PrimitiveType.Long, a, b) => IR.LBinOp(a, operator, b)
+            case (IR.PrimitiveType.Float, a, b) => throw NonIntegral
+            case (IR.PrimitiveType.Double, a, b) => throw NonIntegral
 }
 
 def relational_operation(left: IR.TypedExpression, operator: AST.Comparison, right: IR.TypedExpression): IR.TypedExpression = {

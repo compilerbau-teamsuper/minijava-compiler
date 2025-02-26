@@ -13,6 +13,7 @@ import miniJavaAnalysis.IR.Comparison.ICmpNe
 import java.io.ObjectOutputStream.PutField
 
 def is_equivalent(a: TypedExpression, b: TypedExpression): Boolean = if (a == b) true else (a, b) match
+    case (BooleanLiteral(a), BooleanLiteral(b)) => a == b
     case (IntLikeLiteral(_, a), IntLikeLiteral(_, b)) => a == b
     case (LongLiteral(a), LongLiteral(b)) => a == b
     case (StringLiteral(a), StringLiteral(b)) => a == b
@@ -40,7 +41,8 @@ def is_equivalent(a: TypedExpression, b: TypedExpression): Boolean = if (a == b)
     case (_, _) => false
 
 def is_sideeffect_free(expr: TypedExpression): Boolean = expr match
-    case IntLikeLiteral(_, _)
+    case BooleanLiteral(_)
+    | IntLikeLiteral(_, _)
     | LongLiteral(_)
     | StringLiteral(_)
     | NullLiteral
@@ -77,6 +79,10 @@ def invert_comparison(cmp: Comparison): Comparison = cmp match
     case ICmpNe => ICmpEq
 
 def decide_comparison(cmp: Comparison, left: TypedExpression, right: TypedExpression): SimplifiedComparison = (left, right) match
+    case (BooleanLiteral(l), BooleanLiteral(r)) => cmp match
+        case ICmpEq => if (l == r) DefiniteYes else DefiniteNo
+        case ICmpNe => if (l != r) DefiniteYes else DefiniteNo
+        case _ => ???
     case (IntLikeLiteral(_, l), IntLikeLiteral(_, r)) => cmp match
         case ICmpEq => if (l == r) DefiniteYes else DefiniteNo
         case ICmpGe => if (l >= r) DefiniteYes else DefiniteNo
@@ -100,7 +106,8 @@ def decide_comparison(cmp: Comparison, left: TypedExpression, right: TypedExpres
     case (l, r) => DoCompare(cmp, l, r)
 
 def simplify_expr(expr: TypedExpression): TypedExpression = expr match
-    case IntLikeLiteral(_, _)
+    case BooleanLiteral(_)
+    | IntLikeLiteral(_, _)
     | LongLiteral(_)
     | FloatLiteral(_)
     | DoubleLiteral(_)
@@ -140,6 +147,22 @@ def simplify_expr(expr: TypedExpression): TypedExpression = expr match
             case PrimitiveType.Float => FloatLiteral(value.toFloat)
             case PrimitiveType.Double => DoubleLiteral(value)
         case value => Convert(to, value)
+
+    case BBinOp(left, op, right) => (op, simplify_expr(left), simplify_expr(right)) match
+        case (And, BooleanLiteral(a), BooleanLiteral(b)) => BooleanLiteral(a & b)
+        case (And, BooleanLiteral(true), b) => b
+        case (And, a, BooleanLiteral(true)) => a
+        case (And, BooleanLiteral(false), b) if is_sideeffect_free(b) => BooleanLiteral(false)
+        case (And, a, BooleanLiteral(false)) if is_sideeffect_free(a) => BooleanLiteral(false)
+        case (Or, BooleanLiteral(a), BooleanLiteral(b)) => BooleanLiteral(a | b)
+        case (Or, BooleanLiteral(true), b) if is_sideeffect_free(b) => BooleanLiteral(true)
+        case (Or, a, BooleanLiteral(true)) if is_sideeffect_free(a) => BooleanLiteral(true)
+        case (Or, BooleanLiteral(false), b) => b
+        case (Or, a, BooleanLiteral(false)) => a
+        case (Xor, BooleanLiteral(a), BooleanLiteral(b)) => BooleanLiteral(a ^ b)
+        case (Xor, BooleanLiteral(false), b) => b
+        case (Xor, a, BooleanLiteral(false)) => a
+        case (op, a, b) => BBinOp(a, op, b)
 
     case INeg(value) => simplify_expr(value) match
         case IntLikeLiteral(ty, value) => IntLiteral(-value)

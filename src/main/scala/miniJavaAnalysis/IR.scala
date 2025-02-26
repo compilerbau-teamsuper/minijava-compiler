@@ -55,7 +55,7 @@ object PrimitiveType {
     case object Float extends NumericOperandType
     case object Double extends NumericOperandType
     case object Char extends NumericType with IntLikeType
-    case object Boolean extends PrimitiveType with IntLikeType
+    case object Boolean extends PrimitiveType
 }
 
 case class ObjectType(name: ClassName) extends Type
@@ -97,6 +97,7 @@ case class InfiniteWhileStatement(val body: List[TypedStatement]) extends TypedS
 sealed trait TypedExpression(val ty: Type)
 
 // Literals
+case class BooleanLiteral(value: Boolean) extends TypedExpression(PrimitiveType.Boolean)
 /** A literal that is treated like an `int`. The `actual_ty` is only relevant for type checking. */
 case class IntLikeLiteral(actual_ty: IntLikeType, value: Int) extends TypedExpression(actual_ty)
 case class LongLiteral(value: Long) extends TypedExpression(PrimitiveType.Long)
@@ -105,7 +106,6 @@ case class DoubleLiteral(value: Double) extends TypedExpression(PrimitiveType.Do
 case class StringLiteral(value: String) extends TypedExpression(LangTypes.String)
 case object NullLiteral extends TypedExpression(NullType)
 
-def BooleanLiteral(value: Boolean): IntLikeLiteral = IntLikeLiteral(PrimitiveType.Boolean, if (value) 1 else 0)
 def ByteLiteral(value: Byte): IntLikeLiteral = IntLikeLiteral(PrimitiveType.Byte, value)
 def ShortLiteral(value: Short): IntLikeLiteral = IntLikeLiteral(PrimitiveType.Short, value)
 def CharLiteral(value: Char): IntLikeLiteral = IntLikeLiteral(PrimitiveType.Char, value)
@@ -141,6 +141,7 @@ object BinaryOperator {
     case object Xor extends BinaryIntegralOperator
 }
 
+case class BBinOp(left: TypedExpression, op: BinaryIntegralOperator, right: TypedExpression) extends TypedExpression(PrimitiveType.Boolean)
 case class IBinOp(left: TypedExpression, op: BinaryOperator, right: TypedExpression) extends TypedExpression(PrimitiveType.Int)
 case class LBinOp(left: TypedExpression, op: BinaryOperator, right: TypedExpression) extends TypedExpression(PrimitiveType.Long)
 case class FBinOp(left: TypedExpression, op: BinaryOperator, right: TypedExpression) extends TypedExpression(PrimitiveType.Float)

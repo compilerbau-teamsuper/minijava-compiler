@@ -227,6 +227,9 @@ extension(expression: TypedExpression) {
                 case PrimitiveType.Int => mv.visitIntInsn(NEWARRAY, T_INT)
                 case PrimitiveType.Long => mv.visitIntInsn(NEWARRAY, T_LONG)
                 case t => mv.visitTypeInsn(ANEWARRAY, t.internalName())
+        case BooleanLiteral(value) => value match
+            case false => mv.visitInsn(ICONST_0)
+            case true => mv.visitInsn(ICONST_1)
         case IntLikeLiteral(_, value) => value match {
             case -1 => mv.visitInsn(ICONST_M1)
             case 0 => mv.visitInsn(ICONST_0)
@@ -300,6 +303,7 @@ extension(expression: TypedExpression) {
                     case PrimitiveType.Float => List(D2F)
                     case PrimitiveType.Double => conversionError()
                 }
+                case PrimitiveType.Boolean => conversionError()
                 case ObjectType(name) => conversionError()
                 case ArrayType(element) => conversionError()
                 case NullType => conversionError()
@@ -310,6 +314,7 @@ extension(expression: TypedExpression) {
         case LNeg(value) => translateNeg(mv, value)
         case DNeg(value) => translateNeg(mv, value)
         case FNeg(value) => translateNeg(mv, value)
+        case BBinOp(left, op, right) => translateBinOp(mv, left, op, right)
         case IBinOp(left, op, right) => translateBinOp(mv, left, op, right)
         case LBinOp(left, op, right) => translateBinOp(mv, left, op, right)
         case DBinOp(left, op, right) => translateBinOp(mv, left, op, right)
@@ -409,6 +414,7 @@ extension(typ: Type) {
     def internalName(): String = typ.asmType().getInternalName()
 
     def asmType(): org.objectweb.asm.Type = typ match {
+        case PrimitiveType.Boolean => BOOLEAN_TYPE
         case _: IntLikeType => INT_TYPE
         case PrimitiveType.Long => LONG_TYPE
         case PrimitiveType.Float => FLOAT_TYPE

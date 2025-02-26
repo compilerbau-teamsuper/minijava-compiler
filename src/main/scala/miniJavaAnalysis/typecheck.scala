@@ -341,16 +341,16 @@ def typecheck_stmts(prev: IR.Code, stmts: List[AST.Statement])(ctx: Context): IR
             typecheck_stmts(code, next)(ctx)
         }
         case AST.IfStatement(condition, thenStmt, elseStmt) => {
-            val cond = typecheck_expr(condition)(ctx)
-            if (!is_subtype(cond.ty, IR.PrimitiveType.Boolean)(ctx)) throw new TypeMismatch(cond.ty, IR.PrimitiveType.Boolean)
+            val cond = unbox(typecheck_expr(condition)(ctx))
+            if (cond.ty != IR.PrimitiveType.Boolean) throw new TypeMismatch(cond.ty, IR.PrimitiveType.Boolean)
             val cthen = typecheck_stmts(IR.Code(prev.max_locals, List.empty), List(thenStmt))(ctx)
             val celse = typecheck_stmts(IR.Code(cthen.max_locals, List.empty), elseStmt.toList)(ctx)
             val code = IR.Code(celse.max_locals, prev.code :+ IR.IfStatement(IR.Comparison.ICmpNe, cond, IR.BooleanLiteral(false), cthen.code, celse.code))
             typecheck_stmts(code, next)(ctx)
         }
         case AST.WhileStatement(condition, body) => {
-            val cond = typecheck_expr(condition)(ctx)
-            if (!is_subtype(cond.ty, IR.PrimitiveType.Boolean)(ctx)) throw new TypeMismatch(cond.ty, IR.PrimitiveType.Boolean)
+            val cond = unbox(typecheck_expr(condition)(ctx))
+            if (cond.ty != IR.PrimitiveType.Boolean) throw new TypeMismatch(cond.ty, IR.PrimitiveType.Boolean)
             val cbody = typecheck_stmts(IR.Code(prev.max_locals, List.empty), List(body))(ctx.copy(inside_loop = true))
             val code = IR.Code(cbody.max_locals, prev.code :+ IR.WhileStatement(IR.Comparison.ICmpNe, cond, IR.BooleanLiteral(false), cbody.code))
             typecheck_stmts(code, next)(ctx)
