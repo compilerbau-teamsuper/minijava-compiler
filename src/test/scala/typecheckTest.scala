@@ -18,7 +18,6 @@ object TypecheckTest extends TestSuite {
         }
         test("typecheck_simple") {
             val ast = JavaASTBuilder.parseFromFile("src/test/java/simpleTypeTest.java")
-            println(ast)
             val ir = typecheck(ast)
             val expected = ClassFile(
                 ClassName(List("simpleTypeTest")),

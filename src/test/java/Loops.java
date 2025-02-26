@@ -4,7 +4,7 @@ class Loops {
         int res = 0;
         while(res != 41) {
             res += i;
-            i -= 1;
+            i--;
         }
         return res;
     }   

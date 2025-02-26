@@ -122,7 +122,7 @@ primary
 
 expressionList : expression (',' expression)*;
 
-newObject: 'new' qualifiedName '(' expressionList ')'; // 'new' qualifiedName | methodCall) (classBody)?;
+newObject: 'new' qualifiedName '(' expressionList? ')'; // 'new' qualifiedName | methodCall) (classBody)?;
 
 // Basic Functions
 calcFunction
