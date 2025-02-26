@@ -114,6 +114,12 @@ object endToEnd extends TestSuite {
                 MethodTest("forLoop", Nil, Nil, Integer(41))
             )
         ))
+        test("break and continue") - endToEndFixture(ClassTest(
+            "BreakContinue",
+            List(
+                MethodTest("loop", Nil, Nil, Integer(1))
+            )
+        ))
         test("Math") - endToEndFixture(ClassTest(
             "Math",
             List(
@@ -164,6 +170,12 @@ object endToEnd extends TestSuite {
                 FieldTest(
                     "array", Array(1, 2, 3)
                 )
+            )
+        ))
+        test("Printing") - endToEndFixture(ClassTest(
+            "Printing",
+            List(
+                MethodTest("print42", Nil, Nil, null)
             )
         ))
     }

@@ -77,8 +77,10 @@ extension(statement: TypedStatement) {
     ): Unit = statement match {
         case ExpressionStatement(expression) => 
             expression.translate(mv)
-            val popInsn = if expression.ty.isCategoryTwo() then POP2 else POP
-            mv.visitInsn(popInsn)
+            if !expression.resultsInVoid() then {
+                val popInsn = if expression.ty.isCategoryTwo() then POP2 else POP
+                mv.visitInsn(popInsn)
+            }
         case ReturnStatement(expression) => expression match {
             case Some(expression) => 
                 expression.translate(mv)
@@ -191,7 +193,6 @@ extension(expression: TypedExpression) {
                 INVOKESTATIC, of.internalName(),
                 name, mty.descriptor()
             )
-            if (mty.ret == VoidType) then mv.visitInsn(ICONST_0)
         case InvokeSpecial(of, name, mty, target, args) =>
             target.translate(mv)
             args.foreach(_.translate(mv))
@@ -199,7 +200,6 @@ extension(expression: TypedExpression) {
                 INVOKESPECIAL, of.internalName(),
                 name, mty.descriptor()
             )
-            if (mty.ret == VoidType) then mv.visitInsn(ICONST_0)
         case InvokeInterface(of, name, mty, target, args) =>
             target.translate(mv)
             args.foreach(_.translate(mv))
@@ -355,6 +355,17 @@ extension(expression: TypedExpression) {
             yes.translate(mv)
             //end
             mv.visitLabel(endLabel)
+    }
+
+    def resultsInVoid(): Boolean = {
+        val methodType = expression match {
+            case InvokeInterface(_, _, mty, _, _) => Some(mty)
+            case InvokeSpecial(_, _, mty, _, _) => Some(mty)
+            case InvokeStatic(_, _, mty, _) => Some(mty)
+            case InvokeVirtual(_, _, mty, _, _) => Some(mty)
+            case _ => None  
+        }
+        methodType.map(_.ret == VoidType).getOrElse(false)
     }
 }
 

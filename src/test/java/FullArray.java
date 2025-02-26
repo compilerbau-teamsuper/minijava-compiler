@@ -1,5 +1,6 @@
 class FullArray {
-    int[] array = new int[3];
+    int length = 3;
+    int[] array = new int[length];
 
     int setElement(int index, int newValue) {
         return array[index] = newValue;
@@ -11,7 +12,7 @@ class FullArray {
 
     int sum() {
         int sum = 0;
-        for(int i = 0; i < array.length; i++) {
+        for(int i = 0; i < length; i++) {
             sum += array[i];
         }
         return sum;
