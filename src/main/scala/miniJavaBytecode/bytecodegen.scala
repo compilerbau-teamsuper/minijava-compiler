@@ -214,7 +214,15 @@ extension(expression: TypedExpression) {
                 INVOKEVIRTUAL, of.internalName(),
                 name, mty.descriptor()
             )
-        case New(of) => mv.visitTypeInsn(NEW, of.internalName())
+        case New(of, mty, args) => {
+            mv.visitTypeInsn(NEW, of.internalName())
+            mv.visitInsn(DUP)
+            args.foreach(_.translate(mv))
+            mv.visitMethodInsn(
+                INVOKESPECIAL, of.internalName(),
+                "<init>", mty.descriptor()
+            )
+        }
         case NewArray(element, size) =>
             size.translate(mv)
             element match
@@ -230,20 +238,10 @@ extension(expression: TypedExpression) {
         case BooleanLiteral(value) => value match
             case false => mv.visitInsn(ICONST_0)
             case true => mv.visitInsn(ICONST_1)
-        case IntLikeLiteral(_, value) => value match {
-            case -1 => mv.visitInsn(ICONST_M1)
-            case 0 => mv.visitInsn(ICONST_0)
-            case 1 => mv.visitInsn(ICONST_1)
-            case 2 => mv.visitInsn(ICONST_2)
-            case 3 => mv.visitInsn(ICONST_3)
-            case 4 => mv.visitInsn(ICONST_4)
-            case 5 => mv.visitInsn(ICONST_5)
-            case i if i >= -128 && i <= 127 =>
-                mv.visitIntInsn(BIPUSH, i)
-            case i if i >= -32768 && i <= 32767 =>
-                mv.visitIntInsn(SIPUSH, i)
-            case i => mv.visitLdcInsn(i)
-        }
+        case ByteLiteral(value) => translateInt(mv, value)
+        case ShortLiteral(value) => translateInt(mv, value)
+        case CharLiteral(value) => translateInt(mv, value)
+        case IntLiteral(value) => translateInt(mv, value)
         case LongLiteral(value) => value match {
             case 0L => mv.visitInsn(LCONST_0)
             case 1L => mv.visitInsn(LCONST_1)
@@ -265,50 +263,50 @@ extension(expression: TypedExpression) {
         case NullLiteral =>
             mv.visitInsn(ACONST_NULL)
         case Convert(to, value) =>
-            def conversionError(): Nothing = {
-                throw IllegalArgumentException(
+            value.translate(mv)
+
+            def narrowInt(to: IntLikeType) = to match {
+                case PrimitiveType.Byte => List(I2B)
+                case PrimitiveType.Char => List(I2C)
+                case PrimitiveType.Short => List(I2S)
+                case PrimitiveType.Int => List.empty
+            }
+
+            val instructions = (value.ty, to) match
+                // Identity conversions
+                case (PrimitiveType.Boolean, PrimitiveType.Boolean)
+                | (PrimitiveType.Byte, PrimitiveType.Byte)
+                | (PrimitiveType.Short, PrimitiveType.Short)
+                | (PrimitiveType.Char, PrimitiveType.Char)
+                | (PrimitiveType.Int, PrimitiveType.Int)
+                | (PrimitiveType.Long, PrimitiveType.Long)
+                | (PrimitiveType.Float, PrimitiveType.Float)
+                | (PrimitiveType.Double, PrimitiveType.Double)
+                | (_: ReferenceType, _: ReferenceType) => List.empty
+                // Widening conversions
+                case (PrimitiveType.Byte, PrimitiveType.Short)
+                | (PrimitiveType.Byte, PrimitiveType.Int)
+                | (PrimitiveType.Short, PrimitiveType.Int)
+                | (PrimitiveType.Char, PrimitiveType.Int) => List.empty
+                case (_: IntLikeType, PrimitiveType.Long) => List(I2L)
+                case (_: IntLikeType, PrimitiveType.Float) => List(I2F)
+                case (_: IntLikeType, PrimitiveType.Double) => List(I2D)
+                case (PrimitiveType.Long, PrimitiveType.Float) => List(L2F)
+                case (PrimitiveType.Long, PrimitiveType.Double) => List(L2D)
+                case (PrimitiveType.Float, PrimitiveType.Double) => List(F2D)
+                // Narrowing conversions
+                case (_: IntLikeType, t: IntLikeType) => narrowInt(t)
+                case (PrimitiveType.Long, t: IntLikeType) => L2I :: narrowInt(t)
+                case (PrimitiveType.Float, t: IntLikeType) => F2I :: narrowInt(t)
+                case (PrimitiveType.Float, PrimitiveType.Long) => List(F2L)
+                case (PrimitiveType.Double, t: IntLikeType) => D2I :: narrowInt(t)
+                case (PrimitiveType.Double, PrimitiveType.Long) => List(D2L)
+                case (PrimitiveType.Double, PrimitiveType.Float) => List(D2F)
+                // Forbidden
+                case _ => throw IllegalArgumentException(
                     s"Illegal conversion from ${value.ty} to $to"
                 )
-            }
-            value.translate(mv)
-            def intConversionInsn() = to match {
-                case PrimitiveType.Byte => I2B
-                case PrimitiveType.Char => I2C
-                case PrimitiveType.Double => I2D
-                case PrimitiveType.Float => I2F
-                case PrimitiveType.Long => I2L
-                case PrimitiveType.Short => I2S
-                case PrimitiveType.Int => conversionError()
-            }
-            val instructions = value.ty match {
-                case _: IntLikeType => List(intConversionInsn())
-                case PrimitiveType.Long => to match {
-                    case _: IntLikeType =>
-                        List(L2I, intConversionInsn())
-                    case PrimitiveType.Double => List(L2D)
-                    case PrimitiveType.Float => List(L2F)
-                    case PrimitiveType.Long => conversionError()
-                }
-                case PrimitiveType.Float => to match {
-                    case _: IntLikeType =>
-                        List(F2I, intConversionInsn())
-                    case PrimitiveType.Double => List(F2D)
-                    case PrimitiveType.Long => List(F2L)
-                    case PrimitiveType.Float => conversionError()
-                }
-                case PrimitiveType.Double => to match {
-                    case _: IntLikeType =>
-                        List(D2I, intConversionInsn())
-                    case PrimitiveType.Long => List(D2L)
-                    case PrimitiveType.Float => List(D2F)
-                    case PrimitiveType.Double => conversionError()
-                }
-                case PrimitiveType.Boolean => conversionError()
-                case ObjectType(name) => conversionError()
-                case ArrayType(element) => conversionError()
-                case NullType => conversionError()
-                case VoidType => conversionError()
-            }
+
             instructions.foreach(insn => mv.visitInsn(insn))
         case INeg(value) => translateNeg(mv, value)
         case LNeg(value) => translateNeg(mv, value)
@@ -358,16 +356,23 @@ extension(expression: TypedExpression) {
     }
 
     def resultsInVoid(): Boolean = {
-        val methodType = expression match {
-            case InvokeInterface(_, _, mty, _, _) => Some(mty)
-            case InvokeSpecial(_, _, mty, _, _) => Some(mty)
-            case InvokeStatic(_, _, mty, _) => Some(mty)
-            case InvokeVirtual(_, _, mty, _, _) => Some(mty)
-            case _ => None  
-        }
-        methodType.map(_.ret == VoidType).getOrElse(false)
+        expression.ty == VoidType
     }
 }
+
+def translateInt(mv: MethodVisitor, value: Int) = value match
+   case -1 => mv.visitInsn(ICONST_M1)
+   case 0 => mv.visitInsn(ICONST_0)
+   case 1 => mv.visitInsn(ICONST_1)
+   case 2 => mv.visitInsn(ICONST_2)
+   case 3 => mv.visitInsn(ICONST_3)
+   case 4 => mv.visitInsn(ICONST_4)
+   case 5 => mv.visitInsn(ICONST_5)
+   case i if i >= -128 && i <= 127 =>
+       mv.visitIntInsn(BIPUSH, i)
+   case i if i >= -32768 && i <= 32767 =>
+       mv.visitIntInsn(SIPUSH, i)
+   case i => mv.visitLdcInsn(i)
 
 def translateNeg(mv: MethodVisitor, value: TypedExpression): Unit = {
     value.translate(mv)

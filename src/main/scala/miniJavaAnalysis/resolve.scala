@@ -5,6 +5,11 @@ import miniJavaParser.AST.AmbiguousName
 import miniJavaAnalysis.error.*
 
 case class PackageName(path: List[String] = List.empty)
+
+extension(c: ClassName) {
+    def pkg(): PackageName = PackageName(c.path.slice(0, c.path.length - 1))
+}
+
 private case class Package(name: PackageName = PackageName(), contents: Map[String, ClassName | Package] = Map.empty) {
     def resolve(name: AmbiguousName): Option[(ClassName, AmbiguousName) | Package] = name.components match
         case Nil => Some(this)

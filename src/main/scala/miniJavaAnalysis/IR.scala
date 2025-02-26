@@ -1,6 +1,8 @@
 package miniJavaAnalysis.IR
 
-case class ClassName(path: List[String])
+case class ClassName(path: List[String]) {
+    def name: String = path.last
+}
 
 case class ClassFile(
     name: ClassName,
@@ -58,9 +60,10 @@ object PrimitiveType {
     case object Boolean extends PrimitiveType
 }
 
-case class ObjectType(name: ClassName) extends Type
-case class ArrayType(element: Type) extends Type
-case object NullType extends Type
+sealed trait ReferenceType extends Type
+case class ObjectType(name: ClassName) extends ReferenceType
+case class ArrayType(element: Type) extends ReferenceType
+case object NullType extends ReferenceType
 
 case object VoidType extends Type
 
@@ -69,6 +72,17 @@ object LangTypes {
     val String = ObjectType(ClassName(List("java", "lang", "String")))
     val System = ObjectType(ClassName(List("java", "lang", "System")))
     val PrintStream = ObjectType(ClassName(List("java", "io", "PrintStream")))
+
+    val Number = ObjectType(ClassName(List("java", "lang", "Number")))
+
+    val Boolean = ObjectType(ClassName(List("java", "lang", "Boolean")))
+    val Byte = ObjectType(ClassName(List("java", "lang", "Byte")))
+    val Short = ObjectType(ClassName(List("java", "lang", "Short")))
+    val Character = ObjectType(ClassName(List("java", "lang", "Character")))
+    val Integer = ObjectType(ClassName(List("java", "lang", "Integer")))
+    val Long = ObjectType(ClassName(List("java", "lang", "Long")))
+    val Float = ObjectType(ClassName(List("java", "lang", "Float")))
+    val Double = ObjectType(ClassName(List("java", "lang", "Double")))
 }
 
 sealed trait TypedStatement
@@ -98,28 +112,23 @@ sealed trait TypedExpression(var ty: Type)
 
 // Literals
 case class BooleanLiteral(value: Boolean) extends TypedExpression(PrimitiveType.Boolean)
-/** A literal that is treated like an `int`. The `actual_ty` is only relevant for type checking. */
-case class IntLikeLiteral(actual_ty: IntLikeType, value: Int) extends TypedExpression(actual_ty)
+case class ByteLiteral(value: Byte) extends TypedExpression(PrimitiveType.Byte)
+case class ShortLiteral(value: Short) extends TypedExpression(PrimitiveType.Short)
+case class CharLiteral(value: Char) extends TypedExpression(PrimitiveType.Char)
+case class IntLiteral(value: Int) extends TypedExpression(PrimitiveType.Int)
 case class LongLiteral(value: Long) extends TypedExpression(PrimitiveType.Long)
 case class FloatLiteral(value: Float) extends TypedExpression(PrimitiveType.Float)
 case class DoubleLiteral(value: Double) extends TypedExpression(PrimitiveType.Double)
 case class StringLiteral(value: String) extends TypedExpression(LangTypes.String)
 case object NullLiteral extends TypedExpression(NullType)
 
-def ByteLiteral(value: Byte): IntLikeLiteral = IntLikeLiteral(PrimitiveType.Byte, value)
-def ShortLiteral(value: Short): IntLikeLiteral = IntLikeLiteral(PrimitiveType.Short, value)
-def CharLiteral(value: Char): IntLikeLiteral = IntLikeLiteral(PrimitiveType.Char, value)
-def IntLiteral(value: Int): IntLikeLiteral = IntLikeLiteral(PrimitiveType.Int, value)
-
-// Conversion
-
-/** Converts the primitive expression `value` to the primitive type `to` using
- * widening, rounding or truncating conversion.
+/** Converts the expression `value` to the type `to` using widening, rounding,
+ * truncating or widening reference conversion.
  *
  * This corresponds to bytecode instructions like `i2l`. The specific instruction
- * can be determined from the type of `value` and `to`.
+ * (if any) can be determined from the type of `value` and `to`.
  */
-case class Convert(val to: NumericType, value: TypedExpression) extends TypedExpression(to)
+case class Convert(val to: Type, value: TypedExpression) extends TypedExpression(to)
 
 case class INeg(value: TypedExpression) extends TypedExpression(PrimitiveType.Int)
 case class LNeg(value: TypedExpression) extends TypedExpression(PrimitiveType.Long)
@@ -167,7 +176,7 @@ case class InvokeSpecial(of: ClassName, name: String, mty: MethodType, target: T
 case class InvokeInterface(of: ClassName, name: String, mty: MethodType, target: TypedExpression, args: List[TypedExpression]) extends TypedExpression(mty.ret)
 case class InvokeVirtual(of: ClassName, name: String, mty: MethodType, target: TypedExpression, args: List[TypedExpression]) extends TypedExpression(mty.ret)
 
-case class New(of: ClassName) extends TypedExpression(ObjectType(of))
+case class New(of: ClassName, mty: MethodType, args: List[TypedExpression]) extends TypedExpression(ObjectType(of))
 case class NewArray(element: Type, size: TypedExpression) extends TypedExpression(ArrayType(element))
 
 /** A ternary expression. `result_ty` is only used during type checking. */

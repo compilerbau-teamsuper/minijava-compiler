@@ -32,15 +32,15 @@ object TypecheckTest extends TestSuite {
                     "Object")),"<init>",MethodType(List(),VoidType),LoadLocal(ObjectType(
                     ClassName(List("simpleTypeTest"))),0),List())), ExpressionStatement(
                     DupPutField(ClassName(List("simpleTypeTest")),"field",LoadLocal(ObjectType(
-                    ClassName(List("simpleTypeTest"))),0),IntLikeLiteral(PrimitiveType.Int,0))), 
+                    ClassName(List("simpleTypeTest"))),0),IntLiteral(0))), 
                     ExpressionStatement(DupPutField(ClassName(List("simpleTypeTest")),
                     "field",LoadLocal(ObjectType(ClassName(List("simpleTypeTest"))),0),
-                    IntLikeLiteral(PrimitiveType.Int,0))), ReturnStatement(None))))),
+                    IntLiteral(0))), ReturnStatement(None))))),
                     Method(Modifiers.empty,"noopTest",MethodType(List(),VoidType),Some(Code(1,List(
                         ReturnStatement(None))))),
                     Method(Modifiers.empty,"assignmentTest",MethodType(List(),PrimitiveType.Int),Some(Code(2,List(
-                        ExpressionStatement(DupStoreLocal(1,IntLikeLiteral(PrimitiveType.Int,0))),
-                        ExpressionStatement(DupStoreLocal(1,IntLikeLiteral(PrimitiveType.Int,1))),
+                        ExpressionStatement(DupStoreLocal(1,IntLiteral(0))),
+                        ExpressionStatement(DupStoreLocal(1,IntLiteral(1))),
                         ReturnStatement(Some(LoadLocal(PrimitiveType.Int,1))))))),
                     Method(Modifiers.empty,"getField",MethodType(List(),PrimitiveType.Int),Some(Code(1,List(
                         ReturnStatement(Some(GetField(PrimitiveType.Int,ClassName(List("simpleTypeTest")),"field",LoadLocal(ObjectType(ClassName(List("simpleTypeTest"))),0)))))))),

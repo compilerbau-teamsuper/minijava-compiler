@@ -14,7 +14,10 @@ import java.io.ObjectOutputStream.PutField
 
 def is_equivalent(a: TypedExpression, b: TypedExpression): Boolean = if (a == b) true else (a, b) match
     case (BooleanLiteral(a), BooleanLiteral(b)) => a == b
-    case (IntLikeLiteral(_, a), IntLikeLiteral(_, b)) => a == b
+    case (ByteLiteral(a), ByteLiteral(b)) => a == b
+    case (ShortLiteral(a), ShortLiteral(b)) => a == b
+    case (CharLiteral(a), CharLiteral(b)) => a == b
+    case (IntLiteral(a), IntLiteral(b)) => a == b
     case (LongLiteral(a), LongLiteral(b)) => a == b
     case (StringLiteral(a), StringLiteral(b)) => a == b
     case (NullLiteral, NullLiteral) => true
@@ -42,15 +45,18 @@ def is_equivalent(a: TypedExpression, b: TypedExpression): Boolean = if (a == b)
 
 def is_sideeffect_free(expr: TypedExpression): Boolean = expr match
     case BooleanLiteral(_)
-    | IntLikeLiteral(_, _)
+    | ByteLiteral(_)
+    | ShortLiteral(_)
+    | CharLiteral(_)
+    | IntLiteral(_)
     | LongLiteral(_)
     | StringLiteral(_)
     | NullLiteral
     | LoadLocal(_, _) => true
     case Convert(_, value) => is_sideeffect_free(value)
     case IBinOp(left, Div | Mod, right) => right match {
-        case IntLikeLiteral(_, 0) => false
-        case IntLikeLiteral(_, _) => is_sideeffect_free(left)
+        case IntLiteral(0) => false
+        case IntLiteral(_) => is_sideeffect_free(left)
         case _ => false
     }
     case IBinOp(left, _, right) => is_sideeffect_free(left) && is_sideeffect_free(right)
@@ -83,7 +89,7 @@ def decide_comparison(cmp: Comparison, left: TypedExpression, right: TypedExpres
         case ICmpEq => if (l == r) DefiniteYes else DefiniteNo
         case ICmpNe => if (l != r) DefiniteYes else DefiniteNo
         case _ => ???
-    case (IntLikeLiteral(_, l), IntLikeLiteral(_, r)) => cmp match
+    case (IntLiteral(l), IntLiteral(r)) => cmp match
         case ICmpEq => if (l == r) DefiniteYes else DefiniteNo
         case ICmpGe => if (l >= r) DefiniteYes else DefiniteNo
         case ICmpGt => if (l > r) DefiniteYes else DefiniteNo
@@ -107,14 +113,26 @@ def decide_comparison(cmp: Comparison, left: TypedExpression, right: TypedExpres
 
 def simplify_expr(expr: TypedExpression): TypedExpression = expr match
     case BooleanLiteral(_)
-    | IntLikeLiteral(_, _)
+    | ByteLiteral(_)
+    | ShortLiteral(_)
+    | CharLiteral(_)
+    | IntLiteral(_)
     | LongLiteral(_)
     | FloatLiteral(_)
     | DoubleLiteral(_)
     | StringLiteral(_)
     | NullLiteral => expr
     case Convert(to, expr) => simplify_expr(expr) match
-        case IntLikeLiteral(actual_ty, value) => to match
+        case ByteLiteral(value) => to match
+            case PrimitiveType.Byte => ByteLiteral(value)
+            case PrimitiveType.Short => ShortLiteral(value)
+            case PrimitiveType.Char => CharLiteral(value.toChar)
+            case PrimitiveType.Int => IntLiteral(value)
+            case PrimitiveType.Long => LongLiteral(value)
+            case PrimitiveType.Float => FloatLiteral(value)
+            case PrimitiveType.Double => DoubleLiteral(value)
+            case _ => ???
+        case ShortLiteral(value) => to match
             case PrimitiveType.Byte => ByteLiteral(value.toByte)
             case PrimitiveType.Short => ShortLiteral(value.toShort)
             case PrimitiveType.Char => CharLiteral(value.toChar)
@@ -122,6 +140,25 @@ def simplify_expr(expr: TypedExpression): TypedExpression = expr match
             case PrimitiveType.Long => LongLiteral(value)
             case PrimitiveType.Float => FloatLiteral(value)
             case PrimitiveType.Double => DoubleLiteral(value)
+            case _ => ???
+        case CharLiteral(value) => to match
+            case PrimitiveType.Byte => ByteLiteral(value.toByte)
+            case PrimitiveType.Short => ShortLiteral(value.toShort)
+            case PrimitiveType.Char => CharLiteral(value)
+            case PrimitiveType.Int => IntLiteral(value)
+            case PrimitiveType.Long => LongLiteral(value)
+            case PrimitiveType.Float => FloatLiteral(value)
+            case PrimitiveType.Double => DoubleLiteral(value)
+            case _ => ???
+        case IntLiteral(value) => to match
+            case PrimitiveType.Byte => ByteLiteral(value.toByte)
+            case PrimitiveType.Short => ShortLiteral(value.toShort)
+            case PrimitiveType.Char => CharLiteral(value.toChar)
+            case PrimitiveType.Int => IntLiteral(value)
+            case PrimitiveType.Long => LongLiteral(value)
+            case PrimitiveType.Float => FloatLiteral(value)
+            case PrimitiveType.Double => DoubleLiteral(value)
+            case _ => ???
         case LongLiteral(value) => to match
             case PrimitiveType.Byte => ByteLiteral(value.toByte)
             case PrimitiveType.Short => ShortLiteral(value.toShort)
@@ -130,6 +167,7 @@ def simplify_expr(expr: TypedExpression): TypedExpression = expr match
             case PrimitiveType.Long => LongLiteral(value)
             case PrimitiveType.Float => FloatLiteral(value)
             case PrimitiveType.Double => DoubleLiteral(value)
+            case _ => ???
         case FloatLiteral(value) => to match
             case PrimitiveType.Byte => ByteLiteral(value.toByte)
             case PrimitiveType.Short => ShortLiteral(value.toShort)
@@ -138,6 +176,7 @@ def simplify_expr(expr: TypedExpression): TypedExpression = expr match
             case PrimitiveType.Long => LongLiteral(value.toLong)
             case PrimitiveType.Float => FloatLiteral(value)
             case PrimitiveType.Double => DoubleLiteral(value)
+            case _ => ???
         case DoubleLiteral(value) => to match
             case PrimitiveType.Byte => ByteLiteral(value.toByte)
             case PrimitiveType.Short => ShortLiteral(value.toShort)
@@ -146,6 +185,9 @@ def simplify_expr(expr: TypedExpression): TypedExpression = expr match
             case PrimitiveType.Long => LongLiteral(value.toLong)
             case PrimitiveType.Float => FloatLiteral(value.toFloat)
             case PrimitiveType.Double => DoubleLiteral(value)
+            case _ => ???
+        case NullLiteral => NullLiteral
+        case value if value.ty == to => value
         case value => Convert(to, value)
 
     case BBinOp(left, op, right) => (op, simplify_expr(left), simplify_expr(right)) match
@@ -165,25 +207,25 @@ def simplify_expr(expr: TypedExpression): TypedExpression = expr match
         case (op, a, b) => BBinOp(a, op, b)
 
     case INeg(value) => simplify_expr(value) match
-        case IntLikeLiteral(ty, value) => IntLiteral(-value)
+        case IntLiteral(value) => IntLiteral(-value)
         case value => INeg(value)
     case IBinOp(left, op, right) => (op, simplify_expr(left), simplify_expr(right)) match {
-        case (Add, IntLikeLiteral(_, a), IntLikeLiteral(_, b)) => IntLiteral(a + b)
-        case (Add, l, IntLikeLiteral(_, 0)) => l
-        case (Add, IntLikeLiteral(_, 0), r) => r
-        case (Sub, IntLikeLiteral(_, a), IntLikeLiteral(_, b)) => IntLiteral(a - b)
-        case (Sub, l, IntLikeLiteral(_, 0)) => l
-        case (Sub, IntLikeLiteral(_, 0), r) => INeg(r)
-        case (Mul, IntLikeLiteral(_, a), IntLikeLiteral(_, b)) => IntLiteral(a * b)
-        case (Mul, l, IntLikeLiteral(_, 0)) if is_sideeffect_free(l) => IntLiteral(0)
-        case (Mul, IntLikeLiteral(_, 0), r) if is_sideeffect_free(r) => IntLiteral(0)
-        case (Mul, l, IntLikeLiteral(_, 1)) => l
-        case (Mul, IntLikeLiteral(_, 1), r) => r
-        case (Mul, l, IntLikeLiteral(_, -1)) => INeg(l)
-        case (Mul, IntLikeLiteral(_, -1), r) => INeg(r)
-        case (Div, IntLikeLiteral(_, a), IntLikeLiteral(_, b)) if b != 0 => IntLiteral(a / b)
-        case (Div, l, IntLikeLiteral(_, 1)) => l
-        case (Div, l, IntLikeLiteral(_, -1)) => INeg(l)
+        case (Add, IntLiteral(a), IntLiteral(b)) => IntLiteral(a + b)
+        case (Add, l, IntLiteral(0)) => l
+        case (Add, IntLiteral(0), r) => r
+        case (Sub, IntLiteral(a), IntLiteral(b)) => IntLiteral(a - b)
+        case (Sub, l, IntLiteral(0)) => l
+        case (Sub, IntLiteral(0), r) => INeg(r)
+        case (Mul, IntLiteral(a), IntLiteral(b)) => IntLiteral(a * b)
+        case (Mul, l, IntLiteral(0)) if is_sideeffect_free(l) => IntLiteral(0)
+        case (Mul, IntLiteral(0), r) if is_sideeffect_free(r) => IntLiteral(0)
+        case (Mul, l, IntLiteral(1)) => l
+        case (Mul, IntLiteral(1), r) => r
+        case (Mul, l, IntLiteral(-1)) => INeg(l)
+        case (Mul, IntLiteral(-1), r) => INeg(r)
+        case (Div, IntLiteral(a), IntLiteral(b)) if b != 0 => IntLiteral(a / b)
+        case (Div, l, IntLiteral(1)) => l
+        case (Div, l, IntLiteral(-1)) => INeg(l)
         // TODO: do more optimization.
         case (op, l, r) => IBinOp(l, op, r)
     }
@@ -262,7 +304,7 @@ def simplify_expr(expr: TypedExpression): TypedExpression = expr match
     case InvokeInterface(of, name, mty, target, args) => InvokeInterface(of, name, mty, simplify_expr(target), args.map(simplify_expr))
     case InvokeVirtual(of, name, mty, target, args) => InvokeVirtual(of, name, mty, simplify_expr(target), args.map(simplify_expr))
 
-    case New(of) => New(of)
+    case New(of, mty, args) => New(of, mty, args.map(simplify_expr))
     case NewArray(element, size) => NewArray(element, simplify_expr(size))
 
     case Ternary(ty, cmp, left, right, yes, no) => decide_comparison(cmp, simplify_expr(left), simplify_expr(right)) match
