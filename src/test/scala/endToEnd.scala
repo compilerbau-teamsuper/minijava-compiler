@@ -134,5 +134,37 @@ object endToEnd extends TestSuite {
                 )
             )
         ))
+        test("Array") - endToEndFixture(ClassTest(
+            "FullArray",
+            List(
+                MethodTest(
+                    "setElement",
+                    List(Integer(0), Integer(1)),
+                    List(classOf[Int], classOf[Int]),
+                    Integer(1)
+                ),
+                MethodTest(
+                    "setElement",
+                    List(Integer(1), Integer(2)),
+                    List(classOf[Int], classOf[Int]),
+                    Integer(2)
+                ),
+                MethodTest(
+                    "setElement",
+                    List(Integer(2), Integer(3)),
+                    List(classOf[Int], classOf[Int]),
+                    Integer(3)
+                ),
+                MethodTest(
+                    "getElement",
+                    List(Integer(1)),
+                    List(classOf[Int]),
+                    Integer(2)
+                ),
+                FieldTest(
+                    "array", Array(1, 2, 3)
+                )
+            )
+        ))
     }
 }
