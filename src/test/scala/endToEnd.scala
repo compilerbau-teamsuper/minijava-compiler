@@ -183,5 +183,25 @@ object endToEnd extends TestSuite {
                 MethodTest("print42", Nil, Nil, null)
             )
         ))
+        test("Demo") - endToEndFixture(ClassTest(
+            "Demo",
+            List(
+                MethodTest(
+                    "isPrime", 
+                    List(Integer(17)), List(classOf[Int]), 
+                    java.lang.Boolean(true)
+                ),
+                MethodTest(
+                    "isPrime", 
+                    List(Integer(49)), List(classOf[Int]), 
+                    java.lang.Boolean(false)
+                ),
+                MethodTest(
+                    "fib",
+                    List(Integer(7)), List(classOf[Int]),
+                    Integer(13)
+                )
+            )
+        ))
     }
 }

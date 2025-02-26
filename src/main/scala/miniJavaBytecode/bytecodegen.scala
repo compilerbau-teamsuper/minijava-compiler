@@ -432,7 +432,7 @@ extension(typ: Type) {
         case PrimitiveType.Double => DOUBLE_TYPE 
         case VoidType => VOID_TYPE
         case ObjectType(name) => getObjectType(name.internalName())
-        case ArrayType(element) => getType("[" + element.internalName())
+        case ArrayType(element) => getType("[" + element.descriptor())
         case NullType => getType(s"L$OBJECT;")
     }
 }
