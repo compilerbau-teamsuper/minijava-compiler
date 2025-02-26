@@ -14,7 +14,12 @@ object Loader extends ClassLoader {
     }
 }
 
-case class MethodTest(name: String, arguments: List[Object], expectedResult: Object)
+case class MethodTest(
+    name: String, 
+    arguments: List[Object],
+    argumentTypes: List[Class[?]], 
+    expectedResult: Object
+)
 
 case class FieldTest(name: String, expectedValue: Object)
 
@@ -38,8 +43,16 @@ def endToEndFixture(toTest: ClassTest): Unit = {
         constructor.setAccessible(true);
         val instance = constructor.newInstance();
         toTest.actions.foreach{ 
-            case MethodTest(toCall, args, expected) =>
-                val method = clss.getDeclaredMethod(toCall)
+            case MethodTest(toCall, args, argTypes, expected) =>
+                val method = try { 
+                    clss.getDeclaredMethod(toCall, argTypes: _*) 
+                } catch {
+                    case e: java.lang.NoSuchMethodException =>
+                        throw java.lang.NoSuchMethodException(
+                            s"${e.getMessage()}. Available methods: " +
+                            s"${clss.getDeclaredMethods().mkString(", ")}"
+                        )
+                }
                 method.setAccessible(true)
                 val result = method.invoke(instance, args: _*)
                 if (result != expected) {
@@ -76,26 +89,47 @@ object endToEnd extends TestSuite {
         test("simpleTypeTest") - endToEndFixture(ClassTest(
             "simpleTypeTest",
             List(
-                MethodTest("noopTest", Nil, null),
-                MethodTest("assignmentTest", Nil, Integer(1)),
-                MethodTest("invokeGetField", Nil, Integer(0)),
+                MethodTest("noopTest", Nil, Nil, null),
+                MethodTest("assignmentTest", Nil, Nil, Integer(1)),
+                MethodTest("invokeGetField", Nil, Nil, Integer(0)),
                 FieldTest("field", Integer(0))
+            )
+        ))
+        test("SimpleIf") - endToEndFixture(ClassTest(
+            "SimpleIf",
+            List(
+                MethodTest("answer", Nil, Nil, Integer(42))
+            )
+        ))
+        test("SimpleWhile") - endToEndFixture(ClassTest(
+            "SimpleWhile",
+            List(
+                MethodTest("six", Nil, Nil, Integer(6))
             )
         ))
         test("Loops") - endToEndFixture(ClassTest(
             "Loops",
             List(
-                MethodTest("whileLoop", Nil, Integer(41)),
-                MethodTest("forLoop", Nil, Integer(41))
+                MethodTest("whileLoop", Nil, Nil, Integer(41)),
+                MethodTest("forLoop", Nil, Nil, Integer(41))
             )
         ))
         test("Math") - endToEndFixture(ClassTest(
             "Math",
             List(
-                MethodTest("facRec", List(Integer(4)), Integer(24)),
-                MethodTest("facImp", List(Integer(6)), Integer(720)),
                 MethodTest(
-                    "circleArea", List(java.lang.Float(5)), 
+                    "facRec", 
+                    List(Integer(4)), List(classOf[Int]), 
+                    Integer(24)
+                ),
+                MethodTest(
+                    "facImp", 
+                    List(Integer(6)), List(classOf[Int]),
+                    Integer(720)
+                ),
+                MethodTest(
+                    "circleArea", 
+                    List(java.lang.Float(5)), List(classOf[Float]), 
                     java.lang.Float(78.5f)
                 )
             )
