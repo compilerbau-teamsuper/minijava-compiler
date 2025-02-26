@@ -229,15 +229,15 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     val variables = ctx.variableDeclarator().asScala.map { declarator =>
       val name = declarator.Identifier().getText
       val initializer = if declarator.variableInitializer() != null
-        then Option(visitVariableInitializer(declarator.variableInitializer()))
+        then Some(visitVariableInitializer(declarator.variableInitializer()))
         else None
       (name, initializer)
     }.toList
     variables.foreach(v =>
       v(1) match {
         case Some(x) => if !modifiers.contains(Modifier.Static) then currentFields.get(currentThis) match {
-          case Some(l) => currentFields = currentFields + (currentThis -> l.addOne(ExpressionStatement(Assignment(FieldAccess(ExpressionName(AmbiguousName(List("this"))), v._1), x))))
-          case None => currentFields = currentFields + (currentThis -> ListBuffer(ExpressionStatement(Assignment(FieldAccess(ExpressionName(AmbiguousName(List("this"))), v._1), x))))
+          case Some(l) => currentFields = currentFields + (currentThis -> l.addOne(ExpressionStatement(Assignment(ExpressionName(AmbiguousName(List(v._1))), x))))
+          case None => currentFields = currentFields + (currentThis -> ListBuffer(ExpressionStatement(Assignment(ExpressionName(AmbiguousName(List(v._1))), x))))
         }
         case None =>
       }
@@ -255,7 +255,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     t match {
       case PrimitiveType.Int => AST.IntLiteral(0)
       case PrimitiveType.Boolean => AST.BooleanLiteral(false)
-      case PrimitiveType.Char => AST.CharacterLiteral('0')
+      case PrimitiveType.Char => AST.CharacterLiteral('\u0000')
       case PrimitiveType.Short => AST.ShortLiteral(0)
       case PrimitiveType.Long => AST.LongLiteral(0)
       case PrimitiveType.Float => AST.FloatLiteral(0)
@@ -267,7 +267,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
 
   private def buildStandardConstructor(modifiers: List[Modifier], name: String): ConstructorDeclaration = {
     val construct = ConstructorInvocation("super", List.empty)
-    val body = List(ReturnStatement(None))
+    val ret = ReturnStatement(None)
+    val body = currentFields.get(name).map(_.toList :+ ret).getOrElse(List(ret))
     ConstructorDeclaration(modifiers, name, List(), construct, body)
   }
 

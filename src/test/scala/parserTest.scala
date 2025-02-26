@@ -3,6 +3,7 @@ package test
 import utest.*
 import miniJavaParser.JavaASTBuilder
 import miniJavaParser.AST.*
+import miniJavaParser.AST.BinaryOperator.*
 
 object ParserTest extends TestSuite {
   val tests = Tests {
@@ -74,9 +75,20 @@ object ParserTest extends TestSuite {
     test("calculations parsing") {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/calculationsTest.java")
       val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public), "calculationsTest", AmbiguousName(List("Object")), List(), List(
-        ConstructorDeclaration(List(Modifier.Public), "calculationsTest", List(),
-          ConstructorInvocation("super",List()),
-          List(ReturnStatement(None))),
+        ConstructorDeclaration(List(Modifier.Public),"calculationsTest",List(),
+        ConstructorInvocation("super",List()),List(ExpressionStatement(Assignment(
+          ExpressionName(AmbiguousName(List("f"))),BinaryExpression(BooleanLiteral(true),
+          Or,BooleanLiteral(false)))), ExpressionStatement(Assignment(ExpressionName(
+          AmbiguousName(List("g"))),BinaryExpression(BinaryExpression(ExpressionName(
+          AmbiguousName(List("f"))),Xor,BooleanLiteral(true)),Xor,BinaryExpression(
+          BinaryExpression(MethodCall(None,"alwaysTrue",List()),Equals,
+          BinaryExpression(BooleanLiteral(true),Equals,BinaryExpression(IntLiteral(5),
+          Less,IntLiteral(4)))),Xor,BooleanLiteral(true))))), 
+          ExpressionStatement(Assignment(ExpressionName(AmbiguousName(List("x"))),
+          BinaryExpression(IntLiteral(0),Subtract,BinaryExpression(MethodCall(None,
+          "alwaysOne",List()),Subtract,BinaryExpression(BinaryExpression(IntLiteral(5),
+          Multiply,BinaryExpression(IntLiteral(2),Divide,IntLiteral(4))),Add,
+          IntLiteral(3)))))), ReturnStatement(None))),
         VarOrFieldDeclaration(List(), PrimitiveType.Boolean, "f", BooleanLiteral(false)),
         VarOrFieldDeclaration(List(), PrimitiveType.Boolean, "g", BooleanLiteral(false)),
         VarOrFieldDeclaration(List(), PrimitiveType.Int, "x", IntLiteral(0)),
@@ -148,9 +160,12 @@ object ParserTest extends TestSuite {
     test("array Test") {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/arrayTest.java")
       val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public), "arrayTest", AmbiguousName(List("Object")), List(), List(
-        ConstructorDeclaration(List(Modifier.Public), "arrayTest", List(),
-          ConstructorInvocation("super",List()),
-          List(ReturnStatement(None))),
+        ConstructorDeclaration(List(Modifier.Public),"arrayTest",List(),
+        ConstructorInvocation("super",List()),List(ExpressionStatement(
+          Assignment(ExpressionName(AmbiguousName(List("numbers"))),ArrayInitializer(
+          List(IntLiteral(1), IntLiteral(2), IntLiteral(3))))), ExpressionStatement(
+          Assignment(ExpressionName(AmbiguousName(List("mail"))),NewArray(ObjectType(
+          AmbiguousName(List("String"))),IntLiteral(3)))), ReturnStatement(None))),
         VarOrFieldDeclaration(List(), ArrayType(PrimitiveType.Int), "numbers", NullLiteral),
         VarOrFieldDeclaration(List(), ArrayType(ObjectType(AmbiguousName(List("String")))), "mail", NullLiteral),
         MethodDeclaration(List(), ArrayType(ObjectType(AmbiguousName(List("String")))), "makeMail", List(), Option(Block(List(
