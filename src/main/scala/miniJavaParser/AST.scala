@@ -52,7 +52,8 @@ case class ConstructorDeclaration(
                                    modifiers: List[Modifier],
                                    name: String,
                                    parameters: List[Parameter],
-                                   body: Block
+                                   construct: ConstructorInvocation,
+                                   body: List[Statement]
                                  ) extends ClassMember
 
 // Parameter
@@ -69,16 +70,18 @@ case class ReturnStatement(expression: Option[Expression]) extends Statement
 case class BreakStatement() extends Statement
 case class ContinueStatement() extends Statement
 
+case class ConstructorInvocation(target: "this" | "super", args: List[Expression]) extends ASTNode
 
 // Expressions
 sealed trait Expression extends ASTNode
+case object ThisExpression extends Expression
 case class BinaryExpression(left: Expression, operator: BinaryOperator, right: Expression) extends Expression
 case class MethodCall(target: Option[Expression | AmbiguousName], name: String, args: List[Expression]) extends Expression  // ToDo: In UML eintragen
 case class FieldAccess(target: Expression, name: String) extends Expression
 case class ArrayInitializer(initializers: List[Expression]) extends Expression
 case class NewArray(arrayType: Type, size: Expression) extends Expression
 case class ArrayAccess(target: Expression, index: Expression) extends Expression // ToDo: Mehrdimensionale arrays
-case class NewObject(constructorCall: MethodCall) extends Expression
+case class NewObject(namme: AmbiguousName, args: List[Expression]) extends Expression
 case class Assignment(left: ExpressionName | FieldAccess | ArrayAccess, right: Expression) extends Expression
 case class ExpressionName(name: AmbiguousName) extends Expression
 

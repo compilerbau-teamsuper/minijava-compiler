@@ -86,7 +86,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     currentThis = oldCurrentThis
     currentSuper = oldCurrentSuper
     val hasConstructor = body.exists(x => x match {
-      case ConstructorDeclaration(_,_,_,_) => true
+      case ConstructorDeclaration(_,_,_,_,_) => true
       case _ => false
     })
     val constructorModifiers = modifiers.intersect(List(Modifier.Public, Modifier.Protected, Modifier.Private))
@@ -177,7 +177,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       val f = visitFieldDec(ctx.fieldDeclaration(), false)
       if f.sizeIs == 1 then f.head else f
     } else if (ctx.constructorDeclaration() != null) {
-      getConstructorDeclaration(ctx.constructorDeclaration(), currentClass)
+      visitConstructorDeclaration(ctx.constructorDeclaration())
     } else if (ctx.classDeclaration() != null) {
       visitClassDeclaration(ctx.classDeclaration()) // Nested class
     } else if (ctx.interfaceDeclaration() != null) {
@@ -266,34 +266,30 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   }
 
   private def buildStandardConstructor(modifiers: List[Modifier], name: String): ConstructorDeclaration = {
-    val body = Block(
-      ExpressionStatement(MethodCall(Some(currentSuper), "<init>", List())) :: (currentFields.get(name) match {
-      case Some(l) => l.toList ::: List(ReturnStatement(None))
-      case None =>  List(ReturnStatement(None))
-    }))
-    ConstructorDeclaration(modifiers, name, List(), body)
+    val construct = ConstructorInvocation("super", List.empty)
+    val body = List(ReturnStatement(None))
+    ConstructorDeclaration(modifiers, name, List(), construct, body)
   }
 
-  private def getConstructorDeclaration(ctx: ConstructorDeclarationContext, name: String): ConstructorDeclaration = {
+  override def visitConstructorDeclaration(ctx: ConstructorDeclarationContext): ConstructorDeclaration = {
     val modifiers = Option(ctx.accessModifier())
       .map(am => toModifier(am.getText))
       .toList
     val name = ctx.Identifier().getText
     val parameters = getFormalParameters(ctx.formalParameters())
-    var body = visitBlock(ctx.block())
-    if !body.statements.contains(ReturnStatement(None)) then body = Block(body.statements ::: List(ReturnStatement(None)))
-    currentFields.get(name) match {
-      case Some(l) =>
-        if body.statements.exists(s => s match{
-          case ExpressionStatement(MethodCall(_,"super",_)) => true
-          case _ => false
-        }) then
-          body = Block(List(body.statements.head) ::: l.toList ::: body.statements.tail)
-        else
-          body = Block(l.toList ::: body.statements)
-      case None =>
-    }
-    ConstructorDeclaration(modifiers, name, parameters, body)
+  
+    val construct = if ctx.constructorBody().explicitConstructorInvocation() != null
+      then visitExplicitConstructorInvocation(ctx.constructorBody().explicitConstructorInvocation())
+      else ConstructorInvocation("super", List.empty)
+
+    val body: ListBuffer[Statement] = ListBuffer()
+    ctx.constructorBody().methodBodyStatement().asScala.foreach(s => visitMethodBodyStmt(s) match {
+      case sm: Statement => body.addOne(sm)
+      case sms: List[Statement] => body.addAll(sms)
+    })
+    if !body.contains(ReturnStatement(None)) then body.addOne(ReturnStatement(None))
+  
+    ConstructorDeclaration(modifiers, name, parameters, construct, body.toList)
   }
 
   private def getFormalParameters(ctx: FormalParametersContext): List[Parameter] = {
@@ -326,6 +322,19 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       case sms: List[Statement] => statements.addAll(sms)
     })
     Block(statements.toList)
+  }
+
+  override def visitExplicitConstructorInvocation(ctx: ExplicitConstructorInvocationContext): ConstructorInvocation = {
+    val target: "this" | "super" = ctx.getChild(0).getText() match
+      case t: ("this" | "super") => t
+      case _ => ???
+
+    val args = if ctx.expressionList() != null then
+      ctx.expressionList().expression().asScala.map(visitExpression).toList
+    else
+      List.empty
+
+    ConstructorInvocation(target, args)
   }
 
   // Methode: visitBlock
@@ -396,8 +405,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     if ctx == null then return null
     ctx.getChild(0) match {
       case b: BlockContext => visitBlock(b)
-      case m: MethodCallContext => ExpressionStatement(visitMethodCall(m))
-      case a: AssignmentContext => ExpressionStatement(visitAssignment(a))
+      case e: ExpressionContext => ExpressionStatement(visitExpression(e))
       case i: (IfThenContext | IfThenElseContext) => visitIfThenElse(i)
       case q: QualifiedNameContext =>
         ctx.calcUnOp().getText match {
@@ -413,13 +421,14 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     }
   }
 
-  override def visitAssignment(ctx: AssignmentContext): Assignment = {
-    val left: ExpressionName | FieldAccess | ArrayAccess = ctx.getChild(0) match {
-      case v: QualifiedNameContext => ExpressionName(buildAmbiguousName(v))
-      case a: ArrayAccessContext => visitArrayAccess(a)
-    }
-    val pre_right = visitExpression(ctx.expression())
-    val right = ctx.assignmentType().getText match {
+  private def visitAssignment(a: AssignmentContext): Assignment = {
+    val (left, ty, r) = a match
+      case q: AssignQualifiedNameContext => (ExpressionName(buildAmbiguousName(q.qualifiedName())) : ExpressionName | FieldAccess | ArrayAccess, q.assignmentType(), q.expression())
+      case f: AssignFieldAccessContext => (FieldAccess(visitPrimary(f.primary()), f.Identifier().getText) : ExpressionName | FieldAccess | ArrayAccess, f.assignmentType(), f.expression())
+      case a: AssignArrayAccessContext if a.qualifiedName() != null => (ArrayAccess(ExpressionName(buildAmbiguousName(a.qualifiedName())), visitExpression(a.expression(0))) : ExpressionName | FieldAccess | ArrayAccess, a.assignmentType(), a.expression(1))
+      case a: AssignArrayAccessContext if a.primary() != null => (ArrayAccess(visitPrimary(a.primary()), visitExpression(a.expression(0))) : ExpressionName | FieldAccess | ArrayAccess, a.assignmentType(), a.expression(1))
+    val pre_right: Expression = visitExpression(r)
+    val right = ty.getText match {
       case "=" => pre_right
       case "+=" => BinaryExpression(left, BinaryOperator.Add, pre_right)
       case "-=" => BinaryExpression(left, BinaryOperator.Subtract, pre_right)
@@ -427,24 +436,24 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       case "/=" => BinaryExpression(left, BinaryOperator.Divide, pre_right)
       case "%=" => BinaryExpression(left, BinaryOperator.Modulo, pre_right)
       case "&=" => BinaryExpression(left, BinaryOperator.And, pre_right)
-      case "|=" =>BinaryExpression(left, BinaryOperator.Or, pre_right)
+      case "|=" => BinaryExpression(left, BinaryOperator.Or, pre_right)
       case "^=" => BinaryExpression(left, BinaryOperator.Xor, pre_right)
     }
     Assignment(left, right)
   }
 
   override def visitMethodCall(ctx: MethodCallContext): MethodCall = {
-    val parts = ctx.qualifiedName().Identifier().asScala.map(p => p.getText).toList
-    val target =
-      if ctx.expression() != null then
-        Option(visitExpression(ctx.expression()))
-      else
-        if parts.sizeIs == 1 then None else Option(AmbiguousName(parts.slice(0, parts.length - 1)))
-
-    if ctx.expressionList() != null then
-      MethodCall(target, parts.last, ctx.expressionList().expression().asScala.map(visitExpression).toList)
+    val target = if ctx.qualifiedName() != null then
+      Some(buildAmbiguousName(ctx.qualifiedName()))
+    else if ctx.primary() != null then
+      Some(visitPrimary(ctx.primary()))
     else
-      MethodCall(target, parts.last, List())
+      None
+    val name = ctx.Identifier().getText
+    if ctx.expressionList() != null then
+      MethodCall(target, name, ctx.expressionList().expression().asScala.map(visitExpression).toList)
+    else
+      MethodCall(target, name, List())
   }
 
   private def visitIfThenElse(ctx: IfThenContext | IfThenElseContext): IfStatement = {
@@ -488,21 +497,29 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   override def visitExpression(ctx: ExpressionContext): Expression = {
     if ctx == null then return null
     ctx.getChild(0) match {
-      case v: ValueContext => visitValueOrPrimary(v)
+      case v: ValueContext => visitValue(v)
       case o: NewObjectContext => visitNewObject(o)
       case b: BooleanFunctionContext => visitBooleanFunction(b)
       case c: CalcFunctionContext => visitCalcFunction(c)
+      case a: AssignmentContext => visitAssignment(a)
     }
   }
 
-  private def visitValueOrPrimary(ctx: ValueContext | PrimaryContext) : Expression = {
+  override def visitValue(ctx: ValueContext) : Expression = {
     ctx.getChild(0) match {
-      case c: TerminalNodeImpl if c.toString == "(" => visitExpression(ctx.getChild(1) match {case e: ExpressionContext => e})
-      case l: LiteralContext => visitLiteral(l)
-      case q: QualifiedNameContext => ExpressionName(buildAmbiguousName(q))
-      case m: MethodCallContext => visitMethodCall(m)
-      case a: ArrayAccessContext => visitArrayAccess(a)
+      case p: PrimaryContext => visitPrimary(p)
+      case e: QualifiedNameContext => ExpressionName(buildAmbiguousName(e))
     }
+  }
+
+  private def visitPrimary(ctx: PrimaryContext): Expression = {
+    ctx match
+      case l: LiteralContext => visitLiteral(l)
+      case t: ThisContext => ThisExpression
+      case n: NestedContext => visitExpression(n.expression())
+      case f: FieldAccessContext => visitFieldAccess(f)
+      case a: ArrayAccessContext => visitArrayAccess(a)
+      case m: MethodCallContext => visitMethodCall(m)
   }
 
   override def visitLiteral(ctx: LiteralContext): Literal = {
@@ -524,11 +541,25 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
 
   override def visitArrayAccess(ctx: ArrayAccessContext): ArrayAccess = {
     val i = visitExpression(ctx.expression())
-    ArrayAccess(visitValueOrPrimary(ctx.primary()), i)
+    val target = if ctx.qualifiedName() != null
+      then ExpressionName(buildAmbiguousName(ctx.qualifiedName()))
+      else visitPrimary(ctx.primary())
+    ArrayAccess(target, i)
+  }
+
+  override def visitFieldAccess(ctx: FieldAccessContext): FieldAccess = {
+    val target = visitPrimary(ctx.primary())
+    val name = ctx.Identifier().getText()
+    FieldAccess(target, name)
   }
 
   override def visitNewObject(ctx: NewObjectContext): Expression = {
-    NewObject(visitMethodCall(ctx.methodCall()))
+    val name = buildAmbiguousName(ctx.qualifiedName())
+    val args = if ctx.expressionList() != null then
+      ctx.expressionList().expression().asScala.map(visitExpression).toList
+    else
+      List.empty
+    NewObject(name, args)
   }
 
   override def visitBooleanFunction(ctx: BooleanFunctionContext): Expression = {
@@ -536,18 +567,18 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     if (ctx.getChild(1) != null) {
       val left = ctx.getChild(0) match {
         case c: CalcFunctionContext => visitCalcFunction(c)
-        case v: ValueContext => visitValueOrPrimary(v)
+        case v: ValueContext => visitValue(v)
         case x: (BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext | BooleanFunUndergroundContext) => getBoolFun(x)
       }
       val right = ctx.getChild(2) match {
         case c: CalcFunctionContext => visitCalcFunction(c)
-        case v: ValueContext => visitValueOrPrimary(v)
+        case v: ValueContext => visitValue(v)
         case b: BooleanFunctionContext => visitBooleanFunction(b)
         case x: (BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext | BooleanFunUndergroundContext) => getBoolFun(x)
       }
       buildBoolFun(left, ctx.getChild(1).getText, right)
     } else if (ctx.inverse() != null) {
-      val expression = visitValueOrPrimary(ctx.inverse().value())
+      val expression = visitValue(ctx.inverse().value())
       BinaryExpression(expression, BinaryOperator.Xor, AST.BooleanLiteral(true))
     } else {
       throw new IllegalArgumentException("Invalid BooleanFunction structure")
@@ -559,23 +590,23 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     if (ctx.getChild(1) != null) {
       ctx.getChild(0) match {
         case c: CalcFunctionContext =>  buildBoolFun(visitCalcFunction(c), ctx.getChild(1).getText, getRightBoolFun(ctx))
-        case v: ValueContext =>  buildBoolFun(visitValueOrPrimary(v), ctx.getChild(1).getText, getRightBoolFun(ctx))
+        case v: ValueContext =>  buildBoolFun(visitValue(v), ctx.getChild(1).getText, getRightBoolFun(ctx))
         case x: (BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext) =>
           buildBoolFun(getBoolFun(x), ctx.getChild(1).getText, getRightBoolFun(ctx))
       }
     } else ctx.getChild(0) match {
-      case v: ValueContext => visitValueOrPrimary(v)
+      case v: ValueContext => visitValue(v)
       case i: InverseContext =>
-        BinaryExpression(visitValueOrPrimary(i.value()), BinaryOperator.Xor, AST.BooleanLiteral(true))
+        BinaryExpression(visitValue(i.value()), BinaryOperator.Xor, AST.BooleanLiteral(true))
     }
   }
 
   private def getRightBoolFun(ctx: BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext | BooleanFunUndergroundContext): Expression = {
     ctx.getChild(2) match {
       case i: InverseContext =>
-        BinaryExpression(visitValueOrPrimary(i.value()), BinaryOperator.Xor, AST.BooleanLiteral(true))
+        BinaryExpression(visitValue(i.value()), BinaryOperator.Xor, AST.BooleanLiteral(true))
       case c: CalcFunctionContext => visitCalcFunction(c)
-      case v: ValueContext => visitValueOrPrimary(v)
+      case v: ValueContext => visitValue(v)
       case b: BooleanFunctionContext => visitBooleanFunction(b)
       case x: (BooleanFunHighContext | BooleanFunMiddleContext | BooleanFunLowContext | BooleanFunUndergroundContext) => getBoolFun(x)
     }
@@ -597,13 +628,13 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
 
   override def visitCalcFunction(ctx: CalcFunctionContext): Expression = {
     if (ctx.calcBinOpHigher() != null) {
-      val left = visitValueOrPrimary(ctx.value()) // Left-hand side expression
+      val left = visitValue(ctx.value()) // Left-hand side expression
       val right = visitTerm(ctx.term()) // Right-hand side expression
       val operator = getCalcOperator(ctx.getChild(1).getText)
       BinaryExpression(left, operator, right)
     } else if (ctx.calcBinOpLower() != null) {
       val left = visitTerm(ctx.term()) // Left-hand side expression
-      val right = if ctx.value != null then visitValueOrPrimary(ctx.value()) else visitCalcFunction(ctx.calcFunction())// Right-hand side expression
+      val right = if ctx.value != null then visitValue(ctx.value()) else visitCalcFunction(ctx.calcFunction())// Right-hand side expression
       val operator = getCalcOperator(ctx.getChild(1).getText)
       BinaryExpression(left, operator, right)
     } else if ctx.negate() != null then BinaryExpression(IntLiteral(0), Subtract, visitExpression(ctx.negate().expression()))
@@ -624,11 +655,11 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
 
   override def visitTerm(ctx: TermContext): Expression = {
     if ctx.calcBinOpHigher() != null then
-      val left = visitValueOrPrimary(ctx.value()) // Left-hand side expression
+      val left = visitValue(ctx.value()) // Left-hand side expression
       val right = visitTerm(ctx.term()) // Right-hand side expression
       val operator = getCalcOperator(ctx.getChild(1).getText)
       BinaryExpression(left, operator, right)
-    else visitValueOrPrimary(ctx.value())
+    else visitValue(ctx.value())
   }
 
   override def visitTypeOrVoid(ctx: TypeOrVoidContext): TypeOrVoid = {

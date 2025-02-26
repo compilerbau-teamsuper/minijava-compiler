@@ -9,14 +9,16 @@ object ParserTest extends TestSuite {
     test("empty class parsing") {
       val ast = JavaASTBuilder.parseFromText("class HelloWorld { }")
       val expected = CompilationUnit(None,List(),List(ClassDeclaration(List(),"HelloWorld", AmbiguousName(List("Object")), List(),List(
-        ConstructorDeclaration(List(), "HelloWorld", List(), Block(List(ReturnStatement(None))))))))
+        ConstructorDeclaration(List(), "HelloWorld", List(),
+          ConstructorInvocation("super", List.empty),
+          List(ReturnStatement(None)))))))
 
       ast ==> expected
     }
     test("method parsing") { // ToDo: Hier evtl. signature Constructor Parsing mittesten (oder in extra Fields test mit this. Sachen!)
       val ast = JavaASTBuilder.parseFromFile("src/test/java/methodTest.java")
       val expected = CompilationUnit(None,List(), List(ClassDeclaration(List(Modifier.Public),"methodTest", AmbiguousName(List("Object")), List(),List(
-        ConstructorDeclaration(List(Modifier.Public), "methodTest", List(), Block(List(ReturnStatement(None)))),
+        ConstructorDeclaration(List(Modifier.Public), "methodTest", List(), ConstructorInvocation("super", List.empty), List(ReturnStatement(None))),
         MethodDeclaration(List(Modifier.Private, Modifier.Static),PrimitiveType.Int,"plusOne",List(Parameter("x",PrimitiveType.Int)),
           Option(Block(List(ReturnStatement(Option(BinaryExpression(ExpressionName(AmbiguousName(List("x"))), BinaryOperator.Add, IntLiteral(1)))))))),
         MethodDeclaration(List(Modifier.Public),VoidType,"doNothing",List(),
@@ -34,16 +36,19 @@ object ParserTest extends TestSuite {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/classInterfaceTest.java")
       val expected = CompilationUnit(None,List(),List(
         ClassDeclaration(List(),"classInterfaceTest",AmbiguousName(List("Object")),List(),List(
-          ConstructorDeclaration(List(),"classInterfaceTest",List(),Block(List(
-            ReturnStatement(None)))),
+          ConstructorDeclaration(List(),"classInterfaceTest",List(),
+            ConstructorInvocation("super",List()),
+            List(ReturnStatement(None))),
           ClassDeclaration(List(Modifier.Protected),"subClass",AmbiguousName(List("Object")),List(AmbiguousName(List("interfaze"))),List(
-            ConstructorDeclaration(List(Modifier.Protected),"subClass",List(),Block(List(
-              ReturnStatement(None)))),
+            ConstructorDeclaration(List(Modifier.Protected),"subClass",List(),
+              ConstructorInvocation("super",List()),
+              List(ReturnStatement(None))),
             MethodDeclaration(List(Modifier.Public),VoidType,"nothing",List(), Option(Block(List(
               ReturnStatement(None))))))),
             ClassDeclaration(List(),"extendClass",AmbiguousName(List("subClass")),List(),List(
-              ConstructorDeclaration(List(),"extendClass",List(),Block(List(
-                ReturnStatement(None)))),
+              ConstructorDeclaration(List(),"extendClass",List(),
+                ConstructorInvocation("super",List()),
+                List(ReturnStatement(None))),
               VarOrFieldDeclaration(List(Modifier.Private),PrimitiveType.Boolean,"why",BooleanLiteral(false)))))),
         InterfaceDeclaration(List(),"interfaze",List(),List(
           VarOrFieldDeclaration(List(Modifier.Public),PrimitiveType.Int,"x",IntLiteral(2)),
@@ -57,55 +62,21 @@ object ParserTest extends TestSuite {
         VarOrFieldDeclaration(List(Modifier.Private),PrimitiveType.Int,"x",IntLiteral(0)),
         VarOrFieldDeclaration(List(Modifier.Protected),PrimitiveType.Boolean,"nah",BooleanLiteral(false)),
         VarOrFieldDeclaration(List(Modifier.Static),ObjectType(AmbiguousName(List("String"))),"s",StringLiteral("s")),
-        ConstructorDeclaration(List(),"fieldsTest",List(Parameter("x",PrimitiveType.Int), Parameter("nah",PrimitiveType.Boolean)),Block(List(
-          ExpressionStatement(MethodCall(None,"super",List())),
-          ExpressionStatement(Assignment(FieldAccess(ExpressionName(AmbiguousName(List("this"))), "nah"), BooleanLiteral(true))),
-          ExpressionStatement(Assignment(ExpressionName(AmbiguousName(List("this", "x"))),ExpressionName(AmbiguousName(List("x"))))),
-          ExpressionStatement(Assignment(ExpressionName(AmbiguousName(List("this", "nah"))),ExpressionName(AmbiguousName(List("nah"))))),
-          ReturnStatement(None))))))))
+        ConstructorDeclaration(List(),"fieldsTest",List(Parameter("x",PrimitiveType.Int), Parameter("nah",PrimitiveType.Boolean)),
+          ConstructorInvocation("super",List()),
+          List(
+            ExpressionStatement(Assignment(FieldAccess(ThisExpression, "x"),ExpressionName(AmbiguousName(List("x"))))),
+            ExpressionStatement(Assignment(FieldAccess(ThisExpression, "nah"),ExpressionName(AmbiguousName(List("nah"))))),
+            ReturnStatement(None)))))))
 
       ast ==> expected
     }
     test("calculations parsing") {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/calculationsTest.java")
       val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public), "calculationsTest", AmbiguousName(List("Object")), List(), List(
-        ConstructorDeclaration(List(Modifier.Public), "calculationsTest", List(), Block(List(
-          ExpressionStatement(Assignment(FieldAccess(ExpressionName(AmbiguousName(List("this"))), "f"), BinaryExpression(BooleanLiteral(true), BinaryOperator.Or, BooleanLiteral(false)))),
-          ExpressionStatement(Assignment(FieldAccess(ExpressionName(AmbiguousName(List("this"))), "g"),
-            BinaryExpression(
-              BinaryExpression(ExpressionName(AmbiguousName(List("f"))), BinaryOperator.Xor, BooleanLiteral(true)),
-              BinaryOperator.Xor,
-              BinaryExpression(
-                BinaryExpression(
-                  MethodCall(None, "alwaysTrue", List()),
-                  BinaryOperator.Equals,
-                  BinaryExpression(
-                    BooleanLiteral(true),
-                    BinaryOperator.Equals,
-                    BinaryExpression(
-                      IntLiteral(5),
-                      BinaryOperator.Less,
-                      IntLiteral(4)))),
-                BinaryOperator.Xor,
-                BooleanLiteral(true))))),
-          ExpressionStatement(Assignment(FieldAccess(ExpressionName(AmbiguousName(List("this"))), "x"),
-            BinaryExpression(
-              IntLiteral(0),
-              BinaryOperator.Subtract,
-              BinaryExpression(
-                MethodCall(None, "alwaysOne", List()),
-                BinaryOperator.Subtract,
-                BinaryExpression(
-                  BinaryExpression(
-                    IntLiteral(5),
-                    BinaryOperator.Multiply,
-                    BinaryExpression(
-                      IntLiteral(2),
-                      BinaryOperator.Divide,
-                      IntLiteral(4))),
-                  BinaryOperator.Add,
-                  IntLiteral(3)))))),
-          ReturnStatement(None)))),
+        ConstructorDeclaration(List(Modifier.Public), "calculationsTest", List(),
+          ConstructorInvocation("super",List()),
+          List(ReturnStatement(None))),
         VarOrFieldDeclaration(List(), PrimitiveType.Boolean, "f", BooleanLiteral(false)),
         VarOrFieldDeclaration(List(), PrimitiveType.Boolean, "g", BooleanLiteral(false)),
         VarOrFieldDeclaration(List(), PrimitiveType.Int, "x", IntLiteral(0)),
@@ -119,8 +90,9 @@ object ParserTest extends TestSuite {
     test("statements parsing 1") {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/statementsTest1.java")
       val expected = CompilationUnit(None,List(),List(ClassDeclaration(List(Modifier.Public),"statementsTest1",AmbiguousName(List("Object")),List(),List(
-        ConstructorDeclaration(List(Modifier.Public),"statementsTest1",List(),Block(List(
-          ReturnStatement(None)))),
+        ConstructorDeclaration(List(Modifier.Public),"statementsTest1",List(),
+          ConstructorInvocation("super",List()),
+          List(ReturnStatement(None))),
         MethodDeclaration(List(),VoidType,"forTest",List(),Some(Block(List(
           Block(List(
             VarOrFieldDeclaration(List(),PrimitiveType.Int,"i",IntLiteral(0)),
@@ -150,8 +122,9 @@ object ParserTest extends TestSuite {
     test("statements parsing 2") {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/statementsTest2.java")
       val expected = CompilationUnit(None,List(),List(ClassDeclaration(List(Modifier.Public),"statementsTest2",AmbiguousName(List("Object")),List(),List(
-        ConstructorDeclaration(List(Modifier.Public),"statementsTest2",List(),Block(List(
-          ReturnStatement(None)))),
+        ConstructorDeclaration(List(Modifier.Public),"statementsTest2",List(),
+          ConstructorInvocation("super",List()),
+          List(ReturnStatement(None))),
         MethodDeclaration(List(),VoidType,"ifTest",List(),Some(Block(List(
           IfStatement(BinaryExpression(IntLiteral(5),BinaryOperator.GreaterOrEqual,IntLiteral(4)),Block(List(
             Block(List()))),
@@ -175,10 +148,9 @@ object ParserTest extends TestSuite {
     test("array Test") {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/arrayTest.java")
       val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public), "arrayTest", AmbiguousName(List("Object")), List(), List(
-        ConstructorDeclaration(List(Modifier.Public), "arrayTest", List(), Block(List(
-          ExpressionStatement(Assignment(FieldAccess(ExpressionName(AmbiguousName(List("this"))), "numbers"), ArrayInitializer(List(IntLiteral(1), IntLiteral(2), IntLiteral(3))))),
-          ExpressionStatement(Assignment(FieldAccess(ExpressionName(AmbiguousName(List("this"))), "mail"), NewArray(ObjectType(AmbiguousName(List("String"))), IntLiteral(3)))),
-          ReturnStatement(None)))),
+        ConstructorDeclaration(List(Modifier.Public), "arrayTest", List(),
+          ConstructorInvocation("super",List()),
+          List(ReturnStatement(None))),
         VarOrFieldDeclaration(List(), ArrayType(PrimitiveType.Int), "numbers", NullLiteral),
         VarOrFieldDeclaration(List(), ArrayType(ObjectType(AmbiguousName(List("String")))), "mail", NullLiteral),
         MethodDeclaration(List(), ArrayType(ObjectType(AmbiguousName(List("String")))), "makeMail", List(), Option(Block(List(

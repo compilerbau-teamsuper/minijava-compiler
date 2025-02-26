@@ -10,8 +10,10 @@ object TypecheckTest extends TestSuite {
         test("typecheck_smoke") {
             val input = AST.CompilationUnit(None, List.empty, List(AST.ClassDeclaration(List.empty, "HelloWorld", AST.AmbiguousName(List("Object")), List.empty, List.empty)))
             val output = typecheck(input)
-            val expected = ClassFile(ClassName(List("HelloWorld")), ClassName(List("java", "lang", "Object")), List.empty, List.empty, List.empty)
-      
+            val expected = ClassFile(ClassName(List("HelloWorld")),ClassName(List("java", "lang", "Object")),List(),
+                List(),
+                List(Method(Modifiers(true,false,false,false,true,true),"<clinit>",MethodType(List(),VoidType),Some(Code(0,List(
+                    ReturnStatement(None)))))))
             output ==> expected
         }
         test("typecheck_simple") {
@@ -22,11 +24,13 @@ object TypecheckTest extends TestSuite {
                 ClassName(List("simpleTypeTest")),
                 ClassName(List("java", "lang", "Object")),
                 List(),
+                List(Field(Modifiers.empty,"field",PrimitiveType.Int)),
                 List(
-                    Field(Modifiers.empty,"field",PrimitiveType.Int,IntLikeLiteral(PrimitiveType.Int,0))),
-                List(
+                    Method(Modifiers(true,false,false,false,true,true),"<clinit>",MethodType(List(),VoidType),Some(Code(0,List(
+                        ReturnStatement(None))))),
                     Method(Modifiers.empty,"<init>",MethodType(List(),VoidType),Some(Code(1,List(
                         ExpressionStatement(DupPutField(ClassName(List("simpleTypeTest")),"field",LoadLocal(ObjectType(ClassName(List("simpleTypeTest"))),0),IntLikeLiteral(PrimitiveType.Int,0))),
+                        ExpressionStatement(InvokeSpecial(ClassName(List("java", "lang", "Object")),"<init>",MethodType(List(),VoidType),LoadLocal(ObjectType(ClassName(List("simpleTypeTest"))),0),List())),
                         ReturnStatement(None))))),
                     Method(Modifiers.empty,"noopTest",MethodType(List(),VoidType),Some(Code(1,List(
                         ReturnStatement(None))))),

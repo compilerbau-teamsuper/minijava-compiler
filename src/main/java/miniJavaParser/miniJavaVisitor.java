@@ -1,4 +1,4 @@
-// Generated from G:/Git/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.2
+// Generated from /Users/Jonas/src/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.1
 package miniJavaParser;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
@@ -125,6 +125,18 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitMethodBody(miniJavaParser.MethodBodyContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link miniJavaParser#constructorBody}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitConstructorBody(miniJavaParser.ConstructorBodyContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link miniJavaParser#explicitConstructorInvocation}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitExplicitConstructorInvocation(miniJavaParser.ExplicitConstructorInvocationContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#methodBodyStatement}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -179,29 +191,53 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitValue(miniJavaParser.ValueContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#primary}.
+	 * Visit a parse tree produced by the {@code fieldAccess}
+	 * labeled alternative in {@link miniJavaParser#primary}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitPrimary(miniJavaParser.PrimaryContext ctx);
+	T visitFieldAccess(miniJavaParser.FieldAccessContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code this}
+	 * labeled alternative in {@link miniJavaParser#primary}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitThis(miniJavaParser.ThisContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code arrayAccess}
+	 * labeled alternative in {@link miniJavaParser#primary}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitArrayAccess(miniJavaParser.ArrayAccessContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code nested}
+	 * labeled alternative in {@link miniJavaParser#primary}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNested(miniJavaParser.NestedContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code literal}
+	 * labeled alternative in {@link miniJavaParser#primary}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLiteral(miniJavaParser.LiteralContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code methodCall}
+	 * labeled alternative in {@link miniJavaParser#primary}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitMethodCall(miniJavaParser.MethodCallContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#expressionList}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitExpressionList(miniJavaParser.ExpressionListContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#methodCall}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitMethodCall(miniJavaParser.MethodCallContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#arrayAccess}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitArrayAccess(miniJavaParser.ArrayAccessContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#newObject}.
 	 * @param ctx the parse tree
@@ -468,11 +504,26 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitThrowStatement(miniJavaParser.ThrowStatementContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#assignment}.
+	 * Visit a parse tree produced by the {@code assignQualifiedName}
+	 * labeled alternative in {@link miniJavaParser#assignment}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitAssignment(miniJavaParser.AssignmentContext ctx);
+	T visitAssignQualifiedName(miniJavaParser.AssignQualifiedNameContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code assignFieldAccess}
+	 * labeled alternative in {@link miniJavaParser#assignment}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAssignFieldAccess(miniJavaParser.AssignFieldAccessContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code assignArrayAccess}
+	 * labeled alternative in {@link miniJavaParser#assignment}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAssignArrayAccess(miniJavaParser.AssignArrayAccessContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#assignmentType}.
 	 * @param ctx the parse tree
@@ -634,10 +685,4 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitQualifiedName(miniJavaParser.QualifiedNameContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#literal}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitLiteral(miniJavaParser.LiteralContext ctx);
 }

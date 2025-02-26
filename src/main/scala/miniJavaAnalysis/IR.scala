@@ -14,7 +14,6 @@ case class Field(
     mod: Modifiers,
     name: String,
     ty: Type,
-    value: TypedExpression,
 )
 
 case class Method(

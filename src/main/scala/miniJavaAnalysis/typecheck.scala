@@ -2,16 +2,19 @@ package miniJavaAnalysis
 import miniJavaParser.AST
 import miniJavaAnalysis.error.*
 import miniJavaAnalysis.resolve.{PackageName, Root, Resolver}
+import miniJavaParser.AST.ConstructorInvocation
 
 case class ObjectInfo(
-    supertypes: List[IR.ObjectType],
+    superclass: Option[IR.ObjectType],
+    interfaces: List[IR.ObjectType],
     methods: Map[String, MethodInfo],
     fields: Map[String, FieldInfo],
-    constructor: Option[MethodInfo],
+    constructors: Map[List[IR.Type], ConstructorInfo],
 )
 
 case class FieldInfo(mod: IR.Modifiers, ty: IR.Type)
 case class MethodInfo(mod: IR.Modifiers, ty: IR.MethodType)
+case class ConstructorInfo(mod: IR.Modifiers)
 
 val prelude = Map(
     "Object" -> IR.LangTypes.Object,
@@ -20,14 +23,19 @@ val prelude = Map(
 
 val langtypes = Map(
     IR.LangTypes.Object -> ObjectInfo(
-        List.empty, Map(
-            "<init>" -> MethodInfo(
-            check_modifiers(List(AST.Modifier.Public)), 
-            IR.MethodType(List(), IR.VoidType))
-        ), 
-        Map.empty, None
+        None,
+        List.empty,
+        Map.empty,
+        Map.empty,
+        Map(List.empty -> ConstructorInfo(IR.Modifiers.empty)),
     ),
-    IR.LangTypes.String -> ObjectInfo(List(IR.LangTypes.Object), Map.empty, Map.empty, None)
+    IR.LangTypes.String -> ObjectInfo(
+        Some(IR.LangTypes.Object),
+        List.empty,
+        Map.empty,
+        Map.empty,
+        Map.empty,
+    )
 )
 
 case class Local(fin: Boolean, ty: IR.Type, idx: Int)
@@ -63,7 +71,7 @@ def is_subtype(ty: IR.Type, of: IR.Type)(ctx: Context): Boolean = (ty, of) match
     case (sub, sup) if sub == sup => true
     case (_, IR.LangTypes.Object) => true
     case (IR.NullType, _ @ IR.ObjectType(_)) => true
-    case (sub @ IR.ObjectType(_), _ @ IR.ObjectType(_)) => ctx.types(sub).supertypes.exists(sup => is_subtype(sup, of)(ctx))
+    case (sub @ IR.ObjectType(_), _ @ IR.ObjectType(_)) => ???
     case _ => false
 
 def assign(ty: IR.Type, expr: IR.TypedExpression): IR.TypedExpression = expr.ty match
@@ -177,12 +185,7 @@ def put_field(target: IR.TypedExpression, name: String, value: IR.TypedExpressio
 
 type AccessType = IR.GetField | IR.GetStatic | IR.LoadLocal
 def resolve_name(name: AST.AmbiguousName)(ctx: Context): IR.ObjectType | IR.GetField | IR.GetStatic | IR.LoadLocal = {
-    if name.components.head == "this"
-    then {
-        if (ctx.is_static) throw NonStaticMember(ctx.this_type.name, "this")
-        name.components.tail.foldLeft(IR.LoadLocal(ctx.this_type, 0) : AccessType)(get_field(_, _)(ctx))
-    }
-    else ctx.locals.get(name.components.head) match
+    ctx.locals.get(name.components.head) match
         case Some(Local(_, ty, idx)) => name.components.tail.foldLeft(IR.LoadLocal(ty, idx) : AccessType)(get_field(_, _)(ctx))
         case None => ctx.types(ctx.this_type).fields.get(name.components.head) match
             case Some(FieldInfo(mod, ty)) => if (mod.stat) {
@@ -217,6 +220,10 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
     case AST.CharacterLiteral(value) => IR.CharLiteral(value)
     case AST.StringLiteral(value) => IR.StringLiteral(value)
     case AST.NullLiteral => IR.NullLiteral
+    case AST.ThisExpression => {
+        if ctx.is_static then ???
+        IR.LoadLocal(ctx.this_type, 0)
+    }
     case AST.BinaryExpression(left, operator, right) => {
         val l = typecheck_expr(left)(ctx)
         val r = typecheck_expr(right)(ctx)
@@ -266,12 +273,8 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
                         case _ => throw NoSuchMethod(name, e.ty)
                     case c: IR.ObjectType => ctx.types(c).methods.get(name) match
                         case Some(MethodInfo(mod, ty)) => {
-                            if name == "<init>" then {
-                                (c.name, ty, Some(IR.LoadLocal(ctx.this_type, 0)))
-                            } else {
-                                if (!mod.stat) throw NonStaticMember(c.name, name)
-                                (c.name, ty, None)
-                            }
+                            if (!mod.stat) throw NonStaticMember(c.name, name)
+                            (c.name, ty, None)
                         }
                         case None => throw NoSuchMethod(name, c)
             }
@@ -319,7 +322,7 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
     }
     case AST.ArrayInitializer(initializers) => ???
     case AST.ArrayAccess(_, _) => ???
-    case AST.NewObject(_) => ???
+    case AST.NewObject(_, _) => ???
     case AST.NewArray(_, _) => ???
 
 def typecheck_stmts(prev: IR.Code, stmts: List[AST.Statement])(ctx: Context): IR.Code = stmts match
@@ -412,6 +415,73 @@ def check_modifiers(modifiers: List[AST.Modifier]): IR.Modifiers = {
     )
 }
 
+def context_from_args(
+    stat: Boolean,
+    parameters: List[String],
+    ty: IR.MethodType,
+    this_type: IR.ObjectType,
+)(
+    resolver: Resolver,
+    types: Map[IR.ObjectType, ObjectInfo],
+): (Context, IR.Code) = {
+    val this_param = if stat then 0 else 1
+    val (max_locals, locals) = parameters.zip(ty.params).foldLeft((this_param, Map.empty[String, Local]))((_, _) match
+        case ((idx, locals), (name, ty)) => (idx + local_size(ty), locals + (name -> Local(false, ty, idx)))
+    )
+    (Context(resolver, types, locals, this_type, ty.ret, stat, false), IR.Code(max_locals, List.empty))
+}
+
+def typecheck_constructor(
+    modifiers: IR.Modifiers,
+    name: String,
+    parameters: List[String],
+    tys: List[IR.Type],
+    this_type: IR.ObjectType,
+    construct: AST.ConstructorInvocation,
+    body: List[AST.Statement],
+)(
+    resolver: Resolver,
+    types: Map[IR.ObjectType, ObjectInfo],
+    initializers: List[IR.TypedStatement],
+): IR.Method = {
+    if name != this_type.name.path.last then throw InvalidConstructor
+
+    val ty = IR.MethodType(tys, IR.VoidType)
+    val (ctx, prev) = context_from_args(false, parameters, ty, this_type)(resolver, types)
+    var code = prev
+    construct match
+        case ConstructorInvocation("super", args) => {
+            if args.length != 0 then ???
+            val superclass = types(this_type).superclass.get
+            val constructor = types(superclass).constructors.get(List.empty) match
+                case Some(c) => c
+                case None => throw NoApplicableConstructor(superclass.name)
+            
+            code = code.copy(code = initializers
+                :+ IR.ExpressionStatement(IR.InvokeSpecial(
+                    superclass.name,
+                    "<init>",
+                    IR.MethodType(List.empty, IR.VoidType),
+                    IR.LoadLocal(this_type, 0),
+                    List.empty
+                ))
+            )
+        }
+        case ConstructorInvocation("this", args) => {
+            if args.length != 0 then ???
+            code = code.copy(code = List(IR.ExpressionStatement(IR.InvokeSpecial(
+                this_type.name,
+                "<init>",
+                IR.MethodType(List.empty, IR.VoidType),
+                IR.LoadLocal(this_type, 0),
+                List.empty
+            ))))
+        }
+    
+    code = typecheck_stmts(code, body)(ctx)
+    IR.Method(modifiers, "<init>", ty, Some(code))
+}
+
 def typecheck_method(
     modifiers: IR.Modifiers,
     name: String,
@@ -426,13 +496,9 @@ def typecheck_method(
     val b = body match
         case Some(b) => b
         case None => ???
-
-    val this_param = if (modifiers.stat) 0 else 1
-    val (max_locals, locals) = parameters.zip(ty.params).foldLeft((this_param, Map.empty[String, Local]))((_, _) match
-        case ((idx, locals), (name, ty)) => (idx + local_size(ty), locals + (name -> Local(false, ty, idx)))
-    )
-    val ctx = Context(resolver, types, locals, this_type, ty.ret, modifiers.stat, false)
-    val code = typecheck_stmts(IR.Code(max_locals, List.empty), List(b))(ctx)
+    
+    val (ctx, prev) = context_from_args(modifiers.stat, parameters, ty, this_type)(resolver, types)
+    val code = typecheck_stmts(prev, List(b))(ctx)
     IR.Method(modifiers, name, ty, Some(code))
 }
 
@@ -445,10 +511,13 @@ def typecheck_field(
 )(
     resolver: Resolver,
     types: Map[IR.ObjectType, ObjectInfo]
-) = {
+): (IR.Field, IR.TypedStatement) = {
     val ctx = Context(resolver, types, Map.empty, this_type, IR.VoidType, modifiers.stat, false)
-    val init = assign(ty, typecheck_expr(initializer)(ctx))
-    IR.Field(modifiers, name, ty, init)
+    val value = assign(ty, typecheck_expr(initializer)(ctx))
+    val init = if modifiers.stat
+        then IR.ExpressionStatement(IR.DupPutStatic(this_type.name, name, value))
+        else IR.ExpressionStatement(IR.DupPutField(this_type.name, name, IR.LoadLocal(this_type, 0), value))
+    (IR.Field(modifiers, name, ty), init)
 }
 
 def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
@@ -477,12 +546,14 @@ def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
         case AST.InterfaceDeclaration(modifiers, name, superInterfaces, body) => (None, superInterfaces.map(i => resolver.resolve(i)), body)
 
     var info = ObjectInfo(
-        (superclass.toList ++ interfaces).map(IR.ObjectType(_)),
+        superclass.map(IR.ObjectType(_)),
+        interfaces.map(IR.ObjectType(_)),
         Map.empty,
         Map.empty,
-        None
+        Map.empty,
     )
-    var check_fields = List.empty[Map[IR.ObjectType, ObjectInfo] => IR.Field]
+    var check_fields = List.empty[Map[IR.ObjectType, ObjectInfo] => (IR.Field, IR.TypedStatement)]
+    var check_constructors = List.empty[(Map[IR.ObjectType, ObjectInfo], List[IR.TypedStatement]) => IR.Method]
     var check_methods = List.empty[Map[IR.ObjectType, ObjectInfo] => IR.Method]
     for (member <- members) member match
         case AST.ClassDeclaration(modifiers, name, superclass, interfaces, body) => ???
@@ -500,19 +571,25 @@ def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
             info = info.copy(fields = info.fields + (name -> FieldInfo(mod, ty)))
             check_fields = check_fields :+ (types => typecheck_field(mod, name, ty, this_type, initializer)(resolver, types))
         }
-        case AST.ConstructorDeclaration(modifiers, name, parameters, body) => {
-            assert(info.constructor.isEmpty, "classes may only have one constructor")
+        case AST.ConstructorDeclaration(modifiers, name, parameters, construct, body) => {
             val mod = check_modifiers(modifiers)
-            val ty = IR.MethodType(parameters.map(p => resolve_ty(p.paramType)(resolver)), IR.VoidType)
+            val tys = parameters.map(p => resolve_ty(p.paramType)(resolver))
             val params = parameters.map(p => p.name)
-            info = info.copy(constructor = Some(MethodInfo(mod, ty)))
-            check_methods = check_methods :+ (types => typecheck_method(mod, "<init>", params, ty, this_type, Some(body))(resolver, types))
+            if info.constructors.contains(tys) then throw DuplicateDefinition(List(class_name.path.last))
+            info = info.copy(constructors = info.constructors + (tys -> ConstructorInfo(mod)))
+            check_constructors = check_constructors :+ ((types, initializers) => typecheck_constructor(mod, name, params, tys, this_type, construct, body)(resolver, types, initializers))
         }
         case AST.Block(statements) => ???
 
     val types = langtypes + (this_type -> info)
 
-    val fields = check_fields.map(check => check(types))
-    val methods = check_methods.map(check => check(types))
+    val (fields, initializers, static_initializers) = check_fields.map(check => check(types)).unzip3(
+        (field, init) => if field.mod.stat
+            then (field, None, Some(init))
+            else (field, Some(init), None))
+
+    val methods = IR.Method(IR.Modifiers(true, false, false, false, true, true), "<clinit>", IR.MethodType(List.empty, IR.VoidType), Some(IR.Code(0, static_initializers.flatten() :+ IR.ReturnStatement(None))))
+        :: check_constructors.map(check => check(types, initializers.flatten()))
+        ++ check_methods.map(check => check(types))
     IR.ClassFile(class_name, superclass.get, interfaces, fields, methods)
 }

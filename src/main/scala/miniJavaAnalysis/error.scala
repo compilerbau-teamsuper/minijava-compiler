@@ -37,6 +37,8 @@ case class DuplicateDefinition(name: List[String]) extends Throwable("duplicate 
 case class PackageNotFound(name: PackageName) extends Throwable("package not found: " + name.stringify) with TypeError
 case class TypeNotFound(name: AST.AmbiguousName) extends Throwable("type not found: " + name.stringify) with TypeError
 
+case object InvalidConstructor extends Throwable("constructor must have same name as class") with TypeError
+case class NoApplicableConstructor(name: IR.ClassName) extends Throwable("no applicable constructor of class " + name.stringify) with TypeError
 case class TypeMismatch(ty: IR.Type, expected: IR.Type) extends Throwable("type mismatch: got " + stringify(ty) + ", expected " + stringify(expected)) with TypeError
 case object LocalVoidVariable extends Throwable("local variables may not have type void") with TypeError
 case class NoSuchField(name: String, ty: Option[IR.Type])

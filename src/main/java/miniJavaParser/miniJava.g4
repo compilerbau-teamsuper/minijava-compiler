@@ -26,7 +26,7 @@ methodDeclaration
 
 interfaceMethodDeclaration : Public? typeOrVoid Identifier '(' formalParameters? ')' ('[' ']')* ';';
 
-constructorDeclaration : accessModifier? Identifier '(' formalParameters? ')' block;
+constructorDeclaration : accessModifier? Identifier '(' formalParameters? ')' constructorBody;
 
 
 // Extends / Implements
@@ -64,6 +64,10 @@ interfaceMemberDeclaration //ToDo: Interface in Interface möglich?
 
 methodBody :  '{' methodBodyStatement* '}';
 
+constructorBody : '{' explicitConstructorInvocation? methodBodyStatement* '}';
+
+explicitConstructorInvocation : ('this' | 'super') '(' expressionList? ')' ';';
+
 methodBodyStatement
     : statement
     | localVariableDeclaration
@@ -91,27 +95,34 @@ expression
     : calcFunction
     | booleanFunction
     | newObject
-    | value;
+    | value
+    | assignment;
 
 value
-    : '(' expression ')'
-    | methodCall
-    | arrayAccess
-    | literal
+    : primary
     | qualifiedName;
 
 primary
-    : '(' expression ')'
-    | methodCall
-    | qualifiedName;
+    : IntegerLiteral# literal
+	| LongLiteral# literal
+	| FloatingPointLiteral# literal
+	| DoubleLiteral# literal
+	| CharacterLiteral# literal
+	| BooleanLiteral # literal
+	| NullLiteral # literal
+	| StringLiteral # literal
+	| 'this' # this
+	| '(' expression ')' # nested
+    | primary '.' Identifier # fieldAccess
+    | qualifiedName '[' expression ']' # arrayAccess
+    | primary '[' expression ']' # arrayAccess
+    | Identifier '(' expressionList? ')' # methodCall
+    | qualifiedName '.' Identifier '(' expressionList? ')' # methodCall
+    | primary '.' Identifier '(' expressionList? ')' # methodCall;
 
 expressionList : expression (',' expression)*;
 
-methodCall : ('(' expression ').' qualifiedName | qualifiedName) '(' expressionList? ')'; // ToDo: Methode kann auch auf andere Sachen aufgerufen werden, relevant tho?
-
-arrayAccess : primary '[' expression ']' ;
-
-newObject: 'new' methodCall; // 'new' qualifiedName | methodCall) (classBody)?;
+newObject: 'new' qualifiedName '(' expressionList ')'; // 'new' qualifiedName | methodCall) (classBody)?;
 
 // Basic Functions
 calcFunction
@@ -191,7 +202,7 @@ OR : '||';
 // Statements
 statement
     : block
-    | methodCall ';'
+    | expression ';'
     | ifThenElse
     | ifThen
     | whileStatement
@@ -199,7 +210,6 @@ statement
     | switch
     | break
     | continue
-    | assignment
     | qualifiedName calcUnOp
     | return // ToDo: evtl noch restricten wo das vorkommen darf auf scala Seite? Vermutlich nicht super wichtig tho..
     | tryStatement // ToDo auf scala Seite
@@ -235,7 +245,7 @@ forControl : (localVariableDeclaration | ';') booleanFunction? ';' statement?;
 
 switch: 'switch' '(' expression ')' '{' switchBlockStatementGroup* '}' ;
 
-switchBlockStatementGroup: switchLabel+ switchBlock? ;
+switchBlockStatementGroup: switchLabel+ switchBlock ;
 
 switchLabel
     : 'case' expression ':'
@@ -255,7 +265,11 @@ finallyClause: 'finally' block;
 throwStatement : 'throw' expression ';' ;
 
 // Assignments
-assignment : (qualifiedName | arrayAccess) assignmentType expression ';';
+assignment
+    : qualifiedName assignmentType expression # assignQualifiedName
+    | primary '.' Identifier assignmentType expression # assignFieldAccess
+    | qualifiedName '[' expression ']' assignmentType expression # assignArrayAccess
+    | primary '[' expression ']' assignmentType expression # assignArrayAccess;
 
 assignmentType
     : ASSIGN
@@ -342,15 +356,6 @@ Static: 'static';
 qualifiedName : (Identifier '.')* Identifier; // ToDo: Vielleicht nicht alles qualified name sein lassen und auch direkt mit Identifier arbeiten!
 
 // Literals
-literal
-    : IntegerLiteral
-    | LongLiteral
-    | FloatingPointLiteral
-    | DoubleLiteral
-    | CharacterLiteral
-    | BooleanLiteral
-    | NullLiteral
-    | StringLiteral;
 
 BooleanLiteral
     :'true'
