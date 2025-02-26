@@ -66,6 +66,8 @@ case object VoidType extends Type
 object LangTypes {
     val Object = ObjectType(ClassName(List("java", "lang", "Object")))
     val String = ObjectType(ClassName(List("java", "lang", "String")))
+    val System = ObjectType(ClassName(List("java", "lang", "System")))
+    val PrintStream = ObjectType(ClassName(List("java", "io", "PrintStream")))
 }
 
 sealed trait TypedStatement

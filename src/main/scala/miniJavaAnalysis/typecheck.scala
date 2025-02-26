@@ -16,11 +16,6 @@ case class FieldInfo(mod: IR.Modifiers, ty: IR.Type)
 case class MethodInfo(mod: IR.Modifiers, ty: IR.MethodType)
 case class ConstructorInfo(mod: IR.Modifiers)
 
-val prelude = Map(
-    "Object" -> IR.LangTypes.Object,
-    "String" -> IR.LangTypes.String,
-)
-
 val langtypes = Map(
     IR.LangTypes.Object -> ObjectInfo(
         None,
@@ -33,6 +28,20 @@ val langtypes = Map(
         Some(IR.LangTypes.Object),
         List.empty,
         Map.empty,
+        Map.empty,
+        Map.empty,
+    ),
+    IR.LangTypes.System -> ObjectInfo(
+        Some(IR.LangTypes.Object),
+        List.empty,
+        Map.empty,
+        Map("out" -> FieldInfo(IR.Modifiers(true, false, false, false, true, false), IR.LangTypes.PrintStream)),
+        Map.empty,
+    ),
+    IR.LangTypes.PrintStream -> ObjectInfo(
+        Some(IR.LangTypes.Object),
+        List.empty,
+        Map("println" -> MethodInfo(IR.Modifiers(true, false, false, false, false, false), IR.MethodType(List(IR.LangTypes.String), IR.VoidType))),
         Map.empty,
         Map.empty,
     )
@@ -203,7 +212,7 @@ def resolve_name(name: AST.AmbiguousName)(ctx: Context): IR.ObjectType | IR.GetF
                 case (c: IR.ClassName, AST.AmbiguousName(n :: rest)) => ctx.types(IR.ObjectType(c)).fields.get(n) match
                     case Some(FieldInfo(mod, ty)) => {
                         if (!mod.stat) throw NonStaticMember(c, n)
-                        name.components.tail.foldLeft(
+                        rest.foldLeft(
                             IR.GetStatic(ty, c, n) : AccessType
                         )(get_field(_, _)(ctx))
                     }
@@ -524,7 +533,8 @@ def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
     var root = Root()
         .define(PackageName(List("java", "lang")), "Object")
         .define(PackageName(List("java", "lang")), "String")
-        .define(PackageName(List("java", "io")), "System")
+        .define(PackageName(List("java", "lang")), "System")
+        .define(PackageName(List("java", "io")), "PrintStream")
 
     val pkg = PackageName(ast.packageDeclaration.map(p => p.name).toList)
     val List(decl) = ast.typeDeclarations
@@ -537,7 +547,6 @@ def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
     root = root.define(pkg, name)
     val resolver = Resolver(root, pkg)
         .imp(AST.AmbiguousName(List("java", "lang")), true)
-        .imp(AST.AmbiguousName(List("java", "io", "System")), false)
 
     val this_type = IR.ObjectType(class_name)
 
