@@ -597,7 +597,7 @@ def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
             then (field, None, Some(init))
             else (field, Some(init), None))
 
-    val methods = IR.Method(IR.Modifiers(true, false, false, false, true, true), "<clinit>", IR.MethodType(List.empty, IR.VoidType), Some(IR.Code(0, static_initializers.flatten() :+ IR.ReturnStatement(None))))
+    val methods = IR.Method(IR.Modifiers(false, false, false, false, true, false), "<clinit>", IR.MethodType(List.empty, IR.VoidType), Some(IR.Code(0, static_initializers.flatten() :+ IR.ReturnStatement(None))))
         :: check_constructors.map(check => check(types, initializers.flatten()))
         ++ check_methods.map(check => check(types))
     IR.ClassFile(class_name, superclass.get, interfaces, fields, methods)

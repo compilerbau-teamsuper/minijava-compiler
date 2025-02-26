@@ -14,28 +14,53 @@ object Loader extends ClassLoader {
     }
 }
 
-case class MethodTest(
-    methodsToCall: List[String],
-    expectedResult: Object
-)
+case class MethodTest(name: String, arguments: List[Object], expectedResult: Object)
 
-def endToEndFixture(className: String, methodTests: List[MethodTest]): Unit = {
-    val srcPath = s"src/test/java/${className}.java"
+case class FieldTest(name: String, expectedValue: Object)
+
+case class ClassTest(name: String, actions: List[MethodTest | FieldTest])
+
+def endToEndFixture(toTest: ClassTest): Unit = {
+    val srcPath = s"src/test/java/${toTest.name}.java"
     val ast = JavaASTBuilder.parseFromFile(srcPath)
-    val typed = typecheck(ast)
+    val typed = try {
+        typecheck(ast)
+    } catch {
+        case e =>
+            println(s"AST:\n$ast")
+            throw e
+    }
+    
     val (bytecode, debug) = typed.codeGen()
     try {
-        val clss = Loader.defineClass(className, bytecode)
+        val clss = Loader.defineClass(toTest.name, bytecode)
         val constructor = clss.getDeclaredConstructor();
         constructor.setAccessible(true);
-        methodTests.foreach{ case MethodTest(toCall, expected) =>
-            val instance = constructor.newInstance();
-            val result = toCall.foldLeft(new Object())((z, methodName) =>
-                val method = clss.getDeclaredMethod(methodName)
+        val instance = constructor.newInstance();
+        toTest.actions.foreach{ 
+            case MethodTest(toCall, args, expected) =>
+                val method = clss.getDeclaredMethod(toCall)
                 method.setAccessible(true)
-                method.invoke(instance)
-            )
-            result ==> expected
+                val result = method.invoke(instance, args: _*)
+                if (result != expected) {
+                    throw new java.lang.AssertionError(
+                        s"Call of $toCall " +
+                        (if args.nonEmpty then 
+                            s"with arguments ${args.mkString(", ")}" 
+                         else "") +
+                        s"resulted in $result, expected $expected"
+                    )
+                }
+            case FieldTest(name, expected) =>
+                val field = clss.getDeclaredField(name)
+                field.setAccessible(true)
+                val result = field.get(instance)
+                if (result != expected) {
+                    throw new java.lang.AssertionError(
+                        s"Access of field $name resulted in value $result, " +
+                        s"expected $expected"
+                    )
+                }
         }
     } catch {
         case e =>
@@ -48,12 +73,32 @@ def endToEndFixture(className: String, methodTests: List[MethodTest]): Unit = {
 
 object endToEnd extends TestSuite {
     val tests = Tests {
-        test("simpleTypeTest") - endToEndFixture("simpleTypeTest", 
+        test("simpleTypeTest") - endToEndFixture(ClassTest(
+            "simpleTypeTest",
             List(
-                MethodTest(List("noopTest"), null),
-                MethodTest(List("assignmentTest"), Integer(1)),
-                MethodTest(List("invokeGetField"), Integer(0))
+                MethodTest("noopTest", Nil, null),
+                MethodTest("assignmentTest", Nil, Integer(1)),
+                MethodTest("invokeGetField", Nil, Integer(0)),
+                FieldTest("field", Integer(0))
             )
-        )
+        ))
+        test("Loops") - endToEndFixture(ClassTest(
+            "Loops",
+            List(
+                MethodTest("whileLoop", Nil, Integer(41)),
+                MethodTest("forLoop", Nil, Integer(41))
+            )
+        ))
+        test("Math") - endToEndFixture(ClassTest(
+            "Math",
+            List(
+                MethodTest("facRec", List(Integer(4)), Integer(24)),
+                MethodTest("facImp", List(Integer(6)), Integer(720)),
+                MethodTest(
+                    "circleArea", List(java.lang.Float(5)), 
+                    java.lang.Float(78.5f)
+                )
+            )
+        ))
     }
 }
