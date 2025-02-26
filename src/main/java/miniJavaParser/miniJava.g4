@@ -94,6 +94,7 @@ arrayInitializer
 expression
     : calcFunction
     | booleanFunction
+    | qualifiedName calcUnOp
     | newObject
     | value
     | assignment;
@@ -210,7 +211,6 @@ statement
     | switch
     | break
     | continue
-    | qualifiedName calcUnOp
     | return // ToDo: evtl noch restricten wo das vorkommen darf auf scala Seite? Vermutlich nicht super wichtig tho..
     | tryStatement // ToDo auf scala Seite
     | throwStatement; // ToDo auf scala Seite
@@ -231,7 +231,7 @@ whileStatement : 'while' '(' expression ')' statement;
 
 forStatement : 'for' '(' forControl ')' statement; // ToDo: Foreach wäre noch nice.
 // Generell an Abstrakter Syntax aus Vorlesung orientiern
-forControl : (localVariableDeclaration | ';') booleanFunction? ';' statement?;
+forControl : (localVariableDeclaration | ';') booleanFunction? ';' expression?;
 
 //forControlStatement
 //    : assignment

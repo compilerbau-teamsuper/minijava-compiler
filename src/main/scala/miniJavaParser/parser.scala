@@ -407,11 +407,6 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       case b: BlockContext => visitBlock(b)
       case e: ExpressionContext => ExpressionStatement(visitExpression(e))
       case i: (IfThenContext | IfThenElseContext) => visitIfThenElse(i)
-      case q: QualifiedNameContext =>
-        ctx.calcUnOp().getText match {
-          case "++" => ExpressionStatement(Assignment(ExpressionName(buildAmbiguousName(ctx.qualifiedName())), BinaryExpression(ExpressionName(buildAmbiguousName(ctx.qualifiedName())), Add, IntLiteral(1))))
-          case "--" => ExpressionStatement(Assignment(ExpressionName(buildAmbiguousName(ctx.qualifiedName())), BinaryExpression(ExpressionName(buildAmbiguousName(ctx.qualifiedName())), Subtract, IntLiteral(1))))
-        }
       case w: WhileStatementContext => visitWhileStatement(w)
       case r: ReturnContext => ReturnStatement(Option(visitExpression(r.expression())))
       case b: BreakContext => BreakStatement()
@@ -472,8 +467,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     val stmts: ListBuffer[Statement] = ListBuffer()
     if forControl.localVariableDeclaration() != null then stmts.addOne(visitLocalVariableDec(forControl.localVariableDeclaration()).head)
     val condition = if forControl.booleanFunction() != null then visitBooleanFunction(forControl.booleanFunction()) else AST.BooleanLiteral(true)
-    if forControl.statement() != null then
-      stmts.addOne(WhileStatement(condition, visitForBodyStatement(ctx.statement(), visitStatement(forControl.statement()))))
+    if forControl.expression() != null then
+      stmts.addOne(WhileStatement(condition, visitForBodyStatement(ctx.statement(), ExpressionStatement(visitExpression(forControl.expression())))))
     else
       stmts.addOne(WhileStatement(condition, visitStatement(ctx.statement())))
     if stmts.sizeIs == 1 then stmts.head else Block(stmts.toList)
@@ -502,6 +497,12 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       case b: BooleanFunctionContext => visitBooleanFunction(b)
       case c: CalcFunctionContext => visitCalcFunction(c)
       case a: AssignmentContext => visitAssignment(a)
+      case q: QualifiedNameContext =>
+        ctx.calcUnOp().getText match {
+          case "++" => Assignment(ExpressionName(buildAmbiguousName(ctx.qualifiedName())), BinaryExpression(ExpressionName(buildAmbiguousName(ctx.qualifiedName())), Add, IntLiteral(1)))
+          case "--" => Assignment(ExpressionName(buildAmbiguousName(ctx.qualifiedName())), BinaryExpression(ExpressionName(buildAmbiguousName(ctx.qualifiedName())), Subtract, IntLiteral(1)))
+        }
+      case _ => throw IllegalArgumentException("Illegal expression")
     }
   }
 
