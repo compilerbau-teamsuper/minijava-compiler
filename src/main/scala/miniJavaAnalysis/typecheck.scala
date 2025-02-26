@@ -309,9 +309,11 @@ def typecheck_stmts(prev: IR.Code, stmts: List[AST.Statement])(ctx: Context): IR
             typecheck_stmts(code, next)(ctx)
         }
         case AST.ReturnStatement(expression) => {
-            val expr = expression.map(e => typecheck_expr(e)(ctx))
-            val ty = expr.map(e => e.ty).getOrElse(IR.VoidType)
-            if (!is_subtype(ty, ctx.return_type)(ctx)) throw new TypeMismatch(ty, ctx.return_type)
+            val expr = expression match
+                case Some(e) => Some(assign(ctx.return_type, typecheck_expr(e)(ctx))(ctx))
+                case None =>
+                    if ctx.return_type != IR.VoidType then throw new TypeMismatch(IR.VoidType, ctx.return_type)
+                    None
             val code = IR.Code(prev.max_locals, prev.code :+ IR.ReturnStatement(expr))
             typecheck_stmts(code, next)(ctx)
         }
