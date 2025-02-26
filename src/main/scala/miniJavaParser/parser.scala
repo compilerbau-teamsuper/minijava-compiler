@@ -82,16 +82,15 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     val oldCurrentSuper = currentSuper
     currentSuper = superclass
     val interfaces = if ctx.superinterfaces() != null then ctx.superinterfaces().qualifiedName().asScala.map(buildAmbiguousName(_)).toList else List.empty
-    var body = getClassBody(ctx.classBody(), name)
-    currentThis = oldCurrentThis
-    currentSuper = oldCurrentSuper
+    var body = getClassBody(ctx.classBody())
     val hasConstructor = body.exists(x => x match {
       case ConstructorDeclaration(_,_,_,_) => true
       case _ => false
     })
     val constructorModifiers = modifiers.intersect(List(Modifier.Public, Modifier.Protected, Modifier.Private))
-    body = if !hasConstructor then body.::(buildStandardConstructor(constructorModifiers, name)) else body
-
+    body = if !hasConstructor then body.::(buildStandardConstructor(constructorModifiers, name, superclass)) else body
+    currentThis = oldCurrentThis
+    currentSuper = oldCurrentSuper
     ClassDeclaration(modifiers, name, superclass, interfaces, body)
   }
 
@@ -104,10 +103,10 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     InterfaceDeclaration(modifiers, name, superInterfaces, body)
   }
 
-  private def getClassBody(ctx: ClassBodyContext, currentClass: String): List[ClassMember] = {
+  private def getClassBody(ctx: ClassBodyContext): List[ClassMember] = {
     if !ctx.classBodyDeclaration().isEmpty then {
       val classBodyDecs : ListBuffer[ClassMember] = ListBuffer()
-      ctx.classBodyDeclaration().asScala.toList.foreach(c => visitClassBodyDec(c, currentClass) match {
+      ctx.classBodyDeclaration().asScala.toList.foreach(c => visitClassBodyDec(c) match {
         case cm: ClassMember => classBodyDecs.addOne(cm)
         case cms: List[ClassMember] => classBodyDecs.addAll(cms)
       })
@@ -152,12 +151,12 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     case _             => throw new IllegalArgumentException(s"Unknown modifier: $modifier")
   }
 
-  private def visitClassBodyDec(ctx: ClassBodyDeclarationContext, currentClass: String): ClassMember | List[ClassMember] = {
+  private def visitClassBodyDec(ctx: ClassBodyDeclarationContext): ClassMember | List[ClassMember] = {
     if (ctx.block() != null) {
       visitBlock(ctx.block())
     }
     else if (ctx.memberDeclaration() != null) {
-      visitMemberDec(ctx.memberDeclaration(), currentClass)
+      visitMemberDec(ctx.memberDeclaration())
     }
     else null  // ToDo: None?
   }
@@ -170,14 +169,14 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   }
 
   // Hilfsfunktion für MemberDeclaration
-  private def visitMemberDec(ctx: MemberDeclarationContext, currentClass: String): ClassMember | List[ClassMember] = {
+  private def visitMemberDec(ctx: MemberDeclarationContext): ClassMember | List[ClassMember] = {
     if (ctx.methodDeclaration() != null) {
       visitMethodDeclaration(ctx.methodDeclaration())
     } else if (ctx.fieldDeclaration() != null) {
       val f = visitFieldDec(ctx.fieldDeclaration(), false)
       if f.sizeIs == 1 then f.head else f
     } else if (ctx.constructorDeclaration() != null) {
-      getConstructorDeclaration(ctx.constructorDeclaration(), currentClass)
+      getConstructorDeclaration(ctx.constructorDeclaration())
     } else if (ctx.classDeclaration() != null) {
       visitClassDeclaration(ctx.classDeclaration()) // Nested class
     } else if (ctx.interfaceDeclaration() != null) {
@@ -265,16 +264,16 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     }
   }
 
-  private def buildStandardConstructor(modifiers: List[Modifier], name: String): ConstructorDeclaration = {
+  private def buildStandardConstructor(modifiers: List[Modifier], className: String, superName: AmbiguousName): ConstructorDeclaration = {
     val body = Block(
-      ExpressionStatement(MethodCall(Some(currentSuper), "<init>", List())) :: (currentFields.get(name) match {
+      ExpressionStatement(MethodCall(Option(superName), "<init>", List())) :: (currentFields.get(className) match {
       case Some(l) => l.toList ::: List(ReturnStatement(None))
       case None =>  List(ReturnStatement(None))
     }))
-    ConstructorDeclaration(modifiers, name, List(), body)
+    ConstructorDeclaration(modifiers, className, List(), body)
   }
 
-  private def getConstructorDeclaration(ctx: ConstructorDeclarationContext, name: String): ConstructorDeclaration = {
+  private def getConstructorDeclaration(ctx: ConstructorDeclarationContext): ConstructorDeclaration = {
     val modifiers = Option(ctx.accessModifier())
       .map(am => toModifier(am.getText))
       .toList
@@ -282,15 +281,13 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     val parameters = getFormalParameters(ctx.formalParameters())
     var body = visitBlock(ctx.block())
     if !body.statements.contains(ReturnStatement(None)) then body = Block(body.statements ::: List(ReturnStatement(None)))
-    currentFields.get(name) match {
-      case Some(l) =>
-        if body.statements.exists(s => s match{
-          case ExpressionStatement(MethodCall(_,"super",_)) => true
-          case _ => false
-        }) then
-          body = Block(List(body.statements.head) ::: l.toList ::: body.statements.tail)
-        else
-          body = Block(l.toList ::: body.statements)
+    if !body.statements.exists(s => s match {
+      case ExpressionStatement(MethodCall(target, "<init>", _)) if target == Option(currentSuper) =>
+        if body.statements.head != s then throw new IllegalArgumentException("Super call must be first Statement in Constructor") else true
+      case _ => false
+    }) then body = Block(List(ExpressionStatement(MethodCall(Option(currentSuper),"<init>",List()))) ::: body.statements)
+    currentFields.get(currentThis) match {
+      case Some(l) => body = Block(List(body.statements.head) ::: l.toList ::: body.statements.tail)
       case None =>
     }
     ConstructorDeclaration(modifiers, name, parameters, body)
@@ -434,12 +431,17 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   }
 
   override def visitMethodCall(ctx: MethodCallContext): MethodCall = {
-    val parts = ctx.qualifiedName().Identifier().asScala.map(p => p.getText).toList
+    var parts = ctx.qualifiedName().Identifier().asScala.map(p => p.getText).toList
     val target =
       if ctx.expression() != null then
         Option(visitExpression(ctx.expression()))
       else
-        if parts.sizeIs == 1 then None else Option(AmbiguousName(parts.slice(0, parts.length - 1)))
+        if parts.sizeIs == 1 then
+          if parts.head == "super" then
+            parts = parts ::: List("<init>")
+            Option(currentSuper)
+          else None
+        else Option(AmbiguousName(parts.slice(0, parts.length - 1)))
 
     if ctx.expressionList() != null then
       MethodCall(target, parts.last, ctx.expressionList().expression().asScala.map(visitExpression).toList)

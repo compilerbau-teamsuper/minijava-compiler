@@ -33,6 +33,7 @@ Using the generated ANTLR Recognizer, he wrote the [parser](https://github.com/c
 - Resolving this and super depending on context
 - Adding empty return statement to void methods and constructors
 - Moving initializing of non-static fields into constructors
+- Helped to add super calls to constructors
 
 He also wrote [tests](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/parserAST/src/test/scala/parserTest.scala) for the parser using the test [java files](https://github.com/compilerbau-teamsuper/minijava-compiler/tree/parserAST/src/test/java) he created, and he made the UML with plantuml.
 
