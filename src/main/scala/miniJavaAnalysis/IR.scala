@@ -94,7 +94,7 @@ case class IfStatement(val cmp: Comparison, val left: TypedExpression, val right
 case class WhileStatement(val cmp: Comparison, val left: TypedExpression, val right: TypedExpression, val body: List[TypedStatement]) extends TypedStatement
 case class InfiniteWhileStatement(val body: List[TypedStatement]) extends TypedStatement
 
-sealed trait TypedExpression(val ty: Type)
+sealed trait TypedExpression(var ty: Type)
 
 // Literals
 case class BooleanLiteral(value: Boolean) extends TypedExpression(PrimitiveType.Boolean)

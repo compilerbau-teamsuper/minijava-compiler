@@ -25,6 +25,11 @@ case class FieldTest(name: String, expectedValue: Object)
 
 case class ClassTest(name: String, actions: List[MethodTest | FieldTest])
 
+def isSame(result: Object, expected: Object): Boolean = (result, expected) match {
+    case (r: Array[?], e: Array[?]) => r.sameElements(e) 
+    case _ => result == expected
+}
+
 def endToEndFixture(toTest: ClassTest): Unit = {
     val srcPath = s"src/test/java/${toTest.name}.java"
     val ast = JavaASTBuilder.parseFromFile(srcPath)
@@ -55,7 +60,7 @@ def endToEndFixture(toTest: ClassTest): Unit = {
                 }
                 method.setAccessible(true)
                 val result = method.invoke(instance, args: _*)
-                if (result != expected) {
+                if (!isSame(result, expected)) {
                     throw new java.lang.AssertionError(
                         s"Call of $toCall " +
                         (if args.nonEmpty then 
@@ -68,7 +73,7 @@ def endToEndFixture(toTest: ClassTest): Unit = {
                 val field = clss.getDeclaredField(name)
                 field.setAccessible(true)
                 val result = field.get(instance)
-                if (result != expected) {
+                if (!isSame(result, expected)) {
                     throw new java.lang.AssertionError(
                         s"Access of field $name resulted in value $result, " +
                         s"expected $expected"

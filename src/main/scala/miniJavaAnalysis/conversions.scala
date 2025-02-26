@@ -5,7 +5,10 @@ import miniJavaAnalysis.error.*
 
 def assign(ty: IR.Type, expr: IR.TypedExpression): IR.TypedExpression = expr.ty match
     case t if t == ty => expr
-    case _ => ???
+    case IR.NullType => 
+        expr.ty = ty
+        expr 
+    case _ => throw new NotImplementedError(s"Trying to assign $expr to type $ty")
 
 def unbox(expr: IR.TypedExpression): IR.TypedExpression = expr.ty match
     case ty: IR.PrimitiveType => expr
