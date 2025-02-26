@@ -69,7 +69,7 @@ def resolve_ty(ty: AST.TypeOrVoid)(resolver: Resolver): IR.Type = ty match
     case AST.PrimitiveType.Long => IR.PrimitiveType.Long
     case AST.PrimitiveType.Short => IR.PrimitiveType.Short
     case AST.ObjectType(name) => IR.ObjectType(resolver.resolve(name))
-    case AST.ArrayType(arrayType) => ???
+    case AST.ArrayType(arrayType) => IR.ArrayType(resolve_ty(arrayType)(resolver))
     case AST.VoidType => IR.VoidType
 
 def local_size(ty: IR.Type): Int = ty match
@@ -217,6 +217,17 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
         case t: IR.TypedExpression => t
         case c: IR.ObjectType => throw NotAField(c)
     case AST.FieldAccess(target, name) => get_field(typecheck_expr(target)(ctx), name)(ctx)
+    case AST.ArrayAccess(target, index) => {
+        val t = typecheck_expr(target)(ctx)
+        val i = unary_numeric_promotion(typecheck_expr(index)(ctx))
+        i.ty match
+            case _: IR.IntLikeType => {}
+            case _ => throw TypeMismatch(i.ty, IR.PrimitiveType.Int)
+    
+        t.ty match
+            case IR.ArrayType(element) => IR.LoadArray(element, t, i)
+            case _ => throw NotAnArray
+    }
     case AST.Assignment(left, right) => {
         val r = typecheck_expr(right)(ctx)
         left match
@@ -249,15 +260,23 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
                 case _ => ???
 
             case AST.FieldAccess(target, name) => put_field(typecheck_expr(target)(ctx), name, r)(ctx)
-            case AST.ArrayAccess(target, index) => ???
+            case AST.ArrayAccess(target, index) => {
+                val t = typecheck_expr(target)(ctx)
+                val i = unary_numeric_promotion(typecheck_expr(index)(ctx))
+                i.ty match
+                    case _: IR.IntLikeType => {}
+                    case _ => throw TypeMismatch(i.ty, IR.PrimitiveType.Int)
+                t.ty match
+                    case IR.ArrayType(element) => IR.DupStoreArray(t, i, assign(element, r))
+                    case _ => throw NotAnArray
+            }
     }
     case AST.ArrayInitializer(initializers) => ???
-    case AST.ArrayAccess(_, _) => ???
     case AST.NewObject(name, args) => {
         val of = ctx.resolver.resolve(name)
         invoke_constructor(IR.ObjectType(of), args, IR.New(of))(ctx)
     }
-    case AST.NewArray(_, _) => ???
+    case AST.NewArray(arrayType, size) => IR.NewArray(resolve_ty(arrayType)(ctx.resolver), typecheck_expr(size)(ctx))
     case AST.MethodCall(target, name, args) => {
         val t = target match
             case None => None

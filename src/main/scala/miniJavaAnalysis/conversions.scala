@@ -11,6 +11,10 @@ def unbox(expr: IR.TypedExpression): IR.TypedExpression = expr.ty match
     case ty: IR.PrimitiveType => expr
     case _ => throw RuntimeException("TODO: unboxing")
 
+def unary_numeric_promotion(v: IR.TypedExpression): IR.TypedExpression = unbox(v).ty match
+    case IR.PrimitiveType.Boolean => throw NonNumeric
+    case _ => v
+
 def binary_numeric_promotion(
     l: IR.TypedExpression,
     r: IR.TypedExpression

@@ -17,6 +17,7 @@ extension(ty: IR.Type) {
         case IR.PrimitiveType.Short => "short"
         case IR.PrimitiveType.Byte => "byte"
         case IR.ObjectType(name) => name.stringify
+        case IR.ArrayType(element) => element.stringify + "[]"
         case IR.NullType => "null"
         case IR.VoidType => "void"
 }
@@ -52,6 +53,7 @@ case object BreakOutsideLoop extends Throwable("break statement outside loop") w
 case object ContinueOutsideLoop extends Throwable("continue statement outside loop") with TypeError
 case object NonNumeric extends Throwable("cannot perform numeric operation on non-numeric type") with TypeError
 case object NonIntegral extends Throwable("cannot perform integer operation on non-integer type") with TypeError
+case object NotAnArray extends Throwable("can only index on arrays") with TypeError
 case class ModifierContradiction(m1: AST.Modifier, m2: AST.Modifier) extends Throwable("contradicting modifiers") with TypeError
 case object InvalidVariableModifier extends Throwable("variables do not support modifiers other than final") with TypeError
 case class ModifyFinal(name: String, ty: Option[IR.Type]) extends Throwable(ty match

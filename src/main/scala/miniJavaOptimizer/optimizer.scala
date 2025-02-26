@@ -228,6 +228,8 @@ def simplify_expr(expr: TypedExpression): TypedExpression = expr match
 
     case LoadLocal(_, _) => expr
     case DupStoreLocal(index, value) => DupStoreLocal(index, simplify_expr(value))
+    case LoadArray(element, target, index) => LoadArray(element, simplify_expr(target), simplify_expr(index))
+    case DupStoreArray(target, index, value) => DupStoreArray(simplify_expr(target), simplify_expr(index), simplify_expr(value))
     case GetField(field_ty, of, name, target) => GetField(field_ty, of, name, simplify_expr(target))
     case DupPutField(of, name, target, value) => DupPutField(of, name, simplify_expr(target), simplify_expr(value))
     case GetStatic(field_ty, of, name) => GetStatic(field_ty, of, name)
@@ -238,6 +240,7 @@ def simplify_expr(expr: TypedExpression): TypedExpression = expr match
     case InvokeVirtual(of, name, mty, target, args) => InvokeVirtual(of, name, mty, simplify_expr(target), args.map(simplify_expr))
 
     case New(of) => New(of)
+    case NewArray(element, size) => NewArray(element, simplify_expr(size))
 
     case Ternary(ty, cmp, left, right, yes, no) => decide_comparison(cmp, simplify_expr(left), simplify_expr(right)) match
         case DefiniteYes => simplify_expr(yes)

@@ -59,6 +59,7 @@ object PrimitiveType {
 }
 
 case class ObjectType(name: ClassName) extends Type
+case class ArrayType(element: Type) extends Type
 case object NullType extends Type
 
 case object VoidType extends Type
@@ -153,6 +154,8 @@ case class DCmpG(left: TypedExpression, right: TypedExpression) extends TypedExp
 
 case class LoadLocal(local_ty: Type, index: Int) extends TypedExpression(local_ty)
 case class DupStoreLocal(index: Int, value: TypedExpression) extends TypedExpression(value.ty)
+case class LoadArray(element: Type, target: TypedExpression, index: TypedExpression) extends TypedExpression(element)
+case class DupStoreArray(target: TypedExpression, index: TypedExpression, value: TypedExpression) extends TypedExpression(value.ty)
 case class GetField(field_ty: Type, of: ClassName, name: String, target: TypedExpression) extends TypedExpression(field_ty)
 case class DupPutField(of: ClassName, name: String, target: TypedExpression, value: TypedExpression) extends TypedExpression(value.ty)
 case class GetStatic(field_ty: Type, of: ClassName, name: String) extends TypedExpression(field_ty)
@@ -164,6 +167,7 @@ case class InvokeInterface(of: ClassName, name: String, mty: MethodType, target:
 case class InvokeVirtual(of: ClassName, name: String, mty: MethodType, target: TypedExpression, args: List[TypedExpression]) extends TypedExpression(mty.ret)
 
 case class New(of: ClassName) extends TypedExpression(ObjectType(of))
+case class NewArray(element: Type, size: TypedExpression) extends TypedExpression(ArrayType(element))
 
 /** A ternary expression. `result_ty` is only used during type checking. */
 case class Ternary(result_ty: Type, cmp: Comparison, left: TypedExpression, right: TypedExpression, yes: TypedExpression, no: TypedExpression) extends TypedExpression(result_ty)

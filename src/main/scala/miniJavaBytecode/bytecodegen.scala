@@ -142,6 +142,20 @@ extension(expression: TypedExpression) {
             mv.visitInsn(dupInsn)
             val storeInsn = value.ty.asmType().getOpcode(ISTORE)
             mv.visitVarInsn(storeInsn, index)
+        case LoadArray(element, target, index) =>
+            target.translate(mv)
+            index.translate(mv)
+            val instruction = element.asmType().getOpcode(IALOAD)
+            mv.visitInsn(instruction)
+        case DupStoreArray(target, index, value) => {
+            target.translate(mv)
+            index.translate(mv)
+            value.translate(mv)
+            val dupInsn = if value.ty.isCategoryTwo() then DUP2_X2 else DUP_X2
+            mv.visitInsn(dupInsn)
+            val storeInsn = value.ty.asmType().getOpcode(IASTORE)
+            mv.visitInsn(storeInsn)
+        }
         case GetField(field_ty, of, name, target) => 
             target.translate(mv)
             mv.visitFieldInsn(
@@ -201,6 +215,18 @@ extension(expression: TypedExpression) {
                 name, mty.descriptor()
             )
         case New(of) => mv.visitTypeInsn(NEW, of.internalName())
+        case NewArray(element, size) =>
+            size.translate(mv)
+            element match
+                case PrimitiveType.Boolean => mv.visitIntInsn(NEWARRAY, T_BOOLEAN)
+                case PrimitiveType.Char => mv.visitIntInsn(NEWARRAY, T_CHAR)
+                case PrimitiveType.Float => mv.visitIntInsn(NEWARRAY, T_FLOAT)
+                case PrimitiveType.Double => mv.visitIntInsn(NEWARRAY, T_DOUBLE)
+                case PrimitiveType.Byte => mv.visitIntInsn(NEWARRAY, T_BYTE)
+                case PrimitiveType.Short => mv.visitIntInsn(NEWARRAY, T_SHORT)
+                case PrimitiveType.Int => mv.visitIntInsn(NEWARRAY, T_INT)
+                case PrimitiveType.Long => mv.visitIntInsn(NEWARRAY, T_LONG)
+                case t => mv.visitTypeInsn(ANEWARRAY, t.internalName())
         case IntLikeLiteral(_, value) => value match {
             case -1 => mv.visitInsn(ICONST_M1)
             case 0 => mv.visitInsn(ICONST_0)
@@ -275,6 +301,7 @@ extension(expression: TypedExpression) {
                     case PrimitiveType.Double => conversionError()
                 }
                 case ObjectType(name) => conversionError()
+                case ArrayType(element) => conversionError()
                 case NullType => conversionError()
                 case VoidType => conversionError()
             }
@@ -388,6 +415,7 @@ extension(typ: Type) {
         case PrimitiveType.Double => DOUBLE_TYPE 
         case VoidType => VOID_TYPE
         case ObjectType(name) => getObjectType(name.internalName())
+        case ArrayType(element) => getType("[" + element.internalName())
         case NullType => getType(s"L$OBJECT;")
     }
 }
