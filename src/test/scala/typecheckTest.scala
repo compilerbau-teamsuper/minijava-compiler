@@ -41,7 +41,7 @@ object TypecheckTest extends TestSuite {
                     Method(Modifiers.empty,"getField",MethodType(List(),PrimitiveType.Int),Some(Code(1,List(
                         ReturnStatement(Some(GetField(PrimitiveType.Int,ClassName(List("simpleTypeTest")),"field",LoadLocal(ObjectType(ClassName(List("simpleTypeTest"))),0)))))))),
                     Method(Modifiers.empty,"invokeGetField",MethodType(List(),PrimitiveType.Int),Some(Code(1,List(
-                        ReturnStatement(Some(InvokeSpecial(ClassName(List("simpleTypeTest")),"getField",MethodType(List(),PrimitiveType.Int),LoadLocal(ObjectType(ClassName(List("simpleTypeTest"))),0),List())))))))))
+                        ReturnStatement(Some(InvokeVirtual(ClassName(List("simpleTypeTest")),"getField",MethodType(List(),PrimitiveType.Int),LoadLocal(ObjectType(ClassName(List("simpleTypeTest"))),0),List())))))))))
 
             ir ==> expected
         }

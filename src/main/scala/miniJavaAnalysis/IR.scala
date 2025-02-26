@@ -160,6 +160,8 @@ case class DupPutStatic(of: ClassName, name: String, value: TypedExpression) ext
 
 case class InvokeStatic(of: ClassName, name: String, mty: MethodType, args: List[TypedExpression]) extends TypedExpression(mty.ret)
 case class InvokeSpecial(of: ClassName, name: String, mty: MethodType, target: TypedExpression, args: List[TypedExpression]) extends TypedExpression(mty.ret)
+case class InvokeInterface(of: ClassName, name: String, mty: MethodType, target: TypedExpression, args: List[TypedExpression]) extends TypedExpression(mty.ret)
+case class InvokeVirtual(of: ClassName, name: String, mty: MethodType, target: TypedExpression, args: List[TypedExpression]) extends TypedExpression(mty.ret)
 
 /** A ternary expression. `result_ty` is only used during type checking. */
 case class Ternary(result_ty: Type, cmp: Comparison, left: TypedExpression, right: TypedExpression, yes: TypedExpression, no: TypedExpression) extends TypedExpression(result_ty)

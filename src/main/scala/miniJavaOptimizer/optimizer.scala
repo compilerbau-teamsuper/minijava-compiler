@@ -234,6 +234,8 @@ def simplify_expr(expr: TypedExpression): TypedExpression = expr match
     case DupPutStatic(of, name, value) => DupPutStatic(of, name, simplify_expr(value))
     case InvokeStatic(of, name, mty, args) => InvokeStatic(of, name, mty, args.map(simplify_expr))
     case InvokeSpecial(of, name, mty, target, args) => InvokeSpecial(of, name, mty, simplify_expr(target), args.map(simplify_expr))
+    case InvokeInterface(of, name, mty, target, args) => InvokeInterface(of, name, mty, simplify_expr(target), args.map(simplify_expr))
+    case InvokeVirtual(of, name, mty, target, args) => InvokeVirtual(of, name, mty, simplify_expr(target), args.map(simplify_expr))
 
     case Ternary(ty, cmp, left, right, yes, no) => decide_comparison(cmp, simplify_expr(left), simplify_expr(right)) match
         case DefiniteYes => simplify_expr(yes)

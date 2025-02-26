@@ -3,6 +3,8 @@ import miniJavaParser.AST
 import miniJavaAnalysis.error.*
 import miniJavaAnalysis.resolve.{PackageName, Root, Resolver}
 import miniJavaParser.AST.ConstructorInvocation
+import miniJavaAnalysis.conversions.*
+import miniJavaAnalysis.operations.*
 
 case class ObjectInfo(
     superclass: Option[IR.ObjectType],
@@ -83,90 +85,25 @@ def is_subtype(ty: IR.Type, of: IR.Type)(ctx: Context): Boolean = (ty, of) match
     case (sub @ IR.ObjectType(_), _ @ IR.ObjectType(_)) => ???
     case _ => false
 
-def assign(ty: IR.Type, expr: IR.TypedExpression): IR.TypedExpression = expr.ty match
-    case t if t == ty => expr
-    case _ => ???
-
-def unbox(expr: IR.TypedExpression): IR.TypedExpression = expr.ty match
-    case ty: IR.PrimitiveType => expr
-    case _ => throw RuntimeException("TODO: unboxing")
-
-def binary_numeric_promotion(
-    l: IR.TypedExpression,
-    r: IR.TypedExpression
-): (IR.NumericOperandType, IR.TypedExpression, IR.TypedExpression) = (r.ty, l.ty) match
-    case (lty: IR.PrimitiveType, rty: IR.PrimitiveType) => (lty, rty) match
-        case (IR.PrimitiveType.Boolean, _)
-        | (_, IR.PrimitiveType.Boolean) => throw NonNumeric
-        case (IR.PrimitiveType.Double, IR.PrimitiveType.Double) => (IR.PrimitiveType.Double, l, r)
-        case (IR.PrimitiveType.Double, _) => (IR.PrimitiveType.Double, l, IR.Convert(IR.PrimitiveType.Double, r))
-        case (_, IR.PrimitiveType.Double) => (IR.PrimitiveType.Double, IR.Convert(IR.PrimitiveType.Double, l), r)
-        case (IR.PrimitiveType.Float, IR.PrimitiveType.Float) => (IR.PrimitiveType.Float, l, r)
-        case (IR.PrimitiveType.Float, _) => (IR.PrimitiveType.Float, l, IR.Convert(IR.PrimitiveType.Float, r))
-        case (_, IR.PrimitiveType.Float) => (IR.PrimitiveType.Float, IR.Convert(IR.PrimitiveType.Float, l), r)
-        case (IR.PrimitiveType.Long, IR.PrimitiveType.Long) => (IR.PrimitiveType.Long, l, r)
-        case (IR.PrimitiveType.Long, _) => (IR.PrimitiveType.Long, l, IR.Convert(IR.PrimitiveType.Long, r))
-        case (_, IR.PrimitiveType.Long) => (IR.PrimitiveType.Long, IR.Convert(IR.PrimitiveType.Long, l), r)
-        case (_, _) => (IR.PrimitiveType.Int, l, r)
-    case _ => throw NonNumeric
-
-def binary_numeric_operation(left: IR.TypedExpression, operator: IR.BinaryNumericOperator, right: IR.TypedExpression): IR.TypedExpression = {
-    val (ty, l, r) = binary_numeric_promotion(unbox(left), unbox(right))
-    ty match
-        case IR.PrimitiveType.Int => IR.IBinOp(l, operator, r)
-        case IR.PrimitiveType.Long => IR.LBinOp(l, operator, r)
-        case IR.PrimitiveType.Float => IR.FBinOp(l, operator, r)
-        case IR.PrimitiveType.Double => IR.DBinOp(l, operator, r)
+def canditate_methods(of: IR.ObjectType, name: String)(ctx: Context): List[(IR.ObjectType, MethodInfo)] = {
+    ctx.types(of).methods.get(name).toList.map(m => (of, m))
+    ++ ctx.types(of).superclass.map(canditate_methods(_, name)(ctx)).toList.flatten
+    ++ ctx.types(of).interfaces.map(canditate_methods(_, name)(ctx)).flatten
 }
 
-def binary_integral_operation(left: IR.TypedExpression, operator: IR.BinaryIntegralOperator, right: IR.TypedExpression): IR.TypedExpression = {
-    val (ty, l, r) = binary_numeric_promotion(unbox(left), unbox(right))
-    ty match
-        case IR.PrimitiveType.Int => IR.IBinOp(l, operator, r)
-        case IR.PrimitiveType.Long => IR.LBinOp(l, operator, r)
-        case IR.PrimitiveType.Float => throw NonIntegral
-        case IR.PrimitiveType.Double => throw NonIntegral
+def potentially_applicable(
+    of: IR.ObjectType,
+    mod: IR.Modifiers,
+    params: List[IR.Type],
+    args: List[IR.Type],
+)(ctx: Context): Boolean = {
+    (!mod.priv || ctx.this_type == of)
+    && (!mod.prot || is_subtype(ctx.this_type, of)(ctx))
+    && params.length == args.length
 }
 
-def relational_operation(left: IR.TypedExpression, operator: AST.Comparison, right: IR.TypedExpression): IR.TypedExpression = {
-    (left.ty, right.ty) match
-        case (IR.ObjectType(_), IR.ObjectType(_)) => operator match
-            case AST.BinaryOperator.Equals => IR.Ternary(IR.PrimitiveType.Boolean, IR.Comparison.ACmpEq, left, right, IR.BooleanLiteral(true), IR.BooleanLiteral(false))
-            case _ => throw NonNumeric
-        case (_, _) => {
-            val l = unbox(left)
-            val r = unbox(right)
-            
-            val (a, b) = if (l.ty == IR.PrimitiveType.Boolean && r.ty == IR.PrimitiveType.Boolean) {
-                if (operator != AST.BinaryOperator.Equals) throw NonNumeric
-                (l, r)
-            } else {
-                binary_numeric_promotion(l, r) match
-                    case (IR.PrimitiveType.Int, a, b) => (a, b)
-                    case (IR.PrimitiveType.Long, a, b) => (IR.LCmp(a, b), IR.IntLiteral(0))
-                    case (IR.PrimitiveType.Float, a, b) => operator match
-                        case AST.BinaryOperator.Equals
-                        | AST.BinaryOperator.Greater
-                        | AST.BinaryOperator.GreaterOrEqual => (IR.FCmpL(a, b), IR.IntLiteral(0))
-                        case AST.BinaryOperator.Less
-                        | AST.BinaryOperator.LessOrEqual => (IR.FCmpG(a, b), IR.IntLiteral(0))
-                    case (IR.PrimitiveType.Double, a, b) => operator match
-                        case AST.BinaryOperator.Equals
-                        | AST.BinaryOperator.Greater
-                        | AST.BinaryOperator.GreaterOrEqual => (IR.DCmpL(a, b), IR.IntLiteral(0))
-                        case AST.BinaryOperator.Less
-                        | AST.BinaryOperator.LessOrEqual => (IR.DCmpG(a, b), IR.IntLiteral(0))
-            }
-
-            val op = operator match
-                case AST.BinaryOperator.Equals => IR.Comparison.ICmpEq
-                case AST.BinaryOperator.Greater => IR.Comparison.ICmpGt
-                case AST.BinaryOperator.GreaterOrEqual => IR.Comparison.ICmpGe
-                case AST.BinaryOperator.Less => IR.Comparison.ICmpLt
-                case AST.BinaryOperator.LessOrEqual => IR.Comparison.ICmpLe
-            
-            IR.Ternary(IR.PrimitiveType.Boolean, op, a, b, IR.BooleanLiteral(true), IR.BooleanLiteral(false))
-        }
+def more_specific(a: List[IR.Type], b: List[IR.Type])(ctx: Context): Boolean = {
+    a.zip(b).forall(is_subtype(_, _)(ctx))
 }
 
 def get_field(target: IR.TypedExpression, name: String)(ctx: Context): IR.GetField = {
@@ -256,45 +193,6 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
         case t: IR.TypedExpression => t
         case c: IR.ObjectType => throw NotAField(c)
     case AST.FieldAccess(target, name) => get_field(typecheck_expr(target)(ctx), name)(ctx)
-    case AST.MethodCall(target, name, args) => {
-        var a = args.map(typecheck_expr(_)(ctx))
-        val (c, ty, t) = target match
-            case None => ctx.types(ctx.this_type).methods.get(name) match
-                case Some(MethodInfo(mod, ty)) => {
-                    if (ctx.is_static && !mod.stat) throw NonStaticMember(ctx.this_type.name, name)
-                    (ctx.this_type.name, ty, if (mod.stat) None else Some(IR.LoadLocal(ctx.this_type, 0)))
-                }
-                case None => throw NoSuchMethod(name, ctx.this_type)
-            case Some(target) => {
-                (target match
-                    case e: AST.Expression => typecheck_expr(e)(ctx)
-                    case n: AST.AmbiguousName => resolve_name(n)(ctx) match
-                        case t: IR.TypedExpression => t
-                        case c: IR.ObjectType => c
-                ) match
-                    case e: IR.TypedExpression => e.ty match
-                        case c: IR.ObjectType => ctx.types(c).methods.get(name) match
-                            case Some(MethodInfo(mod, ty)) => {
-                                if (mod.stat) throw StaticMember(c.name, name)
-                                (c.name, ty, Some(e))
-                            }
-                            case None => throw NoSuchMethod(name, c)
-                        case _ => throw NoSuchMethod(name, e.ty)
-                    case c: IR.ObjectType => ctx.types(c).methods.get(name) match
-                        case Some(MethodInfo(mod, ty)) => {
-                            if (!mod.stat) throw NonStaticMember(c.name, name)
-                            (c.name, ty, None)
-                        }
-                        case None => throw NoSuchMethod(name, c)
-            }
-            
-        if (a.length != ty.params.length) throw new ParameterCountMismatch(a.length, ty.params.length)
-        a = ty.params.zip(a).map(assign)
-
-        t match
-            case Some(t) => IR.InvokeSpecial(c, name, ty, t, a)
-            case None => IR.InvokeStatic(c, name, ty, a)
-    }
     case AST.Assignment(left, right) => {
         val r = typecheck_expr(right)(ctx)
         left match
@@ -331,8 +229,53 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
     }
     case AST.ArrayInitializer(initializers) => ???
     case AST.ArrayAccess(_, _) => ???
-    case AST.NewObject(_, _) => ???
+    case AST.NewObject(name, args) => ???
     case AST.NewArray(_, _) => ???
+    case AST.MethodCall(target, name, args) => {
+        val a = args.map(typecheck_expr(_)(ctx))
+        val atys = a.map(_.ty)
+        val t = target match
+            case None => None
+            case Some(e: AST.Expression) => Some(typecheck_expr(e)(ctx))
+            case Some(a: AST.AmbiguousName) => Some(resolve_name(a)(ctx))
+        
+        val to_search = t match
+            case None => ctx.this_type
+            case Some(e: IR.TypedExpression) => e.ty match
+                case c: IR.ObjectType => c
+                case _ => throw NoSuchMethod(name, ctx.this_type)
+            case Some(c: IR.ObjectType) => c
+
+        val candidates = canditate_methods(to_search, name)(ctx)
+            .filter((of, method) => potentially_applicable(of, method.mod, method.ty.params, atys)(ctx))
+
+        val (of, method) = candidates.filter((_, method) => atys.zip(method.ty.params).forall(is_subtype(_, _)(ctx)))
+            .sortWith((f, g) => more_specific(f._2.ty.params, g._2.ty.params)(ctx) && !more_specific(f._2.ty.params, g._2.ty.params)(ctx))
+            match
+                case best :: Nil => best
+                case best :: next :: _ if !more_specific(next._2.ty.params, best._2.ty.params)(ctx) => best
+                case best :: equal :: _ => throw Ambiguous(name)
+                case Nil => ???
+
+        if method.mod.stat then {
+            t match
+                case Some(e: IR.TypedExpression) => throw new StaticMember(of.name, name)
+                case _ => IR.InvokeStatic(of.name, name, method.ty, a)
+        } else {
+            val actual_target = t match
+                case None => IR.LoadLocal(ctx.this_type, 0)
+                case Some(e: IR.TypedExpression) => e
+                case Some(c: IR.ObjectType) => throw NonStaticMember(of.name, name)
+
+            if method.mod.priv then {
+                IR.InvokeSpecial(of.name, name, method.ty, actual_target, a)
+            } else if ctx.types(of).superclass.isEmpty then {
+                IR.InvokeInterface(of.name, name, method.ty, actual_target, a)
+            } else {
+                IR.InvokeVirtual(of.name, name, method.ty, actual_target, a)
+            }
+        }
+    }
 
 def typecheck_stmts(prev: IR.Code, stmts: List[AST.Statement])(ctx: Context): IR.Code = stmts match
     case Nil => prev

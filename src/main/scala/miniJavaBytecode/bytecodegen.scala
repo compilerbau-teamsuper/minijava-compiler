@@ -186,6 +186,20 @@ extension(expression: TypedExpression) {
                 name, mty.descriptor()
             )
             if (mty.ret == VoidType) then mv.visitInsn(ICONST_0)
+        case InvokeInterface(of, name, mty, target, args) =>
+            target.translate(mv)
+            args.foreach(_.translate(mv))
+            mv.visitMethodInsn(
+                INVOKEINTERFACE, of.internalName(),
+                name, mty.descriptor()
+            )
+        case InvokeVirtual(of, name, mty, target, args) =>
+            target.translate(mv)
+            args.foreach(_.translate(mv))
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL, of.internalName(),
+                name, mty.descriptor()
+            )
         case IntLikeLiteral(_, value) => value match {
             case -1 => mv.visitInsn(ICONST_M1)
             case 0 => mv.visitInsn(ICONST_0)
