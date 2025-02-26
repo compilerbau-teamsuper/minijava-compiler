@@ -200,6 +200,7 @@ extension(expression: TypedExpression) {
                 INVOKEVIRTUAL, of.internalName(),
                 name, mty.descriptor()
             )
+        case New(of) => mv.visitTypeInsn(NEW, of.internalName())
         case IntLikeLiteral(_, value) => value match {
             case -1 => mv.visitInsn(ICONST_M1)
             case 0 => mv.visitInsn(ICONST_0)

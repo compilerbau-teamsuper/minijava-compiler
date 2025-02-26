@@ -11,12 +11,11 @@ case class ObjectInfo(
     interfaces: List[IR.ObjectType],
     methods: Map[String, MethodInfo],
     fields: Map[String, FieldInfo],
-    constructors: Map[List[IR.Type], ConstructorInfo],
+    constructors: List[MethodInfo],
 )
 
 case class FieldInfo(mod: IR.Modifiers, ty: IR.Type)
 case class MethodInfo(mod: IR.Modifiers, ty: IR.MethodType)
-case class ConstructorInfo(mod: IR.Modifiers)
 
 val langtypes = Map(
     IR.LangTypes.Object -> ObjectInfo(
@@ -24,28 +23,28 @@ val langtypes = Map(
         List.empty,
         Map.empty,
         Map.empty,
-        Map(List.empty -> ConstructorInfo(IR.Modifiers.empty)),
+        List(MethodInfo(IR.Modifiers.empty, IR.MethodType(List.empty, IR.VoidType))),
     ),
     IR.LangTypes.String -> ObjectInfo(
         Some(IR.LangTypes.Object),
         List.empty,
         Map.empty,
         Map.empty,
-        Map.empty,
+        List.empty,
     ),
     IR.LangTypes.System -> ObjectInfo(
         Some(IR.LangTypes.Object),
         List.empty,
         Map.empty,
         Map("out" -> FieldInfo(IR.Modifiers(true, false, false, false, true, false), IR.LangTypes.PrintStream)),
-        Map.empty,
+        List.empty,
     ),
     IR.LangTypes.PrintStream -> ObjectInfo(
         Some(IR.LangTypes.Object),
         List.empty,
         Map("println" -> MethodInfo(IR.Modifiers(true, false, false, false, false, false), IR.MethodType(List(IR.LangTypes.String), IR.VoidType))),
         Map.empty,
-        Map.empty,
+        List.empty,
     )
 )
 
@@ -93,13 +92,38 @@ def canditate_methods(of: IR.ObjectType, name: String)(ctx: Context): List[(IR.O
 
 def potentially_applicable(
     of: IR.ObjectType,
-    mod: IR.Modifiers,
-    params: List[IR.Type],
+    method: MethodInfo,
     args: List[IR.Type],
 )(ctx: Context): Boolean = {
-    (!mod.priv || ctx.this_type == of)
-    && (!mod.prot || is_subtype(ctx.this_type, of)(ctx))
-    && params.length == args.length
+    (!method.mod.priv || ctx.this_type == of)
+    && (!method.mod.prot || is_subtype(ctx.this_type, of)(ctx))
+    && method.ty.params.length == args.length
+}
+
+def select_method(
+    candidates: List[(IR.ObjectType, MethodInfo)],
+    args: List[AST.Expression],
+)(ctx: Context): (IR.ObjectType, MethodInfo, List[IR.TypedExpression]) = {
+    val a = args.map(typecheck_expr(_)(ctx))
+    val atys = a.map(_.ty)
+    candidates
+        .filter((of, method) => potentially_applicable(of, method, atys)(ctx))
+        .filter((_, method) => atys.zip(method.ty.params).forall(is_subtype(_, _)(ctx)))
+        .sortWith((f, g) => more_specific(f._2.ty.params, g._2.ty.params)(ctx) && !more_specific(f._2.ty.params, g._2.ty.params)(ctx))
+        match
+            case best :: Nil => best :* a
+            case best :: next :: _ if !more_specific(next._2.ty.params, best._2.ty.params)(ctx) => best :* a
+            case best :: equal :: _ => throw Ambiguous
+            case Nil => ???
+}
+
+def invoke_constructor(
+    of: IR.ObjectType,
+    args: List[AST.Expression],
+    target: IR.TypedExpression,
+)(ctx: Context): IR.TypedExpression = {
+    val (_, method, a) = select_method(ctx.types(of).constructors.map((of, _)), args)(ctx)
+    IR.InvokeSpecial(of.name, "<init>", method.ty, target, a)
 }
 
 def more_specific(a: List[IR.Type], b: List[IR.Type])(ctx: Context): Boolean = {
@@ -229,11 +253,12 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
     }
     case AST.ArrayInitializer(initializers) => ???
     case AST.ArrayAccess(_, _) => ???
-    case AST.NewObject(name, args) => ???
+    case AST.NewObject(name, args) => {
+        val of = ctx.resolver.resolve(name)
+        invoke_constructor(IR.ObjectType(of), args, IR.New(of))(ctx)
+    }
     case AST.NewArray(_, _) => ???
     case AST.MethodCall(target, name, args) => {
-        val a = args.map(typecheck_expr(_)(ctx))
-        val atys = a.map(_.ty)
         val t = target match
             case None => None
             case Some(e: AST.Expression) => Some(typecheck_expr(e)(ctx))
@@ -246,17 +271,7 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
                 case _ => throw NoSuchMethod(name, ctx.this_type)
             case Some(c: IR.ObjectType) => c
 
-        val candidates = canditate_methods(to_search, name)(ctx)
-            .filter((of, method) => potentially_applicable(of, method.mod, method.ty.params, atys)(ctx))
-
-        val (of, method) = candidates.filter((_, method) => atys.zip(method.ty.params).forall(is_subtype(_, _)(ctx)))
-            .sortWith((f, g) => more_specific(f._2.ty.params, g._2.ty.params)(ctx) && !more_specific(f._2.ty.params, g._2.ty.params)(ctx))
-            match
-                case best :: Nil => best
-                case best :: next :: _ if !more_specific(next._2.ty.params, best._2.ty.params)(ctx) => best
-                case best :: equal :: _ => throw Ambiguous(name)
-                case Nil => ???
-
+        val (of, method, a) = select_method(canditate_methods(to_search, name)(ctx), args)(ctx)
         if method.mod.stat then {
             t match
                 case Some(e: IR.TypedExpression) => throw new StaticMember(of.name, name)
@@ -387,7 +402,7 @@ def typecheck_constructor(
     modifiers: IR.Modifiers,
     name: String,
     parameters: List[String],
-    tys: List[IR.Type],
+    ty: IR.MethodType,
     this_type: IR.ObjectType,
     construct: AST.ConstructorInvocation,
     body: List[AST.Statement],
@@ -398,39 +413,19 @@ def typecheck_constructor(
 ): IR.Method = {
     if name != this_type.name.path.last then throw InvalidConstructor
 
-    val ty = IR.MethodType(tys, IR.VoidType)
     val (ctx, prev) = context_from_args(false, parameters, ty, this_type)(resolver, types)
-    var code = prev
-    construct match
+    val constructor = construct match
         case ConstructorInvocation("super", args) => {
-            if args.length != 0 then ???
             val superclass = types(this_type).superclass.get
-            val constructor = types(superclass).constructors.get(List.empty) match
-                case Some(c) => c
-                case None => throw NoApplicableConstructor(superclass.name)
-            
-            code = code.copy(code = initializers
-                :+ IR.ExpressionStatement(IR.InvokeSpecial(
-                    superclass.name,
-                    "<init>",
-                    IR.MethodType(List.empty, IR.VoidType),
-                    IR.LoadLocal(this_type, 0),
-                    List.empty
-                ))
-            )
+            IR.ExpressionStatement(invoke_constructor(superclass, args, IR.LoadLocal(ctx.this_type, 0))(ctx))
+            :: initializers
         }
         case ConstructorInvocation("this", args) => {
-            if args.length != 0 then ???
-            code = code.copy(code = List(IR.ExpressionStatement(IR.InvokeSpecial(
-                this_type.name,
-                "<init>",
-                IR.MethodType(List.empty, IR.VoidType),
-                IR.LoadLocal(this_type, 0),
-                List.empty
-            ))))
+            IR.ExpressionStatement(invoke_constructor(this_type, args, IR.LoadLocal(ctx.this_type, 0))(ctx))
+            :: Nil
         }
-    
-    code = typecheck_stmts(code, body)(ctx)
+
+    val code = typecheck_stmts(prev.copy(code = constructor), body)(ctx)
     IR.Method(modifiers, "<init>", ty, Some(code))
 }
 
@@ -502,7 +497,7 @@ def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
         interfaces.map(IR.ObjectType(_)),
         Map.empty,
         Map.empty,
-        Map.empty,
+        List.empty,
     )
     var check_fields = List.empty[Map[IR.ObjectType, ObjectInfo] => (IR.Field, IR.TypedStatement)]
     var check_constructors = List.empty[(Map[IR.ObjectType, ObjectInfo], List[IR.TypedStatement]) => IR.Method]
@@ -525,11 +520,10 @@ def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
         }
         case AST.ConstructorDeclaration(modifiers, name, parameters, construct, body) => {
             val mod = check_modifiers(modifiers)
-            val tys = parameters.map(p => resolve_ty(p.paramType)(resolver))
+            val ty = IR.MethodType(parameters.map(p => resolve_ty(p.paramType)(resolver)), IR.VoidType)
             val params = parameters.map(p => p.name)
-            if info.constructors.contains(tys) then throw DuplicateDefinition(List(class_name.path.last))
-            info = info.copy(constructors = info.constructors + (tys -> ConstructorInfo(mod)))
-            check_constructors = check_constructors :+ ((types, initializers) => typecheck_constructor(mod, name, params, tys, this_type, construct, body)(resolver, types, initializers))
+            info = info.copy(constructors = info.constructors :+ MethodInfo(mod, ty))
+            check_constructors = check_constructors :+ ((types, initializers) => typecheck_constructor(mod, name, params, ty, this_type, construct, body)(resolver, types, initializers))
         }
         case AST.Block(statements) => ???
 

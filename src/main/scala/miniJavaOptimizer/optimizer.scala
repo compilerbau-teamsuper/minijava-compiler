@@ -237,6 +237,8 @@ def simplify_expr(expr: TypedExpression): TypedExpression = expr match
     case InvokeInterface(of, name, mty, target, args) => InvokeInterface(of, name, mty, simplify_expr(target), args.map(simplify_expr))
     case InvokeVirtual(of, name, mty, target, args) => InvokeVirtual(of, name, mty, simplify_expr(target), args.map(simplify_expr))
 
+    case New(of) => New(of)
+
     case Ternary(ty, cmp, left, right, yes, no) => decide_comparison(cmp, simplify_expr(left), simplify_expr(right)) match
         case DefiniteYes => simplify_expr(yes)
         case DefiniteNo => simplify_expr(no)

@@ -61,4 +61,4 @@ case class ModifyFinal(name: String, ty: Option[IR.Type]) extends Throwable(ty m
 case class NonStaticMember(of: IR.ClassName, name: String) extends Throwable("member " + name + " of class " + of.stringify + " is non-static") with TypeError
 case class StaticMember(of: IR.ClassName, name: String) extends Throwable("member " + name + " of class " + of.stringify + "is static") with TypeError
 case class NotAField(ty: IR.Type) extends Throwable("expected a field, found type " + ty.stringify) with TypeError
-case class Ambiguous(name: String) extends Throwable("name " + name + " is ambiguous") with TypeError
+case object Ambiguous extends Throwable("method invocation is ambiguous") with TypeError

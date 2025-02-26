@@ -163,5 +163,7 @@ case class InvokeSpecial(of: ClassName, name: String, mty: MethodType, target: T
 case class InvokeInterface(of: ClassName, name: String, mty: MethodType, target: TypedExpression, args: List[TypedExpression]) extends TypedExpression(mty.ret)
 case class InvokeVirtual(of: ClassName, name: String, mty: MethodType, target: TypedExpression, args: List[TypedExpression]) extends TypedExpression(mty.ret)
 
+case class New(of: ClassName) extends TypedExpression(ObjectType(of))
+
 /** A ternary expression. `result_ty` is only used during type checking. */
 case class Ternary(result_ty: Type, cmp: Comparison, left: TypedExpression, right: TypedExpression, yes: TypedExpression, no: TypedExpression) extends TypedExpression(result_ty)
