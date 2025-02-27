@@ -43,4 +43,4 @@ He also wrote [tests](https://github.com/compilerbau-teamsuper/minijava-compiler
 - [user documentation](#Usage)
 - [continuous integration](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/main/.github/workflows/scala.yaml) setup
 - [end-to-end tests](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/main/src/test/scala/endToEnd.scala)
-- several fixes in the other packages (please see the commit history for this)
+- several fixes in the typechecker and parser (please see the commit history for this)
