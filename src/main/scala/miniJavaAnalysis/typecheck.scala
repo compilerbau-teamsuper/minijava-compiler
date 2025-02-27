@@ -44,7 +44,7 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
     case AST.StringLiteral(value) => IR.StringLiteral(value)
     case AST.NullLiteral => IR.NullLiteral
     case AST.ThisExpression => {
-        if ctx.is_static then ???
+        if ctx.is_static then throw NonStaticMember(ctx.this_type.name, "this")
         IR.LoadLocal(ctx.this_type, 0)
     }
     case AST.BinaryExpression(left, operator, right) => {
