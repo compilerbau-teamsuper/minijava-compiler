@@ -232,7 +232,7 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
         val (_, method, a) = select_method(ctx.types(of).constructors.map((of, _)), args)(ctx)
         IR.New(n, method.ty, a)
     }
-    case AST.NewArray(arrayType, size) => IR.NewArray(resolve_ty(arrayType)(ctx.resolver), typecheck_expr(size)(ctx))
+    case AST.NewArray(element, size) => IR.NewArray(resolve_ty(element)(ctx.resolver), typecheck_expr(size)(ctx))
     case AST.MethodCall(target, name, args) => {
         val t = target match
             case None => None

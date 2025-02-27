@@ -87,43 +87,45 @@ variableInitializer
 
 arrayInitializer
     : '{' (expression (',' expression)*)? ','? '}'
-    | 'new' type '[' expression ']';
-
+    | newArray;
 
 // Expressions
 expression
     : calcFunction
     | booleanFunction
     | qualifiedName calcUnOp
-    | newObject
     | value
     | assignment;
 
 value
     : primary
+    | newArray
     | qualifiedName;
 
 primary
-    : IntegerLiteral# literal
-	| LongLiteral# literal
-	| FloatingPointLiteral# literal
-	| DoubleLiteral# literal
-	| CharacterLiteral# literal
+    : IntegerLiteral # literal
+	| LongLiteral # literal
+	| FloatingPointLiteral # literal
+	| DoubleLiteral # literal
+	| CharacterLiteral # literal
 	| BooleanLiteral # literal
 	| NullLiteral # literal
 	| StringLiteral # literal
 	| 'this' # this
 	| '(' expression ')' # nested
+    | 'new' qualifiedName '(' expressionList? ')' # newObject
+    | newArray '.' Identifier # fieldAccess
     | primary '.' Identifier # fieldAccess
     | qualifiedName '[' expression ']' # arrayAccess
     | primary '[' expression ']' # arrayAccess
     | Identifier '(' expressionList? ')' # methodCall
     | qualifiedName '.' Identifier '(' expressionList? ')' # methodCall
+    | newArray '.' Identifier '(' expressionList? ')' # methodCall
     | primary '.' Identifier '(' expressionList? ')' # methodCall;
 
-expressionList : expression (',' expression)*;
+newArray: 'new' (objectType | primitiveType) '[' expression ']';
 
-newObject: 'new' qualifiedName '(' expressionList? ')'; // 'new' qualifiedName | methodCall) (classBody)?;
+expressionList : expression (',' expression)*;
 
 // Basic Functions
 calcFunction
@@ -270,6 +272,7 @@ throwStatement : 'throw' expression ';' ;
 // Assignments
 assignment
     : qualifiedName assignmentType expression # assignQualifiedName
+    | newArray '.' Identifier assignmentType expression # assignFieldAccess
     | primary '.' Identifier assignmentType expression # assignFieldAccess
     | qualifiedName '[' expression ']' assignmentType expression # assignArrayAccess
     | primary '[' expression ']' assignmentType expression # assignArrayAccess;
@@ -311,24 +314,17 @@ type
     | primitiveType
     | arrayType;
 
-objectType
-    : 'String' #StringObject
-    | 'Short' #ShortObject
-    | 'Integer' #IntegerObject
-    | 'Float' #FloatObject
-    | 'Double' #DoubleObject
-    | 'Boolean' #BooleanObject
-    | 'Character' #CharacterObject
-    | Identifier #Identifier;
+objectType: qualifiedName;
 
 primitiveType
-    : 'short' #ShortType
-    | 'byte' #ByteType
-    | 'int' #IntType
-    | 'float' #FloatType
-    | 'double' #DoubleType
-    | 'boolean' #BooleanType
-    | 'char' #CharType;
+	: 'boolean'
+    | 'byte'
+    | 'short'
+	| 'char'
+    | 'int'
+    | 'long'
+    | 'float'
+    | 'double';
 
 arrayType : (primitiveType | objectType) '[' ']' ; // ToDo: Support für mehrdimensionale Arrays?
 

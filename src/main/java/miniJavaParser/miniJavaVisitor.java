@@ -191,6 +191,13 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitValue(miniJavaParser.ValueContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code newObject}
+	 * labeled alternative in {@link miniJavaParser#primary}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNewObject(miniJavaParser.NewObjectContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code fieldAccess}
 	 * labeled alternative in {@link miniJavaParser#primary}.
 	 * @param ctx the parse tree
@@ -233,17 +240,17 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitMethodCall(miniJavaParser.MethodCallContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link miniJavaParser#newArray}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNewArray(miniJavaParser.NewArrayContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#expressionList}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitExpressionList(miniJavaParser.ExpressionListContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link miniJavaParser#newObject}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitNewObject(miniJavaParser.NewObjectContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#calcFunction}.
 	 * @param ctx the parse tree
@@ -543,103 +550,17 @@ public interface miniJavaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitType(miniJavaParser.TypeContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code StringObject}
-	 * labeled alternative in {@link miniJavaParser#objectType}.
+	 * Visit a parse tree produced by {@link miniJavaParser#objectType}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitStringObject(miniJavaParser.StringObjectContext ctx);
+	T visitObjectType(miniJavaParser.ObjectTypeContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code ShortObject}
-	 * labeled alternative in {@link miniJavaParser#objectType}.
+	 * Visit a parse tree produced by {@link miniJavaParser#primitiveType}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitShortObject(miniJavaParser.ShortObjectContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code IntegerObject}
-	 * labeled alternative in {@link miniJavaParser#objectType}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitIntegerObject(miniJavaParser.IntegerObjectContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code FloatObject}
-	 * labeled alternative in {@link miniJavaParser#objectType}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitFloatObject(miniJavaParser.FloatObjectContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code DoubleObject}
-	 * labeled alternative in {@link miniJavaParser#objectType}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitDoubleObject(miniJavaParser.DoubleObjectContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code BooleanObject}
-	 * labeled alternative in {@link miniJavaParser#objectType}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitBooleanObject(miniJavaParser.BooleanObjectContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code CharacterObject}
-	 * labeled alternative in {@link miniJavaParser#objectType}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitCharacterObject(miniJavaParser.CharacterObjectContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code Identifier}
-	 * labeled alternative in {@link miniJavaParser#objectType}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitIdentifier(miniJavaParser.IdentifierContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code ShortType}
-	 * labeled alternative in {@link miniJavaParser#primitiveType}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitShortType(miniJavaParser.ShortTypeContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code IntType}
-	 * labeled alternative in {@link miniJavaParser#primitiveType}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitIntType(miniJavaParser.IntTypeContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code FloatType}
-	 * labeled alternative in {@link miniJavaParser#primitiveType}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitFloatType(miniJavaParser.FloatTypeContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code DoubleType}
-	 * labeled alternative in {@link miniJavaParser#primitiveType}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitDoubleType(miniJavaParser.DoubleTypeContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code BooleanType}
-	 * labeled alternative in {@link miniJavaParser#primitiveType}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitBooleanType(miniJavaParser.BooleanTypeContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code CharType}
-	 * labeled alternative in {@link miniJavaParser#primitiveType}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitCharType(miniJavaParser.CharTypeContext ctx);
+	T visitPrimitiveType(miniJavaParser.PrimitiveTypeContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link miniJavaParser#arrayType}.
 	 * @param ctx the parse tree

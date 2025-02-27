@@ -79,7 +79,7 @@ case class BinaryExpression(left: Expression, operator: BinaryOperator, right: E
 case class MethodCall(target: Option[Expression | AmbiguousName], name: String, args: List[Expression]) extends Expression  // ToDo: In UML eintragen
 case class FieldAccess(target: Expression, name: String) extends Expression
 case class ArrayInitializer(initializers: List[Expression]) extends Expression
-case class NewArray(arrayType: Type, size: Expression) extends Expression
+case class NewArray(element: PrimitiveType | ObjectType, size: Expression) extends Expression
 case class ArrayAccess(target: Expression, index: Expression) extends Expression // ToDo: Mehrdimensionale arrays
 case class NewObject(namme: AmbiguousName, args: List[Expression]) extends Expression
 case class Assignment(left: ExpressionName | FieldAccess | ArrayAccess, right: Expression) extends Expression
@@ -124,14 +124,14 @@ sealed trait Type extends TypeOrVoid
 
 sealed trait PrimitiveType extends Type
 object PrimitiveType {
-  case object Int extends PrimitiveType
   case object Boolean extends PrimitiveType
-  case object Char extends PrimitiveType
-  case object Double extends PrimitiveType
-  case object Float extends PrimitiveType
-  case object Long extends PrimitiveType
-  case object Short extends PrimitiveType
   case object Byte extends PrimitiveType
+  case object Short extends PrimitiveType
+  case object Char extends PrimitiveType
+  case object Int extends PrimitiveType
+  case object Long extends PrimitiveType
+  case object Float extends PrimitiveType
+  case object Double extends PrimitiveType
 }
 
 sealed case class ObjectType(name: AmbiguousName) extends Type

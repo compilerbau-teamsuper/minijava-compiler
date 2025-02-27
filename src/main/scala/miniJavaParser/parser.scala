@@ -225,7 +225,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   // Methode: visitFieldDeclaration
   private def visitFieldDec(ctx: FieldDeclarationContext, inInterface: Boolean): List[VarOrFieldDeclaration] = {
     val modifiers = getModifiers(ctx.fieldModifier())
-    val fieldType = getType(ctx.`type`())
+    val fieldType = visitType(ctx.`type`())
     val variables = ctx.variableDeclarator().asScala.map { declarator =>
       val name = declarator.Identifier().getText
       val initializer = if declarator.variableInitializer() != null
@@ -296,7 +296,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
 
   private def getFormalParameters(ctx: FormalParametersContext): List[Parameter] = {
     if ctx == null then return List.empty
-    (ctx.`type`().asScala zip ctx.Identifier().asScala).map{case (t, n) =>  Parameter(n.getText, getType(t))}.toList
+    (ctx.`type`().asScala zip ctx.Identifier().asScala).map{case (t, n) =>  Parameter(n.getText, visitType(t))}.toList
   }
 
   // Methode: visitVariableInitializer
@@ -312,7 +312,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
 
   // Methode: visitArrayInitializer
   override def visitArrayInitializer(ctx: ArrayInitializerContext): ArrayInitializer | NewArray = {
-    if ctx.`type`() != null then NewArray(getType(ctx.`type`()), visitExpression(ctx.expression(0)))
+    if ctx.newArray() != null then visitNewArray(ctx.newArray())
     else ArrayInitializer(ctx.expression().asScala.map(visitExpression).toList)
   }
 
@@ -381,7 +381,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   }
 
   private def visitLocalVariableDec(ctx: LocalVariableDeclarationContext): List[VarOrFieldDeclaration] = {
-    val t = getType(ctx.`type`())
+    val t = visitType(ctx.`type`())
     val variables = ctx.variableDeclarator().asScala.map(v => visitVariableDeclarator(v, t)).toList
     variables.map(v => VarOrFieldDeclaration(List(), t, v(0), v(1)))
   }
@@ -425,6 +425,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   private def visitAssignment(a: AssignmentContext): Assignment = {
     val (left, ty, r) = a match
       case q: AssignQualifiedNameContext => (ExpressionName(buildAmbiguousName(q.qualifiedName())) : ExpressionName | FieldAccess | ArrayAccess, q.assignmentType(), q.expression())
+      case f: AssignFieldAccessContext if f.newArray() != null => (FieldAccess(visitNewArray(f.newArray()), f.Identifier().getText()) : ExpressionName | FieldAccess | ArrayAccess, f.assignmentType(), f.expression())
       case f: AssignFieldAccessContext => (FieldAccess(visitPrimary(f.primary()), f.Identifier().getText) : ExpressionName | FieldAccess | ArrayAccess, f.assignmentType(), f.expression())
       case a: AssignArrayAccessContext if a.qualifiedName() != null => (ArrayAccess(ExpressionName(buildAmbiguousName(a.qualifiedName())), visitExpression(a.expression(0))) : ExpressionName | FieldAccess | ArrayAccess, a.assignmentType(), a.expression(1))
       case a: AssignArrayAccessContext if a.primary() != null => (ArrayAccess(visitPrimary(a.primary()), visitExpression(a.expression(0))) : ExpressionName | FieldAccess | ArrayAccess, a.assignmentType(), a.expression(1))
@@ -446,6 +447,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   override def visitMethodCall(ctx: MethodCallContext): MethodCall = {
     val target = if ctx.qualifiedName() != null then
       Some(buildAmbiguousName(ctx.qualifiedName()))
+    else if ctx.newArray() != null then
+      Some(visitNewArray(ctx.newArray()))
     else if ctx.primary() != null then
       Some(visitPrimary(ctx.primary()))
     else
@@ -515,6 +518,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   override def visitValue(ctx: ValueContext) : Expression = {
     ctx.getChild(0) match {
       case p: PrimaryContext => visitPrimary(p)
+      case a: NewArrayContext => visitNewArray(a)
       case e: QualifiedNameContext => ExpressionName(buildAmbiguousName(e))
     }
   }
@@ -524,6 +528,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       case l: LiteralContext => visitLiteral(l)
       case t: ThisContext => ThisExpression
       case n: NestedContext => visitExpression(n.expression())
+      case c: NewObjectContext => visitNewObject(c)
       case f: FieldAccessContext => visitFieldAccess(f)
       case a: ArrayAccessContext => visitArrayAccess(a)
       case m: MethodCallContext => visitMethodCall(m)
@@ -555,7 +560,10 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   }
 
   override def visitFieldAccess(ctx: FieldAccessContext): FieldAccess = {
-    val target = visitPrimary(ctx.primary())
+    val target = if ctx.newArray() != null then
+      visitNewArray(ctx.newArray())
+    else
+      visitPrimary(ctx.primary())
     val name = ctx.Identifier().getText()
     FieldAccess(target, name)
   }
@@ -567,6 +575,13 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     else
       List.empty
     NewObject(name, args)
+  }
+
+  override def visitNewArray(ctx: NewArrayContext): NewArray = {
+    if ctx.primitiveType() != null then
+      NewArray(visitPrimitiveType(ctx.primitiveType()), visitExpression(ctx.expression()))
+    else
+      NewArray(visitObjectType(ctx.objectType()), visitExpression(ctx.expression()))
   }
 
   override def visitBooleanFunction(ctx: BooleanFunctionContext): Expression = {
@@ -671,29 +686,35 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
 
   override def visitTypeOrVoid(ctx: TypeOrVoidContext): TypeOrVoid = {
     if (ctx.`type`() != null) {
-      getType(ctx.`type`())
+      visitType(ctx.`type`())
     } else {
       AST.VoidType
     }
   }
 
-  private def getType(ctx: TypeContext | ArrayTypeContext): Type = {
+  override def visitType(ctx: TypeContext): Type = {
     ctx.getChild(0) match {
-      case t: (PrimitiveTypeContext | ObjectTypeContext) => toType(t.getText)
-      case a: ArrayTypeContext => ArrayType(getType(a))
+      case p: PrimitiveTypeContext => visitPrimitiveType(p)
+      case o: ObjectTypeContext => visitObjectType(o)
+      case a: ArrayTypeContext if a.primitiveType() != null => ArrayType(visitPrimitiveType(a.primitiveType()))
+      case a: ArrayTypeContext => ArrayType(visitObjectType(a.objectType()))
     }
   }
 
-  private def toType(typeName: String): Type = typeName match {
-    // Primitive Typen
-    case "int" => PrimitiveType.Int
+  override def visitObjectType(ctx: ObjectTypeContext): ObjectType = ObjectType(buildAmbiguousName(ctx.qualifiedName()))
+
+  override def visitPrimitiveType(ctx: PrimitiveTypeContext): PrimitiveType = ctx.getText() match
     case "boolean" => PrimitiveType.Boolean
-    case "char" => PrimitiveType.Char
-    case "short" => PrimitiveType.Short
     case "byte" => PrimitiveType.Byte
+    case "short" => PrimitiveType.Short
+    case "char" => PrimitiveType.Char
+    case "int" => PrimitiveType.Int
     case "long" => PrimitiveType.Long
     case "float" => PrimitiveType.Float
     case "double" => PrimitiveType.Double
+
+  private def toType(typeName: String): Type = typeName match {
+    // Primitive Typen
 
     // Objekttyp
     case ty if ty.matches("[A-Za-z_][A-Za-z0-9_]*") => ObjectType(AmbiguousName(List(ty)))
