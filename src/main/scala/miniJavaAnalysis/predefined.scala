@@ -23,7 +23,10 @@ val types = Map(
         Some(LangTypes.Object),
         List.empty,
         Map.empty,
-        Map("out" -> FieldInfo(Modifiers(true, false, false, false, true, false), LangTypes.PrintStream)),
+        Map(
+            "out" -> FieldInfo(Modifiers(false, false, false, false, true, false), LangTypes.PrintStream),
+            "err" -> FieldInfo(Modifiers(false, false, false, false, true, false), LangTypes.PrintStream),
+        ),
         List.empty,
     ),
     LangTypes.PrintStream -> ObjectInfo(
