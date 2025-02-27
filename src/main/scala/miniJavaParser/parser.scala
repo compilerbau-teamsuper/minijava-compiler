@@ -634,13 +634,13 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
 
   override def visitCalcFunction(ctx: CalcFunctionContext): Expression = {
     if (ctx.calcBinOpHigher() != null) {
-      val left = visitValue(ctx.value()) // Left-hand side expression
-      val right = visitTerm(ctx.term()) // Right-hand side expression
+      val left = visitTerm(ctx.term()) // Left-hand side expression
+      val right = visitValue(ctx.value()) // Right-hand side expression
       val operator = getCalcOperator(ctx.getChild(1).getText)
       BinaryExpression(left, operator, right)
     } else if (ctx.calcBinOpLower() != null) {
-      val left = visitTerm(ctx.term()) // Left-hand side expression
-      val right = if ctx.value != null then visitValue(ctx.value()) else visitCalcFunction(ctx.calcFunction())// Right-hand side expression
+      val left = if ctx.value != null then visitValue(ctx.value()) else visitCalcFunction(ctx.calcFunction()) // Left-hand side expression
+      val right = visitTerm(ctx.term())// Right-hand side expression
       val operator = getCalcOperator(ctx.getChild(1).getText)
       BinaryExpression(left, operator, right)
     } else if ctx.negate() != null then BinaryExpression(IntLiteral(0), Subtract, visitExpression(ctx.negate().expression()))
@@ -661,8 +661,8 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
 
   override def visitTerm(ctx: TermContext): Expression = {
     if ctx.calcBinOpHigher() != null then
-      val left = visitValue(ctx.value()) // Left-hand side expression
-      val right = visitTerm(ctx.term()) // Right-hand side expression
+      val left = visitTerm(ctx.term()) // Left-hand side expression
+      val right = visitValue(ctx.value()) // Right-hand side expression
       val operator = getCalcOperator(ctx.getChild(1).getText)
       BinaryExpression(left, operator, right)
     else visitValue(ctx.value())

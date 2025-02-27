@@ -74,28 +74,26 @@ object ParserTest extends TestSuite {
     }
     test("calculations parsing") {
       val ast = JavaASTBuilder.parseFromFile("src/test/java/calculationsTest.java")
-      val expected = CompilationUnit(None, List(), List(ClassDeclaration(List(Modifier.Public), "calculationsTest", AmbiguousName(List("Object")), List(), List(
-        ConstructorDeclaration(List(Modifier.Public),"calculationsTest",List(),
-        ConstructorInvocation("super",List()),List(ExpressionStatement(Assignment(
-          ExpressionName(AmbiguousName(List("f"))),BinaryExpression(BooleanLiteral(true),
-          Or,BooleanLiteral(false)))), ExpressionStatement(Assignment(ExpressionName(
-          AmbiguousName(List("g"))),BinaryExpression(BinaryExpression(ExpressionName(
-          AmbiguousName(List("f"))),Xor,BooleanLiteral(true)),Xor,BinaryExpression(
-          BinaryExpression(MethodCall(None,"alwaysTrue",List()),Equals,
-          BinaryExpression(BooleanLiteral(true),Equals,BinaryExpression(IntLiteral(5),
-          Less,IntLiteral(4)))),Xor,BooleanLiteral(true))))), 
-          ExpressionStatement(Assignment(ExpressionName(AmbiguousName(List("x"))),
-          BinaryExpression(IntLiteral(0),Subtract,BinaryExpression(MethodCall(None,
-          "alwaysOne",List()),Subtract,BinaryExpression(BinaryExpression(IntLiteral(5),
-          Multiply,BinaryExpression(IntLiteral(2),Divide,IntLiteral(4))),Add,
-          IntLiteral(3)))))), ReturnStatement(None))),
-        VarOrFieldDeclaration(List(), PrimitiveType.Boolean, "f", BooleanLiteral(false)),
-        VarOrFieldDeclaration(List(), PrimitiveType.Boolean, "g", BooleanLiteral(false)),
-        VarOrFieldDeclaration(List(), PrimitiveType.Int, "x", IntLiteral(0)),
-        MethodDeclaration(List(), PrimitiveType.Boolean, "alwaysTrue", List(),
-          Option(Block(List(ReturnStatement(Option(BinaryExpression(BooleanLiteral(true), BinaryOperator.And, BooleanLiteral(true)))))))),
-        MethodDeclaration(List(), PrimitiveType.Int, "alwaysOne", List(),
-          Option(Block(List(ReturnStatement(Option(IntLiteral(1)))))))))))
+      val expected = CompilationUnit(None,List(),List(ClassDeclaration(List(Modifier.Public),"calculationsTest",AmbiguousName(List("Object")),List(),List(
+        ConstructorDeclaration(
+          List(Modifier.Public),"calculationsTest",List(),
+          ConstructorInvocation("super",List()),
+          List(
+            ExpressionStatement(Assignment(ExpressionName(AmbiguousName(List("f"))),BinaryExpression(BooleanLiteral(true),Or,BooleanLiteral(false)))),
+            ExpressionStatement(Assignment(ExpressionName(AmbiguousName(List("g"))),BinaryExpression(BinaryExpression(ExpressionName(AmbiguousName(List("f"))),Xor,BooleanLiteral(true)),Xor,BinaryExpression(BinaryExpression(MethodCall(None,"alwaysTrue",List()),Equals,BinaryExpression(BooleanLiteral(true),Equals,BinaryExpression(IntLiteral(5),Less,IntLiteral(4)))),Xor,BooleanLiteral(true))))),
+            ExpressionStatement(Assignment(ExpressionName(AmbiguousName(List("x"))),BinaryExpression(IntLiteral(0),Subtract,BinaryExpression(BinaryExpression(MethodCall(None,"alwaysOne",List()),Subtract,BinaryExpression(BinaryExpression(IntLiteral(5),Multiply,IntLiteral(2)),Divide,IntLiteral(4))),Add,IntLiteral(3))))),
+            ReturnStatement(None)
+          )
+        ),
+        VarOrFieldDeclaration(List(),PrimitiveType.Boolean,"f",BooleanLiteral(false)),
+        VarOrFieldDeclaration(List(),PrimitiveType.Boolean,"g",BooleanLiteral(false)),
+        VarOrFieldDeclaration(List(),PrimitiveType.Int,"x",IntLiteral(0)),
+        MethodDeclaration(List(),PrimitiveType.Boolean,"alwaysTrue",List(),Some(Block(List(
+          ReturnStatement(Some(BinaryExpression(BooleanLiteral(true),And,BooleanLiteral(true))))
+        )))),
+        MethodDeclaration(List(),PrimitiveType.Int,"alwaysOne",List(),Some(Block(List(
+          ReturnStatement(Some(IntLiteral(1)))
+        ))))))))
 
       ast ==> expected
     }

@@ -127,12 +127,13 @@ newObject: 'new' qualifiedName '(' expressionList? ')'; // 'new' qualifiedName |
 
 // Basic Functions
 calcFunction
-    : value calcBinOpHigher term
-    | term calcBinOpLower (calcFunction | value)
+    : term calcBinOpHigher value
+    | value calcBinOpLower term
+	| calcFunction calcBinOpLower term
     | negate;
 
 term
-    : value calcBinOpHigher term
+    : term calcBinOpHigher value
     | value;
 
 calcBinOpHigher
