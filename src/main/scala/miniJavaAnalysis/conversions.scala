@@ -76,7 +76,7 @@ def unary_numeric_promotion(v: IR.TypedExpression): IR.TypedExpression = unbox(v
 def binary_numeric_promotion(
     l: IR.TypedExpression,
     r: IR.TypedExpression
-): (IR.NumericOperandType, IR.TypedExpression, IR.TypedExpression) = (r.ty, l.ty) match
+): (IR.NumericOperandType, IR.TypedExpression, IR.TypedExpression) = (l.ty, r.ty) match
     case (lty: IR.PrimitiveType, rty: IR.PrimitiveType) => (lty, rty) match
         case (IR.PrimitiveType.Boolean, _)
         | (_, IR.PrimitiveType.Boolean) => throw NonNumeric

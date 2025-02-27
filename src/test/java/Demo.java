@@ -61,13 +61,10 @@ public class Demo {
         float f = 3.5f;
         long l = 2L;
         double d = 4.2d;
-        char c = '\u0000';
+        char c = 4;
         short s = 5;
         byte b = 1;
 
-        double res = f + l;
-        res += d + c;
-        res += s + b;
-        return res;
+        return f + l + d + c + s + b;
     }
 }
