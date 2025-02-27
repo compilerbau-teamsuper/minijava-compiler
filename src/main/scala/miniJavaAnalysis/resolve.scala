@@ -1,6 +1,8 @@
 package miniJavaAnalysis.resolve
 
+import miniJavaAnalysis.IR
 import miniJavaAnalysis.IR.ClassName
+import miniJavaParser.AST
 import miniJavaParser.AST.AmbiguousName
 import miniJavaAnalysis.error.*
 
@@ -86,3 +88,16 @@ class Resolver(val root: Root, val pkg: PackageName) {
             }
     }
 }
+
+def resolve_ty(ty: AST.TypeOrVoid)(resolver: Resolver): IR.Type = ty match
+    case AST.PrimitiveType.Int => IR.PrimitiveType.Int
+    case AST.PrimitiveType.Boolean => IR.PrimitiveType.Boolean
+    case AST.PrimitiveType.Char => IR.PrimitiveType.Char
+    case AST.PrimitiveType.Double => IR.PrimitiveType.Double
+    case AST.PrimitiveType.Byte => IR.PrimitiveType.Byte
+    case AST.PrimitiveType.Float => IR.PrimitiveType.Float
+    case AST.PrimitiveType.Long => IR.PrimitiveType.Long
+    case AST.PrimitiveType.Short => IR.PrimitiveType.Short
+    case AST.ObjectType(name) => IR.ObjectType(resolver.resolve(name))
+    case AST.ArrayType(arrayType) => IR.ArrayType(resolve_ty(arrayType)(resolver))
+    case AST.VoidType => IR.VoidType

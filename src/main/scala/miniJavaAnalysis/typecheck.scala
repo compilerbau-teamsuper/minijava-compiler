@@ -1,8 +1,7 @@
 package miniJavaAnalysis
 import miniJavaParser.AST
 import miniJavaAnalysis.error.*
-import miniJavaAnalysis.resolve.{PackageName, Root, Resolver}
-import miniJavaParser.AST.ConstructorInvocation
+import miniJavaAnalysis.resolve.*
 import miniJavaAnalysis.conversions.*
 import miniJavaAnalysis.operations.*
 
@@ -28,19 +27,6 @@ case class Context(
     is_static: Boolean,
     inside_loop: Boolean,
 )
-
-def resolve_ty(ty: AST.TypeOrVoid)(resolver: Resolver): IR.Type = ty match
-    case AST.PrimitiveType.Int => IR.PrimitiveType.Int
-    case AST.PrimitiveType.Boolean => IR.PrimitiveType.Boolean
-    case AST.PrimitiveType.Char => IR.PrimitiveType.Char
-    case AST.PrimitiveType.Double => IR.PrimitiveType.Double
-    case AST.PrimitiveType.Byte => IR.PrimitiveType.Byte
-    case AST.PrimitiveType.Float => IR.PrimitiveType.Float
-    case AST.PrimitiveType.Long => IR.PrimitiveType.Long
-    case AST.PrimitiveType.Short => IR.PrimitiveType.Short
-    case AST.ObjectType(name) => IR.ObjectType(resolver.resolve(name))
-    case AST.ArrayType(arrayType) => IR.ArrayType(resolve_ty(arrayType)(resolver))
-    case AST.VoidType => IR.VoidType
 
 def local_size(ty: IR.Type): Int = ty match
     case IR.PrimitiveType.Long | IR.PrimitiveType.Double => 2
@@ -303,13 +289,13 @@ def typecheck_constructor(
 
     val (ctx, prev) = context_from_args(false, parameters, ty, this_type)(resolver, types)
     val constructor = construct match
-        case ConstructorInvocation("super", args) => {
+        case AST.ConstructorInvocation("super", args) => {
             val superclass = types(this_type).superclass.get
             val (_, method, a) = select_method(ctx.types(superclass).constructors.map((superclass, _)), args)(ctx)
             IR.ExpressionStatement(IR.InvokeSpecial(superclass.name, "<init>", method.ty, IR.LoadLocal(this_type, 0), a))
             :: initializers
         }
-        case ConstructorInvocation("this", args) => {
+        case AST.ConstructorInvocation("this", args) => {
             val (_, method, a) = select_method(ctx.types(this_type).constructors.map((this_type, _)), args)(ctx)
             IR.ExpressionStatement(IR.InvokeSpecial(this_type.name, "<init>", method.ty, IR.LoadLocal(ctx.this_type, 0), a))
             :: Nil
