@@ -1,3 +1,5 @@
+package main
+
 import scala.io.Source.fromFile
 import miniJavaParser.JavaASTBuilder
 import miniJavaAnalysis.typecheck

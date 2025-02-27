@@ -29,7 +29,7 @@ extension(classfile: ClassFile) {
         //val cv = new CheckClassAdapter(trace)
 
         cv.visit(
-            JAVA_VERSION, NO_MODIFIERS, classfile.name.internalName(), 
+            JAVA_VERSION, ACC_PUBLIC, classfile.name.internalName(), 
             NO_GENERICS, OBJECT, NO_INTERFACES
         )
 
@@ -460,9 +460,9 @@ extension(mods: Modifiers) {
             ACC_PUBLIC, ACC_PRIVATE, ACC_PROTECTED, 
             ACC_ABSTRACT, ACC_STATIC, ACC_FINAL
         )
-        modifiers.zip(asmModifiers).foldRight(0){
+        modifiers.zip(asmModifiers).foldRight(NO_MODIFIERS){
             case ((modFlag, asmFlag), z) =>
-                z | (if modFlag then asmFlag else 0)
+                z | (if modFlag then asmFlag else NO_MODIFIERS)
         }
     }
 }

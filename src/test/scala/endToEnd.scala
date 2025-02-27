@@ -199,7 +199,7 @@ object endToEnd extends TestSuite {
                 MethodTest(
                     "fib",
                     List(Integer(7)), List(classOf[Int]),
-                    Integer(13)
+                    null
                 )
             )
         ))

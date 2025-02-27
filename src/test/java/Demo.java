@@ -1,10 +1,11 @@
 public class Demo {
-    int x = 7; 
+    int x = 42; 
 
     public static void main(String[] args) {
         System.err.println("Hello, " + "world!");
 
-        System.out.println(args[0]);
+        System.out.println("Passed argument: " + args[0]);
+        
         Demo demo = new Demo();
         if (demo.isPrime(17)) {
             System.out.println("17 is prime!");
@@ -12,10 +13,9 @@ public class Demo {
         if (demo.isPrime(49)) {
             System.out.println("Uh-oh, 49 is prime?");
         }
-        int gotIt = demo.getX();
-        if (demo.fib(gotIt) == 13) {
-            System.out.println("Right fib number!");
-        }
+        demo.setX(7);
+        int gotX = demo.getX();
+        demo.fib(gotX);
     }
 
     //inefficient :)
@@ -27,11 +27,15 @@ public class Demo {
         return true;
     }
 
+    void setX(int value) {
+        x = value;
+    }
+
     int getX() {
         return x;
     }
 
-    int fib(int n) {
+    void fib(int n) {
         int length = n + 1;
         int[] fibNumbers = new int[length];
         fibNumbers[0] = 0;
@@ -39,6 +43,12 @@ public class Demo {
         for (int i = 2; i < length; i++) {
             fibNumbers[i] = fibNumbers[i - 1] + fibNumbers[i - 2];
         }
-        return fibNumbers[length - 1];
+
+        System.out.println("Fibonacci numbers:");
+        for (int i = 0; i < length; i++) {
+            System.out.println(
+                "" + fibNumbers[i]
+            );
+        }
     }
 }
