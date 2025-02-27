@@ -5,7 +5,7 @@ public class Demo {
         System.err.println("Hello, " + "world!");
 
         System.out.println("Passed argument: " + args[0]);
-        
+
         Demo demo = new Demo();
         if (demo.isPrime(17)) {
             System.out.println("17 is prime!");
@@ -15,7 +15,7 @@ public class Demo {
         }
         demo.setX(7);
         int gotX = demo.getX();
-        demo.fib(gotX);
+        int[] fibs = demo.fib(gotX);
     }
 
     //inefficient :)
@@ -35,20 +35,23 @@ public class Demo {
         return x;
     }
 
-    void fib(int n) {
+    int[] fib(int n) {
         int length = n + 1;
         int[] fibNumbers = new int[length];
         fibNumbers[0] = 0;
         fibNumbers[1] = 1;
-        for (int i = 2; i < length; i++) {
+        int i = 2;
+        while(i < length) {
             fibNumbers[i] = fibNumbers[i - 1] + fibNumbers[i - 2];
+            i++;
         }
-
-        System.out.println("Fibonacci numbers:");
-        for (int i = 0; i < length; i++) {
+        
+        for (int j = 0; j < length; j++) {
             System.out.println(
-                "" + fibNumbers[i]
+                "Fibonacci number " + j + " is " + fibNumbers[j]
             );
         }
+
+        return fibNumbers;
     }
 }
