@@ -24,7 +24,7 @@ def assign(ty: IR.Type, expr: IR.TypedExpression)(ctx: Context): IR.TypedExpress
     case (from: IR.PrimitiveType, to: IR.PrimitiveType) if is_subtype(from, to)(ctx) => IR.Convert(to, expr)
     case (from: IR.ReferenceType, to: IR.ReferenceType) if is_subtype(from, to)(ctx) => IR.Convert(to, expr)
     case (from: IR.PrimitiveType, to: IR.ReferenceType) => assign(ty, box(expr))(ctx)
-    case (from: IR.ReferenceType, to: IR.PrimitiveType) => assign(ty, unbox(expr)(ctx))(ctx)
+    case (from: IR.ReferenceType, to: IR.PrimitiveType) => assign(ty, unbox(expr))(ctx)
     case (got, expected) => throw TypeMismatch(got, expected)
 
 private def box(expr: IR.TypedExpression): IR.TypedExpression = {
@@ -42,23 +42,23 @@ private def box(expr: IR.TypedExpression): IR.TypedExpression = {
     IR.New(name.name, IR.MethodType(List(expr.ty), IR.VoidType), List(expr))
 }
 
-def unbox(expr: IR.TypedExpression)(ctx: Context): IR.TypedExpression = {
+def unbox(expr: IR.TypedExpression): IR.TypedExpression = {
     val (of, name, ty) = expr.ty match
         case _: IR.PrimitiveType => return expr
-        case t if is_subtype(t, IR.LangTypes.Boolean)(ctx) => (IR.LangTypes.Boolean, "booleanValue", IR.PrimitiveType.Boolean)
-        case t if is_subtype(t, IR.LangTypes.Byte)(ctx) => (IR.LangTypes.Byte, "byteValue", IR.PrimitiveType.Byte)
-        case t if is_subtype(t, IR.LangTypes.Short)(ctx) => (IR.LangTypes.Short, "shortValue", IR.PrimitiveType.Short)
-        case t if is_subtype(t, IR.LangTypes.Character)(ctx) => (IR.LangTypes.Character, "charValue", IR.PrimitiveType.Char)
-        case t if is_subtype(t, IR.LangTypes.Integer)(ctx) => (IR.LangTypes.Integer, "intValue", IR.PrimitiveType.Int)
-        case t if is_subtype(t, IR.LangTypes.Long)(ctx) => (IR.LangTypes.Long, "longValue", IR.PrimitiveType.Long)
-        case t if is_subtype(t, IR.LangTypes.Float)(ctx) => (IR.LangTypes.Float, "floatValue", IR.PrimitiveType.Float)
-        case t if is_subtype(t, IR.LangTypes.Double)(ctx) => (IR.LangTypes.Double, "doubleValue", IR.PrimitiveType.Double)
+        case IR.LangTypes.Boolean => (IR.LangTypes.Boolean, "booleanValue", IR.PrimitiveType.Boolean)
+        case IR.LangTypes.Byte => (IR.LangTypes.Byte, "byteValue", IR.PrimitiveType.Byte)
+        case IR.LangTypes.Short => (IR.LangTypes.Short, "shortValue", IR.PrimitiveType.Short)
+        case IR.LangTypes.Character => (IR.LangTypes.Character, "charValue", IR.PrimitiveType.Char)
+        case IR.LangTypes.Integer => (IR.LangTypes.Integer, "intValue", IR.PrimitiveType.Int)
+        case IR.LangTypes.Long => (IR.LangTypes.Long, "longValue", IR.PrimitiveType.Long)
+        case IR.LangTypes.Float => (IR.LangTypes.Float, "floatValue", IR.PrimitiveType.Float)
+        case IR.LangTypes.Double => (IR.LangTypes.Double, "doubleValue", IR.PrimitiveType.Double)
         case t => throw ExpectedPrimitive(t)
 
     IR.InvokeVirtual(of.name, name, IR.MethodType(List.empty, ty), expr, List.empty)
 }
 
-def unary_numeric_promotion(v: IR.TypedExpression)(ctx: Context): IR.TypedExpression = unbox(v)(ctx).ty match
+def unary_numeric_promotion(v: IR.TypedExpression): IR.TypedExpression = unbox(v).ty match
     case IR.PrimitiveType.Boolean => throw NonNumeric
     case _ => v
 

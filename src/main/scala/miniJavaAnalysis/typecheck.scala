@@ -152,19 +152,19 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
         val r = typecheck_expr(right)(ctx)
         operator match
             case AST.BinaryOperator.Add if l.ty == IR.LangTypes.String || r.ty == IR.LangTypes.String => string_concatenation(l, r)
-            case AST.BinaryOperator.Add => binary_numeric_operation(l, IR.BinaryOperator.Add, r)(ctx)
-            case AST.BinaryOperator.Subtract => binary_numeric_operation(l, IR.BinaryOperator.Sub, r)(ctx)
-            case AST.BinaryOperator.Multiply => binary_numeric_operation(l, IR.BinaryOperator.Mul, r)(ctx)
-            case AST.BinaryOperator.Divide => binary_numeric_operation(l, IR.BinaryOperator.Div, r)(ctx)
-            case AST.BinaryOperator.Modulo => binary_numeric_operation(l, IR.BinaryOperator.Mod, r)(ctx)
-            case AST.BinaryOperator.And => binary_integral_operation(l, IR.BinaryOperator.And, r)(ctx)
-            case AST.BinaryOperator.Or => binary_integral_operation(l, IR.BinaryOperator.Or, r)(ctx)
-            case AST.BinaryOperator.Xor => binary_integral_operation(l, IR.BinaryOperator.Xor, r)(ctx)
-            case AST.BinaryOperator.Equals => relational_operation(l, AST.BinaryOperator.Equals, r)(ctx)
-            case AST.BinaryOperator.Greater => relational_operation(l, AST.BinaryOperator.Greater, r)(ctx)
-            case AST.BinaryOperator.GreaterOrEqual => relational_operation(l, AST.BinaryOperator.GreaterOrEqual, r)(ctx)
-            case AST.BinaryOperator.Less => relational_operation(l, AST.BinaryOperator.Less, r)(ctx)
-            case AST.BinaryOperator.LessOrEqual => relational_operation(l, AST.BinaryOperator.LessOrEqual, r)(ctx)
+            case AST.BinaryOperator.Add => binary_numeric_operation(l, IR.BinaryOperator.Add, r)
+            case AST.BinaryOperator.Subtract => binary_numeric_operation(l, IR.BinaryOperator.Sub, r)
+            case AST.BinaryOperator.Multiply => binary_numeric_operation(l, IR.BinaryOperator.Mul, r)
+            case AST.BinaryOperator.Divide => binary_numeric_operation(l, IR.BinaryOperator.Div, r)
+            case AST.BinaryOperator.Modulo => binary_numeric_operation(l, IR.BinaryOperator.Mod, r)
+            case AST.BinaryOperator.And => binary_integral_operation(l, IR.BinaryOperator.And, r)
+            case AST.BinaryOperator.Or => binary_integral_operation(l, IR.BinaryOperator.Or, r)
+            case AST.BinaryOperator.Xor => binary_integral_operation(l, IR.BinaryOperator.Xor, r)
+            case AST.BinaryOperator.Equals => relational_operation(l, AST.BinaryOperator.Equals, r)
+            case AST.BinaryOperator.Greater => relational_operation(l, AST.BinaryOperator.Greater, r)
+            case AST.BinaryOperator.GreaterOrEqual => relational_operation(l, AST.BinaryOperator.GreaterOrEqual, r)
+            case AST.BinaryOperator.Less => relational_operation(l, AST.BinaryOperator.Less, r)
+            case AST.BinaryOperator.LessOrEqual => relational_operation(l, AST.BinaryOperator.LessOrEqual, r)
     }
     case AST.ExpressionName(name) => resolve_name(name)(ctx) match
         case t: IR.TypedExpression => t
@@ -172,7 +172,7 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
     case AST.FieldAccess(target, name) => get_field(typecheck_expr(target)(ctx), name)(ctx)
     case AST.ArrayAccess(target, index) => {
         val t = typecheck_expr(target)(ctx)
-        val i = unary_numeric_promotion(typecheck_expr(index)(ctx))(ctx)
+        val i = unary_numeric_promotion(typecheck_expr(index)(ctx))
         i.ty match
             case _: IR.IntLikeType => {}
             case _ => throw TypeMismatch(i.ty, IR.PrimitiveType.Int)
@@ -215,7 +215,7 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
             case AST.FieldAccess(target, name) => put_field(typecheck_expr(target)(ctx), name, r)(ctx)
             case AST.ArrayAccess(target, index) => {
                 val t = typecheck_expr(target)(ctx)
-                val i = unary_numeric_promotion(typecheck_expr(index)(ctx))(ctx)
+                val i = unary_numeric_promotion(typecheck_expr(index)(ctx))
                 i.ty match
                     case _: IR.IntLikeType => {}
                     case _ => throw TypeMismatch(i.ty, IR.PrimitiveType.Int)

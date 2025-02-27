@@ -10,8 +10,8 @@ def binary_numeric_operation(
     left: IR.TypedExpression,
     operator: IR.BinaryNumericOperator,
     right: IR.TypedExpression
-)(ctx: Context): IR.TypedExpression = {
-    val (ty, l, r) = binary_numeric_promotion(unbox(left)(ctx), unbox(right)(ctx))
+): IR.TypedExpression = {
+    val (ty, l, r) = binary_numeric_promotion(unbox(left), unbox(right))
     ty match
         case IR.PrimitiveType.Int => IR.IBinOp(l, operator, r)
         case IR.PrimitiveType.Long => IR.LBinOp(l, operator, r)
@@ -23,9 +23,9 @@ def binary_integral_operation(
     left: IR.TypedExpression,
     operator: IR.BinaryIntegralOperator,
     right: IR.TypedExpression
-)(ctx: Context): IR.TypedExpression = {
-    val l = unbox(left)(ctx)
-    val r = unbox(right)(ctx)
+): IR.TypedExpression = {
+    val l = unbox(left)
+    val r = unbox(right)
     if l.ty == IR.PrimitiveType.Boolean && r.ty == IR.PrimitiveType.Boolean
     then 
         IR.BBinOp(l, operator, r)
@@ -41,14 +41,14 @@ def relational_operation(
     left: IR.TypedExpression,
     operator: AST.Comparison,
     right: IR.TypedExpression
-)(ctx: Context): IR.TypedExpression = {
+): IR.TypedExpression = {
     (left.ty, right.ty) match
         case (IR.ObjectType(_), IR.ObjectType(_)) => operator match
             case AST.BinaryOperator.Equals => IR.Ternary(IR.PrimitiveType.Boolean, IR.Comparison.ACmpEq, left, right, IR.BooleanLiteral(true), IR.BooleanLiteral(false))
             case _ => throw NonNumeric
         case (_, _) => {
-            val l = unbox(left)(ctx)
-            val r = unbox(right)(ctx)
+            val l = unbox(left)
+            val r = unbox(right)
 
             val (a, b) = if (l.ty == IR.PrimitiveType.Boolean && r.ty == IR.PrimitiveType.Boolean) {
                 if (operator != AST.BinaryOperator.Equals) throw NonNumeric
