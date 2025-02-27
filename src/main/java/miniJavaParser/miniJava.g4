@@ -323,6 +323,7 @@ objectType
 
 primitiveType
     : 'short' #ShortType
+    | 'byte' #ByteType
     | 'int' #IntType
     | 'float' #FloatType
     | 'double' #DoubleType
@@ -369,7 +370,7 @@ LongLiteral : ('-')? [0-9]+ [lL];
 NullLiteral: 'null';
 FloatingPointLiteral : ('-')? [0-9]+ '.' [0-9]* ([eE][+-]?[0-9]+)? ('f'|'F');
 DoubleLiteral : ('-')? [0-9]+ '.' [0-9]* ([eE][+-]?[0-9]+)? ('d'|'D')?;
-CharacterLiteral : '\'' . '\'';
+CharacterLiteral : '\'' .*? '\'';
 StringLiteral : '"' .*? '"';
 
 

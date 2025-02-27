@@ -16,6 +16,8 @@ public class Demo {
         demo.setX(7);
         int gotX = demo.getX();
         int[] fibs = demo.fib(gotX);
+
+        System.out.println("" + demo.conversions());
     }
 
     //inefficient :)
@@ -53,5 +55,15 @@ public class Demo {
         }
 
         return fibNumbers;
+    }
+
+    double conversions() {
+        float f = 3.5f;
+        long l = 2L;
+        double d = 4.2d;
+        char c = '\u0000';
+        byte b = 1;
+
+        return f + l + d + c + b;
     }
 }

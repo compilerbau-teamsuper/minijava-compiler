@@ -256,6 +256,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
       case PrimitiveType.Int => AST.IntLiteral(0)
       case PrimitiveType.Boolean => AST.BooleanLiteral(false)
       case PrimitiveType.Char => AST.CharacterLiteral('\u0000')
+      case PrimitiveType.Byte => AST.IntLiteral(0)
       case PrimitiveType.Short => AST.ShortLiteral(0)
       case PrimitiveType.Long => AST.LongLiteral(0)
       case PrimitiveType.Float => AST.FloatLiteral(0)
@@ -689,6 +690,7 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     case "boolean" => PrimitiveType.Boolean
     case "char" => PrimitiveType.Char
     case "short" => PrimitiveType.Short
+    case "byte" => PrimitiveType.Byte
     case "long" => PrimitiveType.Long
     case "float" => PrimitiveType.Float
     case "double" => PrimitiveType.Double

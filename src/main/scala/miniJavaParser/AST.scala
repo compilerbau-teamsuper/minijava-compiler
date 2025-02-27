@@ -131,6 +131,7 @@ object PrimitiveType {
   case object Float extends PrimitiveType
   case object Long extends PrimitiveType
   case object Short extends PrimitiveType
+  case object Byte extends PrimitiveType
 }
 
 sealed case class ObjectType(name: AmbiguousName) extends Type

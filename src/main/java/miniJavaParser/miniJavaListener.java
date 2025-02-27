@@ -1,4 +1,4 @@
-// Generated from /Users/Jonas/src/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.1
+// Generated from miniJava.g4 by ANTLR 4.13.2
 package miniJavaParser;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
@@ -1009,6 +1009,18 @@ public interface miniJavaListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitShortType(miniJavaParser.ShortTypeContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code ByteType}
+	 * labeled alternative in {@link miniJavaParser#primitiveType}.
+	 * @param ctx the parse tree
+	 */
+	void enterByteType(miniJavaParser.ByteTypeContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code ByteType}
+	 * labeled alternative in {@link miniJavaParser#primitiveType}.
+	 * @param ctx the parse tree
+	 */
+	void exitByteType(miniJavaParser.ByteTypeContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code IntType}
 	 * labeled alternative in {@link miniJavaParser#primitiveType}.

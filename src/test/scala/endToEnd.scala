@@ -200,7 +200,8 @@ object endToEnd extends TestSuite {
                     "fib",
                     List(Integer(7)), List(classOf[Int]),
                     Array(0, 1, 1 ,2, 3, 5, 8, 13)
-                )
+                ),
+                MethodTest("conversions", Nil, Nil, java.lang.Double(15.7d))
             )
         ))
     }

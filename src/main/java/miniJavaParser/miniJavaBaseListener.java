@@ -1,4 +1,4 @@
-// Generated from /Users/Jonas/src/minijava-compiler/src/main/java/miniJavaParser/miniJava.g4 by ANTLR 4.13.1
+// Generated from miniJava.g4 by ANTLR 4.13.2
 package miniJavaParser;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -1140,6 +1140,18 @@ public class miniJavaBaseListener implements miniJavaListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitShortType(miniJavaParser.ShortTypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterByteType(miniJavaParser.ByteTypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitByteType(miniJavaParser.ByteTypeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

@@ -34,6 +34,7 @@ def resolve_ty(ty: AST.TypeOrVoid)(resolver: Resolver): IR.Type = ty match
     case AST.PrimitiveType.Boolean => IR.PrimitiveType.Boolean
     case AST.PrimitiveType.Char => IR.PrimitiveType.Char
     case AST.PrimitiveType.Double => IR.PrimitiveType.Double
+    case AST.PrimitiveType.Byte => IR.PrimitiveType.Byte
     case AST.PrimitiveType.Float => IR.PrimitiveType.Float
     case AST.PrimitiveType.Long => IR.PrimitiveType.Long
     case AST.PrimitiveType.Short => IR.PrimitiveType.Short
