@@ -272,7 +272,7 @@ def simplify_expr(expr: TypedExpression): TypedExpression = expr match
 
     // Combine chained string concatenations.
     case InvokeVirtual(LangTypes.StringBuilder.name, "toString", MethodType(List(), LangTypes.String), builder, List()) => simplify_string_builder(builder) match
-        case Some(builder) => InvokeVirtual(LangTypes.StringBuilder.name, "toString", MethodType(List(), VoidType), builder, List())
+        case Some(builder) => InvokeVirtual(LangTypes.StringBuilder.name, "toString", MethodType(List(), LangTypes.String), builder, List())
         case None => InvokeVirtual(LangTypes.StringBuilder.name, "toString", MethodType(List(), LangTypes.String), simplify_expr(builder), List())
 
     case LoadLocal(_, _) => expr
