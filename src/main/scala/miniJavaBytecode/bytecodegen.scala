@@ -25,8 +25,8 @@ extension(classfile: ClassFile) {
         )
         val sw = new StringWriter()
         val pw = new PrintWriter(sw)
-        val cv = new TraceClassVisitor(cw, pw)
-        //val cv = new CheckClassAdapter(trace)
+        val trace = new TraceClassVisitor(cw, pw)
+        val cv = new CheckClassAdapter(trace)
 
         cv.visit(
             JAVA_VERSION, ACC_PUBLIC, classfile.name.internalName(), 
