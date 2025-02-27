@@ -44,3 +44,21 @@ He also wrote [tests](https://github.com/compilerbau-teamsuper/minijava-compiler
 - [continuous integration](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/main/.github/workflows/scala.yaml) setup
 - [end-to-end tests](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/main/src/test/scala/endToEnd.scala)
 - several fixes in the typechecker and parser (please see the commit history for this)
+
+### joboet (Jonas Böttiger)
+- wrote a mostly standard-compliant type checker that converts the AST to an intermediate representation by the same author.
+  The type checker supports:
+    - name resolution, respecting package boundaries
+    - class and local variables, respecting the final modifier
+    - conditionals and loops
+    - calculations, in particular those relying on numeric promotion
+    - array accesses
+    - field accesses, even to static fields
+    - boxing and unboxing conversions
+    - method calls, employing the method selection algorithm described by the specification (without variadic and generic support)
+    - object creation with constructor overloading
+- wrote a simple optimizer for the resultant bytecode that
+    - performs some constant-propagation
+    - removes unused side-effect-free expressions
+    - optimizes repeated string concatenation by removing unneeded invocations of `StringBuilder.toString`
+    - optimizes conditionals by simplifying the branch conditions and removing unreachable branches
