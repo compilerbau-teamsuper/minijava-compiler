@@ -16,14 +16,14 @@ sbt:minijava-compiler> run src/test/java/calculationsTest.java src/test
 
 ## UML
 
-Click on it to see more! For reference look at [this file](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/parserAST/src/main/scala/miniJavaParser/AST.scala).
+Click on it to see more! For reference look at [this file](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/main/src/main/scala/miniJavaParser/AST.scala).
 
-![AST UML](http://www.plantuml.com/plantuml/proxy?cache=no&fmt=svg&src=https://raw.githubusercontent.com/compilerbau-teamsuper/minijava-compiler/parserAST/UML/UML.puml)
+![AST UML](http://www.plantuml.com/plantuml/proxy?cache=no&fmt=svg&src=https://raw.githubusercontent.com/compilerbau-teamsuper/minijava-compiler/main/UML/UML.puml)
 
 ## Task Distribution
 
-Luca Dürr (Luceleven) was responsible for scanning and parsing. He wrote his own [mini java grammar](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/parserAST/src/main/java/miniJavaParser/miniJava.g4) and the [Abstract Syntax](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/parserAST/src/main/scala/miniJavaParser/AST.scala).
-Using the generated ANTLR Recognizer, he wrote the [parser](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/parserAST/src/main/scala/miniJavaParser/parser.scala) in scala where he desugared some of the features of java: 
+Luca Dürr (Luceleven) was responsible for scanning and parsing. He wrote his own [mini java grammar](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/main/src/main/java/miniJavaParser/miniJava.g4) and the [Abstract Syntax](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/main/src/main/scala/miniJavaParser/AST.scala).
+Using the generated ANTLR Recognizer, he wrote the [parser](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/main/src/main/scala/miniJavaParser/parser.scala) in scala where he desugared some of the features of java: 
 - Transformed for to while loops with support of continue statements
 - Desugared assignments like "x += 1" to "x = x + 1"
 - Removed unary expressions by converting them to binary expressions
@@ -34,13 +34,13 @@ Using the generated ANTLR Recognizer, he wrote the [parser](https://github.com/c
 - Adding empty return statement to void methods and constructors
 - Moving initializing of non-static fields into constructors
 
-He also wrote [tests](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/parserAST/src/test/scala/parserTest.scala) for the parser using test [java files](https://github.com/compilerbau-teamsuper/minijava-compiler/tree/parserAST/src/test/java) he created (the files with Test at the end), and he made the UML with plantuml.
+He also wrote [tests](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/main/src/test/scala/parserTest.scala) for the parser using test [java files](https://github.com/compilerbau-teamsuper/minijava-compiler/tree/main/src/test/java) he created (the files with Test at the end), and he made the UML with plantuml.
 
 
 ###### OriginalCpp (Martin Ilgner):
-- [miniJavaBytecode](https://github.com/compilerbau-teamsuper/minijava-compiler/tree/parserAST/src/main/scala/miniJavaBytecode) package
-- whole [CLI](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/parserAST/src/main/scala/main.scala)
+- [miniJavaBytecode](https://github.com/compilerbau-teamsuper/minijava-compiler/tree/main/src/main/scala/miniJavaBytecode) package
+- whole [CLI](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/main/src/main/scala/main.scala)
 - [user documentation](#Usage)
-- [continuous integration](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/parserAST/.github/workflows/scala.yaml) setup
-- [end-to-end tests](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/parserAST/src/test/scala/endToEnd.scala)
+- [continuous integration](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/main/.github/workflows/scala.yaml) setup
+- [end-to-end tests](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/main/src/test/scala/endToEnd.scala)
 - several fixes in the other packages (please see the commit history for this)
