@@ -62,8 +62,12 @@ public class Demo {
         long l = 2L;
         double d = 4.2d;
         char c = '\u0000';
+        short s = 5;
         byte b = 1;
 
-        return f + l + d + c + b;
+        double res = f + l;
+        res += d + c;
+        res += s + b;
+        return res;
     }
 }

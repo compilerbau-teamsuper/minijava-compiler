@@ -19,13 +19,24 @@ def is_subtype(ty: IR.Type, of: IR.Type)(ctx: Context): Boolean = ty == of || ((
     case (IR.ArrayType(t: IR.ReferenceType), IR.ArrayType(o: IR.ReferenceType)) => is_subtype(t, o)(ctx)
     case _ => false)
 
-def assign(ty: IR.Type, expr: IR.TypedExpression)(ctx: Context): IR.TypedExpression = (expr.ty, ty) match
-    case (got, expected) if got == expected => expr
-    case (from: IR.PrimitiveType, to: IR.PrimitiveType) if is_subtype(from, to)(ctx) => IR.Convert(to, expr)
-    case (from: IR.ReferenceType, to: IR.ReferenceType) if is_subtype(from, to)(ctx) => IR.Convert(to, expr)
-    case (from: IR.PrimitiveType, to: IR.ReferenceType) => assign(ty, box(expr))(ctx)
-    case (from: IR.ReferenceType, to: IR.PrimitiveType) => assign(ty, unbox(expr))(ctx)
-    case (got, expected) => throw TypeMismatch(got, expected)
+//def isShortLiteral(expr): Unit = 
+
+def assign(ty: IR.Type, expr: IR.TypedExpression)(ctx: Context): IR.TypedExpression = (expr, ty) match {
+    case (IR.IntLiteral(i), IR.PrimitiveType.Byte) if i >= -128 && i <= 127 =>
+        IR.ByteLiteral(i.toByte)
+    case (IR.IntLiteral(i), IR.PrimitiveType.Char) if i >= 0 && i <= 65535 =>
+        IR.CharLiteral(i.toChar) 
+    case (IR.IntLiteral(i), IR.PrimitiveType.Short) if i >= -32768 && i <= 32767 =>
+        IR.ShortLiteral(i.toShort)
+    case _ => (expr.ty, ty) match {
+        case (got, expected) if got == expected => expr 
+        case (from: IR.PrimitiveType, to: IR.PrimitiveType) if is_subtype(from, to)(ctx) => IR.Convert(to, expr)
+        case (from: IR.ReferenceType, to: IR.ReferenceType) if is_subtype(from, to)(ctx) => IR.Convert(to, expr)
+        case (from: IR.PrimitiveType, to: IR.ReferenceType) => assign(ty, box(expr))(ctx)
+        case (from: IR.ReferenceType, to: IR.PrimitiveType) => assign(ty, unbox(expr))(ctx)
+        case (got, expected) => throw TypeMismatch(got, expected)
+    }
+}
 
 private def box(expr: IR.TypedExpression): IR.TypedExpression = {
     val name = expr.ty match
