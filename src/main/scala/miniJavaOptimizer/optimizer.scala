@@ -69,6 +69,16 @@ def is_sideeffect_free(expr: TypedExpression): Boolean = expr match
     case DBinOp(left, _, right) => is_sideeffect_free(left) && is_sideeffect_free(right)
     case _ => false
 
+def simplify_string_builder(expr: TypedExpression): Option[TypedExpression] = expr match
+    case New(LangTypes.StringBuilder.name, MethodType(List(), VoidType), List()) => Some(expr)
+    case New(LangTypes.StringBuilder.name, MethodType(List(LangTypes.String), VoidType), List(what)) => what match
+        case InvokeVirtual(LangTypes.StringBuilder.name, "toString", MethodType(List(), LangTypes.StringBuilder), what, List()) => simplify_string_builder(what)
+        case _ => None
+    case InvokeVirtual(LangTypes.StringBuilder.name, "append", mty, target, arg) => simplify_string_builder(target) match
+        case Some(builder) => Some(InvokeVirtual(LangTypes.StringBuilder.name, "append", mty, builder, arg.map(simplify_expr)))
+        case None => None
+    case _ => None
+
 sealed trait SimplifiedComparison
 case object DefiniteYes extends SimplifiedComparison
 case object DefiniteNo extends SimplifiedComparison
@@ -290,6 +300,11 @@ def simplify_expr(expr: TypedExpression): TypedExpression = expr match
         case (l, DoubleLiteral(r)) if r.isNaN && is_sideeffect_free(l) => IntLiteral(1)
         case (DoubleLiteral(l), DoubleLiteral(r)) => IntLiteral(l.compare(r))
         case (l, r) => DCmpG(l, r)
+
+    // Combine chained string concatenations.
+    case InvokeVirtual(LangTypes.StringBuilder.name, "toString", MethodType(List(), LangTypes.String), builder, List()) => simplify_string_builder(builder) match
+        case Some(builder) => InvokeVirtual(LangTypes.StringBuilder.name, "toString", MethodType(List(), VoidType), builder, List())
+        case None => InvokeVirtual(LangTypes.StringBuilder.name, "toString", MethodType(List(), LangTypes.String), simplify_expr(builder), List())
 
     case LoadLocal(_, _) => expr
     case DupStoreLocal(index, value) => DupStoreLocal(index, simplify_expr(value))
