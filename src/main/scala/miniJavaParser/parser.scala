@@ -404,6 +404,10 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
   // Methode: visitStatement
   override def visitStatement(ctx: StatementContext): Statement = {
     if ctx == null then return null
+    if ctx.calcUnOp() != null then ctx.calcUnOp().getText match {
+      case "++" => ExpressionStatement(Assignment(ExpressionName(buildAmbiguousName(ctx.qualifiedName())), BinaryExpression(ExpressionName(buildAmbiguousName(ctx.qualifiedName())), BinaryOperator.Add, IntLiteral(1))))
+      case "--" => ExpressionStatement(Assignment(ExpressionName(buildAmbiguousName(ctx.qualifiedName())), BinaryExpression(ExpressionName(buildAmbiguousName(ctx.qualifiedName())), BinaryOperator.Subtract, IntLiteral(1))))
+    }
     ctx.getChild(0) match {
       case b: BlockContext => visitBlock(b)
       case e: ExpressionContext => ExpressionStatement(visitExpression(e))

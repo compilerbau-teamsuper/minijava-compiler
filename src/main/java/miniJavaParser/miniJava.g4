@@ -208,6 +208,8 @@ statement
     | ifThen
     | whileStatement
     | forStatement
+    | calcUnOp qualifiedName
+    | qualifiedName calcUnOp
     | switch
     | break
     | continue

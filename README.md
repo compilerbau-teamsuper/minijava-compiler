@@ -34,7 +34,7 @@ Using the generated ANTLR Recognizer, he wrote the [parser](https://github.com/c
 - Adding empty return statement to void methods and constructors
 - Moving initializing of non-static fields into constructors
 
-He also wrote [tests](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/parserAST/src/test/scala/parserTest.scala) for the parser using the test [java files](https://github.com/compilerbau-teamsuper/minijava-compiler/tree/parserAST/src/test/java) he created, and he made the UML with plantuml.
+He also wrote [tests](https://github.com/compilerbau-teamsuper/minijava-compiler/blob/parserAST/src/test/scala/parserTest.scala) for the parser using test [java files](https://github.com/compilerbau-teamsuper/minijava-compiler/tree/parserAST/src/test/java) he created (the files with Test at the end), and he made the UML with plantuml.
 
 
 ###### OriginalCpp (Martin Ilgner):
