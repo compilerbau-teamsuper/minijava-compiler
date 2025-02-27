@@ -167,6 +167,7 @@ case class LoadLocal(local_ty: Type, index: Int) extends TypedExpression(local_t
 case class DupStoreLocal(index: Int, value: TypedExpression) extends TypedExpression(value.ty)
 case class LoadArray(element: Type, target: TypedExpression, index: TypedExpression) extends TypedExpression(element)
 case class DupStoreArray(target: TypedExpression, index: TypedExpression, value: TypedExpression) extends TypedExpression(value.ty)
+case class ArrayLength(target: TypedExpression) extends TypedExpression(PrimitiveType.Int)
 case class GetField(field_ty: Type, of: ClassName, name: String, target: TypedExpression) extends TypedExpression(field_ty)
 case class DupPutField(of: ClassName, name: String, target: TypedExpression, value: TypedExpression) extends TypedExpression(value.ty)
 case class GetStatic(field_ty: Type, of: ClassName, name: String) extends TypedExpression(field_ty)

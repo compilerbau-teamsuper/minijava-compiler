@@ -5,11 +5,12 @@ import miniJavaAnalysis.IR
 import miniJavaAnalysis.error.*
 import miniJavaAnalysis.conversions.{is_subtype, is_assignable, assign}
 
-def canditate_methods(of: IR.ObjectType, name: String)(ctx: Context): List[(IR.ObjectType, MethodInfo)] = {
-    ctx.types(of).methods.get(name).toList.flatten.map(m => (of, m))
-    ++ ctx.types(of).superclass.map(canditate_methods(_, name)(ctx)).toList.flatten
-    ++ ctx.types(of).interfaces.map(canditate_methods(_, name)(ctx)).flatten
-}
+def canditate_methods(of: IR.Type, name: String)(ctx: Context): List[(IR.ObjectType, MethodInfo)] = of match
+    case c: IR.ObjectType => ctx.types(c).methods.get(name).toList.flatten.map(m => (c, m))
+        ++ ctx.types(c).superclass.map(canditate_methods(_, name)(ctx)).toList.flatten
+        ++ ctx.types(c).interfaces.map(canditate_methods(_, name)(ctx)).flatten
+    case _: IR.ArrayType => ctx.types(IR.LangTypes.Object).methods.get(name).toList.flatten.map(m => (IR.LangTypes.Object, m))
+    case _ => throw NoSuchMethod(name, of)
 
 def potentially_applicable(
     of: IR.ObjectType,
@@ -47,7 +48,7 @@ def more_specific(a: List[IR.Type], b: List[IR.Type])(ctx: Context): Boolean = {
     a.zip(b).forall(is_subtype(_, _)(ctx))
 }
 
-def get_field(target: IR.TypedExpression, name: String)(ctx: Context): IR.GetField = {
+def get_field(target: IR.TypedExpression, name: String)(ctx: Context): IR.GetField | IR.ArrayLength = {
     target.ty match
         case c: IR.ObjectType => ctx.types(c).fields.get(name) match
             case Some(FieldInfo(mod, ty)) => {
@@ -55,6 +56,7 @@ def get_field(target: IR.TypedExpression, name: String)(ctx: Context): IR.GetFie
                 IR.GetField(ty, c.name, name, target)
             }
             case None => throw NoSuchField(name, Some(target.ty))
+        case _: IR.ArrayType if name == "length" => IR.ArrayLength(target)
         case _ => throw NoSuchField(name, Some(target.ty))
 }
 
@@ -67,11 +69,12 @@ def put_field(target: IR.TypedExpression, name: String, value: IR.TypedExpressio
                 IR.DupPutField(c.name, name, target, assign(ty, value)(ctx))
             }
             case None => throw NoSuchField(name, Some(c))
+        case _: IR.ArrayType if name == "length" => throw ModifyFinal("length", Some(target.ty))
         case _ => throw NoSuchField(name, Some(target.ty))
 }
 
-type AccessType = IR.GetField | IR.GetStatic | IR.LoadLocal
-def resolve_name(name: AST.AmbiguousName)(ctx: Context): IR.ObjectType | IR.GetField | IR.GetStatic | IR.LoadLocal = {
+type AccessType = IR.ArrayLength | IR.GetField | IR.GetStatic | IR.LoadLocal
+def resolve_name(name: AST.AmbiguousName)(ctx: Context): IR.ObjectType | AccessType = {
     ctx.locals.get(name.components.head) match
         case Some(Local(_, ty, idx)) => name.components.tail.foldLeft(IR.LoadLocal(ty, idx) : AccessType)(get_field(_, _)(ctx))
         case None => ctx.types(ctx.this_type).fields.get(name.components.head) match

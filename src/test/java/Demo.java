@@ -48,7 +48,7 @@ public class Demo {
             i++;
         }
         
-        for (int j = 0; j < length; j++) {
+        for (int j = 0; j < fibNumbers.length; j++) {
             System.out.println(
                 "Fibonacci number " + j + " is " + fibNumbers[j]
             );

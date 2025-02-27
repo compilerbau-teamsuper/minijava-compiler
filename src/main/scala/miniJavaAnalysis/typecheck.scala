@@ -140,9 +140,7 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
         
         val to_search = t match
             case None => ctx.this_type
-            case Some(e: IR.TypedExpression) => e.ty match
-                case c: IR.ObjectType => c
-                case _ => throw NoSuchMethod(name, ctx.this_type)
+            case Some(e: IR.TypedExpression) => e.ty
             case Some(c: IR.ObjectType) => c
 
         val (of, method, a) = select_method(canditate_methods(to_search, name)(ctx), args)(ctx)

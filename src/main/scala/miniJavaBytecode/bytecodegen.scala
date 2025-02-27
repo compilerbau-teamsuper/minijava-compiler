@@ -173,6 +173,9 @@ extension(expression: TypedExpression) {
                 PUTFIELD, of.internalName(),
                 name, value.ty.descriptor()
             )
+        case ArrayLength(target) =>
+            target.translate(mv)
+            mv.visitInsn(ARRAYLENGTH)
         case GetStatic(field_ty, of, name) =>
             mv.visitFieldInsn(
                 GETSTATIC, of.internalName(),
