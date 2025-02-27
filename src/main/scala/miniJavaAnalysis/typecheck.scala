@@ -353,8 +353,10 @@ def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
     
     val class_name = IR.ClassName(pkg.path :+ name)
     root = root.define(pkg, name)
-    val resolver = Resolver(root, pkg)
-        .imp(AST.AmbiguousName(List("java", "lang")), true)
+    val resolver = ast.importDeclarations.foldLeft(
+        Resolver(root, pkg)
+            .imp(AST.AmbiguousName(List("java", "lang")), true)
+    )((resolver, i) => resolver.imp(i.name, i.isStatic))
 
     val this_type = IR.ObjectType(class_name)
 

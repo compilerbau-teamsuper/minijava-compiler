@@ -1,3 +1,5 @@
+import java.io.PrintStream;
+
 public class Demo {
     int x = 42; 
 
@@ -17,7 +19,8 @@ public class Demo {
         int gotX = demo.getX();
         int[] fibs = demo.fib(gotX);
 
-        System.out.println("" + demo.conversions());
+        PrintStream output = System.out;
+        output.println("" + demo.conversions());
     }
 
     //inefficient :)
