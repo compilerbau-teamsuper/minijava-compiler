@@ -65,6 +65,17 @@ public class Demo {
         short s = 5;
         byte b = 1;
 
+        // Boxing conversions work:
+        Float boxedf = f;
+        f = boxedf;
+
+        // and unboxing works, too:
+        double promoted = boxedf + b; 
+        System.out.println("value of promoted is " + promoted);
+
+        Object demo = new Demo();
+        System.out.println("even object casting works: " + demo);
+
         return f + l + d + c + s + b;
     }
 }
