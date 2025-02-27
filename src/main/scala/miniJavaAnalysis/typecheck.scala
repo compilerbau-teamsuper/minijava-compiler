@@ -151,7 +151,7 @@ def typecheck_expr(expr: AST.Expression)(ctx: Context): IR.TypedExpression = exp
         val l = typecheck_expr(left)(ctx)
         val r = typecheck_expr(right)(ctx)
         operator match
-            case AST.BinaryOperator.Add if is_subtype(l.ty, IR.LangTypes.String)(ctx) || is_subtype(r.ty, IR.LangTypes.String)(ctx) => ???
+            case AST.BinaryOperator.Add if l.ty == IR.LangTypes.String || r.ty == IR.LangTypes.String => string_concatenation(l, r)
             case AST.BinaryOperator.Add => binary_numeric_operation(l, IR.BinaryOperator.Add, r)(ctx)
             case AST.BinaryOperator.Subtract => binary_numeric_operation(l, IR.BinaryOperator.Sub, r)(ctx)
             case AST.BinaryOperator.Multiply => binary_numeric_operation(l, IR.BinaryOperator.Mul, r)(ctx)

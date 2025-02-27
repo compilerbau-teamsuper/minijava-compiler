@@ -2,6 +2,8 @@ public class Demo {
     int x = 7; 
 
     public static void main(String[] args) {
+        System.err.println("Hello, " + "world!");
+
         System.out.println(args[0]);
         Demo demo = new Demo();
         if (demo.isPrime(17)) {

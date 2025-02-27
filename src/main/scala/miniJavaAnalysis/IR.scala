@@ -72,6 +72,7 @@ object LangTypes {
     val String = ObjectType(ClassName(List("java", "lang", "String")))
     val System = ObjectType(ClassName(List("java", "lang", "System")))
     val PrintStream = ObjectType(ClassName(List("java", "io", "PrintStream")))
+    val StringBuilder = ObjectType(ClassName(List("java", "lang", "StringBuilder")))
 
     val Number = ObjectType(ClassName(List("java", "lang", "Number")))
 

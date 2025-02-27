@@ -81,3 +81,20 @@ def relational_operation(
             IR.Ternary(IR.PrimitiveType.Boolean, op, a, b, IR.BooleanLiteral(true), IR.BooleanLiteral(false))
         }
 }
+
+def string_concatenation(left: IR.TypedExpression, right: IR.TypedExpression): IR.TypedExpression = {
+    def append(builder: IR.TypedExpression, value: IR.TypedExpression): IR.TypedExpression = {
+        val ty = value.ty match
+            case _: IR.PrimitiveType | IR.LangTypes.String | IR.ArrayType(IR.PrimitiveType.Char) => value.ty
+            case _ => IR.LangTypes.Object
+
+        IR.InvokeVirtual(IR.LangTypes.StringBuilder.name, "append", IR.MethodType(List(ty), IR.LangTypes.StringBuilder), builder, List(value))
+    }
+
+    val builder = left.ty match
+        case IR.LangTypes.String => IR.New(IR.LangTypes.StringBuilder.name, IR.MethodType(List(IR.LangTypes.String), IR.VoidType), List(left))
+        case IR.VoidType => throw new TypeMismatch(left.ty, IR.VoidType)
+        case _ => append(IR.New(IR.LangTypes.StringBuilder.name, IR.MethodType(List.empty, IR.VoidType), List.empty), right)
+
+    IR.InvokeVirtual(IR.LangTypes.StringBuilder.name, "toString", IR.MethodType(List.empty, IR.LangTypes.String), append(builder, right), List.empty)
+}
