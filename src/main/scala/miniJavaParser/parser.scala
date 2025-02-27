@@ -713,14 +713,5 @@ class ASTBuilderVisitor extends miniJavaBaseVisitor[ASTNode] { // ToDo: Klasse p
     case "float" => PrimitiveType.Float
     case "double" => PrimitiveType.Double
 
-  private def toType(typeName: String): Type = typeName match {
-    // Primitive Typen
-
-    // Objekttyp
-    case ty if ty.matches("[A-Za-z_][A-Za-z0-9_]*") => ObjectType(AmbiguousName(List(ty)))
-
-    // Unbekannter Typ
-    case _ => throw new IllegalArgumentException(s"Unknown type: $typeName")
-  }
 }
 
