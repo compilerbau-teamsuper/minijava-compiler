@@ -7,6 +7,7 @@ import miniJavaBytecode.codeGen
 import java.io.{DataOutputStream, FileOutputStream, File}
 import miniJavaParser.AST.ClassDeclaration
 import miniJavaParser.AST.InterfaceDeclaration
+import miniJavaOptimizer.optimize
 
 def getClassName(ast: miniJavaParser.AST.CompilationUnit): String = {
     ast.typeDeclarations.head match {
@@ -18,8 +19,9 @@ def getClassName(ast: miniJavaParser.AST.CompilationUnit): String = {
 @main
 def main(sourcePath: String, compileFolder: String): Unit = {
     val ast = JavaASTBuilder.parseFromFile(sourcePath)
-    val typedAst = typecheck(ast)
-    val (bytecode, _) = typedAst.codeGen()
+    val ir = typecheck(ast)
+    val optimized = ir.copy(methods = ir.methods.map(m => m.copy(code = m.code.map(optimize))))
+    val (bytecode, _) = optimized.codeGen()
     val slash = 
         if compileFolder.endsWith("/") || compileFolder.endsWith("\\") then "" 
         else if compileFolder.contains("/") then "/" else "\\"
