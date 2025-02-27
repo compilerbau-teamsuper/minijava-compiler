@@ -12,37 +12,6 @@ import miniJavaAnalysis.IR.Comparison.ICmpLt
 import miniJavaAnalysis.IR.Comparison.ICmpNe
 import java.io.ObjectOutputStream.PutField
 
-def is_equivalent(a: TypedExpression, b: TypedExpression): Boolean = if (a == b) true else (a, b) match
-    case (BooleanLiteral(a), BooleanLiteral(b)) => a == b
-    case (ByteLiteral(a), ByteLiteral(b)) => a == b
-    case (ShortLiteral(a), ShortLiteral(b)) => a == b
-    case (CharLiteral(a), CharLiteral(b)) => a == b
-    case (IntLiteral(a), IntLiteral(b)) => a == b
-    case (LongLiteral(a), LongLiteral(b)) => a == b
-    case (StringLiteral(a), StringLiteral(b)) => a == b
-    case (NullLiteral, NullLiteral) => true
-    case (Convert(aty, a), Convert(bty, b)) => aty == bty && is_equivalent(a, b)
-    case (INeg(a), INeg(b)) => is_equivalent(a, b)
-    case (IBinOp(la, opa, ra), IBinOp(lb, opb, rb)) => opa == opb && is_equivalent(la, lb) && is_equivalent(ra, rb)
-    case (LNeg(a), LNeg(b)) => is_equivalent(a, b)
-    case (LBinOp(la, opa, ra), LBinOp(lb, opb, rb)) => opa == opb && is_equivalent(la, lb) && is_equivalent(ra, rb)
-    case (FNeg(a), FNeg(b)) => is_equivalent(a, b)
-    case (FBinOp(la, opa, ra), FBinOp(lb, opb, rb)) => opa == opb && is_equivalent(la, lb) && is_equivalent(ra, rb)
-    case (DNeg(a), DNeg(b)) => is_equivalent(a, b)
-    case (DBinOp(la, opa, ra), DBinOp(lb, opb, rb)) => opa == opb && is_equivalent(la, lb) && is_equivalent(ra, rb)
-    case (LCmp(la, ra), LCmp(lb, rb)) => is_equivalent(la, lb) && is_equivalent(ra, rb)
-    case (FCmpL(la, ra), FCmpL(lb, rb)) => is_equivalent(la, lb) && is_equivalent(ra, rb)
-    case (FCmpG(la, ra), FCmpG(lb, rb)) => is_equivalent(la, lb) && is_equivalent(ra, rb)
-    case (DCmpL(la, ra), DCmpL(lb, rb)) => is_equivalent(la, lb) && is_equivalent(ra, rb)
-    case (DCmpG(la, ra), DCmpG(lb, rb)) => is_equivalent(la, lb) && is_equivalent(ra, rb)
-    case (LoadLocal(_, a), LoadLocal(_, b)) => a == b // In welformed IR, the types must be equal.
-    case (DupStoreLocal(ia, a), DupStoreLocal(ib, b)) => ia == ib && is_equivalent(a, b)
-    case (GetField(tya, ofa, na, ta), GetField(tyb, ofb, nb, tb)) => tya == tyb && ofa == ofb && na == nb && is_equivalent(ta, tb) // In welformed IR, the types must be equal.
-    case (DupPutField(ofa, na, ta, a), DupPutField(ofb, nb, tb, b)) => ofa == ofb && na == nb && is_equivalent(ta, tb) && is_equivalent(a, b)
-    case (InvokeSpecial(oa, na, ma, ta, aa), InvokeSpecial(ob, nb, mb, tb, ab)) => false // TODO
-    case (Ternary(_, ca, la, ra, ya, na), Ternary(_, cb, lb, rb, yb, nb)) => false // TODO
-    case (_, _) => false
-
 def is_sideeffect_free(expr: TypedExpression): Boolean = expr match
     case BooleanLiteral(_)
     | ByteLiteral(_)
@@ -312,6 +281,7 @@ def simplify_expr(expr: TypedExpression): TypedExpression = expr match
     case DupStoreArray(target, index, value) => DupStoreArray(simplify_expr(target), simplify_expr(index), simplify_expr(value))
     case GetField(field_ty, of, name, target) => GetField(field_ty, of, name, simplify_expr(target))
     case DupPutField(of, name, target, value) => DupPutField(of, name, simplify_expr(target), simplify_expr(value))
+    case ArrayLength(target) => ArrayLength(simplify_expr(target))
     case GetStatic(field_ty, of, name) => GetStatic(field_ty, of, name)
     case DupPutStatic(of, name, value) => DupPutStatic(of, name, simplify_expr(value))
     case InvokeStatic(of, name, mty, args) => InvokeStatic(of, name, mty, args.map(simplify_expr))
@@ -328,7 +298,7 @@ def simplify_expr(expr: TypedExpression): TypedExpression = expr match
         case DoCompare(c, l, r) => {
             val y = simplify_expr(yes)
             val n = simplify_expr(no)
-            if (is_sideeffect_free(l) && is_sideeffect_free(r) && is_equivalent(yes, no)) yes
+            if (is_sideeffect_free(l) && is_sideeffect_free(r) && yes == no) yes
             else Ternary(ty, c, l, r, y, n)
         }
 
