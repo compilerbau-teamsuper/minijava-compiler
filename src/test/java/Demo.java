@@ -71,11 +71,24 @@ public class Demo {
 
         // and unboxing works, too:
         double promoted = boxedf + b; 
-        System.out.println("value of promoted is " + promoted);
+        System.out.println("value of promoted is:");
+        System.out.println(promoted);
+        System.out.println("oh, and by the way, that was an example of method selection ;-)");
+        System.out.println("and that was too...");
+        System.out.println("this should call the overloaded method that takes a double, even though we pass a Float:");
+        overloaded(boxedf);
 
         Object demo = new Demo();
         System.out.println("even object casting works: " + demo);
 
         return f + l + d + c + s + b;
+    }
+
+    void overloaded(double val) {
+        System.out.println("overloaded called with double " + val);
+    }
+
+    void overloaded(String val) {
+        System.out.println("overloaded called with String " + val);
     }
 }

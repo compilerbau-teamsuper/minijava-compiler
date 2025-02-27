@@ -22,6 +22,10 @@ extension(ty: IR.Type) {
         case IR.VoidType => "void"
 }
 
+extension(ty: IR.MethodType) {
+    def stringify: String = "(" + ty.params.map(_.stringify).mkString(", ") + ") -> " + ty.ret.stringify
+}
+
 extension(name: AST.AmbiguousName) {
     def stringify: String = name.components.mkString(".")
 }
@@ -39,7 +43,7 @@ case class PackageNotFound(name: PackageName) extends Throwable("package not fou
 case class TypeNotFound(name: AST.AmbiguousName) extends Throwable("type not found: " + name.stringify) with TypeError
 
 case object InvalidConstructor extends Throwable("constructor must have same name as class") with TypeError
-case class NoApplicableConstructor(name: IR.ClassName) extends Throwable("no applicable constructor of class " + name.stringify) with TypeError
+case object NoApplicableMethod extends Throwable("no applicable method") with TypeError
 case class TypeMismatch(ty: IR.Type, expected: IR.Type) extends Throwable("type mismatch: got " + stringify(ty) + ", expected " + stringify(expected)) with TypeError
 case class ExpectedPrimitive(ty: IR.Type) extends Throwable("expected a primitive type, got " + ty.stringify) with TypeError
 case object LocalVoidVariable extends Throwable("local variables may not have type void") with TypeError
@@ -64,4 +68,4 @@ case class ModifyFinal(name: String, ty: Option[IR.Type]) extends Throwable(ty m
 case class NonStaticMember(of: IR.ClassName, name: String) extends Throwable("member " + name + " of class " + of.stringify + " is non-static") with TypeError
 case class StaticMember(of: IR.ClassName, name: String) extends Throwable("member " + name + " of class " + of.stringify + "is static") with TypeError
 case class NotAField(ty: IR.Type) extends Throwable("expected a field, found type " + ty.stringify) with TypeError
-case object Ambiguous extends Throwable("method invocation is ambiguous") with TypeError
+case class Ambiguous(best: IR.MethodType, nextbest: IR.MethodType) extends Throwable("method invocation is ambiguous:\nbest candidate has signature: " + best.stringify + "\nbut next best candidate has signature: " + nextbest.stringify) with TypeError

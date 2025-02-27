@@ -19,39 +19,55 @@ def is_subtype(ty: IR.Type, of: IR.Type)(ctx: Context): Boolean = ty == of || ((
     case (IR.ArrayType(t: IR.ReferenceType), IR.ArrayType(o: IR.ReferenceType)) => is_subtype(t, o)(ctx)
     case _ => false)
 
-//def isShortLiteral(expr): Unit = 
+def is_assignable(to: IR.Type, ty: IR.Type)(ctx: Context): Boolean = (ty, to) match
+    case (got, expected) if got == expected => true 
+    case (from: IR.PrimitiveType, to: IR.PrimitiveType) if is_subtype(from, to)(ctx) => true
+    case (from: IR.ReferenceType, to: IR.ReferenceType) if is_subtype(from, to)(ctx) => true
+    case (from: IR.PrimitiveType, to: IR.ReferenceType) => is_assignable(to, boxed_ty(from))(ctx)
+    case (from: IR.ReferenceType, to: IR.PrimitiveType) => unboxed_ty(from).exists(is_assignable(to, _)(ctx))
+    case (got, expected) => false
 
 def assign(ty: IR.Type, expr: IR.TypedExpression)(ctx: Context): IR.TypedExpression = (expr, ty) match {
     case (IR.IntLiteral(i), IR.PrimitiveType.Byte) if i >= -128 && i <= 127 =>
         IR.ByteLiteral(i.toByte)
     case (IR.IntLiteral(i), IR.PrimitiveType.Char) if i >= 0 && i <= 65535 =>
-        IR.CharLiteral(i.toChar) 
+        IR.CharLiteral(i.toChar)
     case (IR.IntLiteral(i), IR.PrimitiveType.Short) if i >= -32768 && i <= 32767 =>
         IR.ShortLiteral(i.toShort)
     case _ => (expr.ty, ty) match {
         case (got, expected) if got == expected => expr 
         case (from: IR.PrimitiveType, to: IR.PrimitiveType) if is_subtype(from, to)(ctx) => IR.Convert(to, expr)
         case (from: IR.ReferenceType, to: IR.ReferenceType) if is_subtype(from, to)(ctx) => IR.Convert(to, expr)
-        case (from: IR.PrimitiveType, to: IR.ReferenceType) => assign(ty, box(expr))(ctx)
+        case (from: IR.PrimitiveType, to: IR.ReferenceType) => {
+            val name = boxed_ty(from).name
+            val boxed = IR.New(name, IR.MethodType(List(from), IR.VoidType), List(expr))
+            assign(ty, boxed)(ctx)
+        }
         case (from: IR.ReferenceType, to: IR.PrimitiveType) => assign(ty, unbox(expr))(ctx)
         case (got, expected) => throw TypeMismatch(got, expected)
     }
 }
 
-private def box(expr: IR.TypedExpression): IR.TypedExpression = {
-    val name = expr.ty match
-        case IR.PrimitiveType.Boolean => IR.LangTypes.Boolean
-        case IR.PrimitiveType.Byte => IR.LangTypes.Byte
-        case IR.PrimitiveType.Short => IR.LangTypes.Short
-        case IR.PrimitiveType.Char => IR.LangTypes.Character
-        case IR.PrimitiveType.Int => IR.LangTypes.Integer
-        case IR.PrimitiveType.Long => IR.LangTypes.Long
-        case IR.PrimitiveType.Float => IR.LangTypes.Float
-        case IR.PrimitiveType.Double => IR.LangTypes.Double
-        case _ => ???
-    
-    IR.New(name.name, IR.MethodType(List(expr.ty), IR.VoidType), List(expr))
-}
+private def boxed_ty(ty: IR.PrimitiveType): IR.ObjectType = ty match
+    case IR.PrimitiveType.Boolean => IR.LangTypes.Boolean
+    case IR.PrimitiveType.Byte => IR.LangTypes.Byte
+    case IR.PrimitiveType.Short => IR.LangTypes.Short
+    case IR.PrimitiveType.Char => IR.LangTypes.Character
+    case IR.PrimitiveType.Int => IR.LangTypes.Integer
+    case IR.PrimitiveType.Long => IR.LangTypes.Long
+    case IR.PrimitiveType.Float => IR.LangTypes.Float
+    case IR.PrimitiveType.Double => IR.LangTypes.Double
+
+private def unboxed_ty(ty: IR.Type): Option[IR.PrimitiveType] = ty match
+    case IR.LangTypes.Boolean => Some(IR.PrimitiveType.Boolean)
+    case IR.LangTypes.Byte => Some(IR.PrimitiveType.Byte)
+    case IR.LangTypes.Short => Some(IR.PrimitiveType.Short)
+    case IR.LangTypes.Character => Some(IR.PrimitiveType.Char)
+    case IR.LangTypes.Integer => Some(IR.PrimitiveType.Int)
+    case IR.LangTypes.Long => Some(IR.PrimitiveType.Long)
+    case IR.LangTypes.Float => Some(IR.PrimitiveType.Float)
+    case IR.LangTypes.Double => Some(IR.PrimitiveType.Double)
+    case _ => None
 
 def unbox(expr: IR.TypedExpression): IR.TypedExpression = {
     val (of, name, ty) = expr.ty match

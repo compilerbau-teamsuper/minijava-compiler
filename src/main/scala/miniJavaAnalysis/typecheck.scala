@@ -9,7 +9,7 @@ import miniJavaAnalysis.operations.*
 case class ObjectInfo(
     superclass: Option[IR.ObjectType],
     interfaces: List[IR.ObjectType],
-    methods: Map[String, MethodInfo],
+    methods: Map[String, List[MethodInfo]],
     fields: Map[String, FieldInfo],
     constructors: List[MethodInfo],
 )
@@ -48,7 +48,7 @@ def local_size(ty: IR.Type): Int = ty match
     case _ => 1
 
 def canditate_methods(of: IR.ObjectType, name: String)(ctx: Context): List[(IR.ObjectType, MethodInfo)] = {
-    ctx.types(of).methods.get(name).toList.map(m => (of, m))
+    ctx.types(of).methods.get(name).toList.flatten.map(m => (of, m))
     ++ ctx.types(of).superclass.map(canditate_methods(_, name)(ctx)).toList.flatten
     ++ ctx.types(of).interfaces.map(canditate_methods(_, name)(ctx)).flatten
 }
@@ -69,15 +69,20 @@ def select_method(
 )(ctx: Context): (IR.ObjectType, MethodInfo, List[IR.TypedExpression]) = {
     val a = args.map(typecheck_expr(_)(ctx))
     val atys = a.map(_.ty)
-    candidates
-        .filter((of, method) => potentially_applicable(of, method, atys)(ctx))
-        .filter((_, method) => atys.zip(method.ty.params).forall(is_subtype(_, _)(ctx)))
-        .sortWith((f, g) => more_specific(f._2.ty.params, g._2.ty.params)(ctx) && !more_specific(f._2.ty.params, g._2.ty.params)(ctx))
+    val potentials = candidates.filter((of, method) => potentially_applicable(of, method, atys)(ctx))
+
+    val applicable = potentials.filter((_, method) => atys.zip(method.ty.params).forall(is_subtype(_, _)(ctx))) match
+        case Nil => potentials.filter((_, method) => method.ty.params.zip(atys).forall(is_assignable(_, _)(ctx)))
+        case by_subtyping => by_subtyping
+    
+    val (of, info) = applicable.sortWith((f, g) => more_specific(f._2.ty.params, g._2.ty.params)(ctx) && !more_specific(g._2.ty.params, f._2.ty.params)(ctx))
         match
-            case best :: Nil => best :* a
-            case best :: next :: _ if !more_specific(next._2.ty.params, best._2.ty.params)(ctx) => best :* a
-            case best :: equal :: _ => throw Ambiguous
-            case Nil => ???
+            case best :: Nil => best
+            case best :: next :: _ if !more_specific(next._2.ty.params, best._2.ty.params)(ctx) => best
+            case best :: equal :: _ => throw Ambiguous(best._2.ty, equal._2.ty)
+            case Nil => throw NoApplicableMethod
+
+    (of, info, info.ty.params.zip(a).map(assign(_, _)(ctx)))
 }
 
 def more_specific(a: List[IR.Type], b: List[IR.Type])(ctx: Context): Boolean = {
@@ -482,7 +487,7 @@ def typecheck(ast: AST.CompilationUnit): IR.ClassFile = {
             val mod = check_modifiers(modifiers)
             val ty = IR.MethodType(parameters.map(p => resolve_ty(p.paramType)(resolver)), resolve_ty(returnType)(resolver))
             val params = parameters.map(p => p.name)
-            info = info.copy(methods = info.methods + (name -> MethodInfo(mod, ty)))
+            info = info.copy(methods = info.methods.updatedWith(name)(sameName => Some(sameName.toList.flatten :+ MethodInfo(mod, ty))))
             check_methods = check_methods :+ (types => typecheck_method(mod, name, params, ty, this_type, body)(resolver, types))
         }
         case AST.VarOrFieldDeclaration(modifiers, fieldType, name, initializer) => {
